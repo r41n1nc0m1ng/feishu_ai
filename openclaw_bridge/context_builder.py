@@ -5,7 +5,7 @@ from memory.zep_session import ZepSessionManager
 class ContextBuilder:
     """
     Assembles the minimal context view passed to OpenClaw.
-    Follows the 代: suggestion: only recent message window + memory hints,
+    Follows the suggestion: only recent message window + memory hints,
     not full raw session history, to avoid context bloat.
     """
 
