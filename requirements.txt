@@ -1,0 +1,12 @@
+httpx>=0.27.0
+pydantic>=2.7.0
+python-dotenv>=1.0.0
+
+# Feishu SDK
+lark-oapi>=1.3.0
+
+# Graphiti temporal graph memory
+graphiti-core>=0.3.0
+
+# Neo4j driver (Graphiti backend)
+neo4j>=5.19.0
