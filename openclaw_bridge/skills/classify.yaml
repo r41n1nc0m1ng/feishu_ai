@@ -1,0 +1,3 @@
+# TODO: OpenClaw skill — classify message as Schedule / Task / Memory / Ignore
+name: classify
+description: Route a group message to the correct processing pipeline

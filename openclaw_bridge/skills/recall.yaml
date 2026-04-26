@@ -1,0 +1,3 @@
+# TODO: OpenClaw skill — trigger memory recall when a query is detected
+name: recall
+description: Detect query intent in group message and retrieve relevant memories from Graphiti

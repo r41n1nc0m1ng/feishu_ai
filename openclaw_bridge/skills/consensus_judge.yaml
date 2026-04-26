@@ -1,0 +1,3 @@
+# TODO: OpenClaw skill — judge whether group consensus has formed
+name: consensus_judge
+description: Detect agree/disagree/topic-switch signals to decide if a decision is finalized

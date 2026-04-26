@@ -1,0 +1,3 @@
+# TODO: OpenClaw skill — extract structured memory fields from a message window
+name: extract_memory
+description: Extract decision/reason/participants/type from classified Memory messages
