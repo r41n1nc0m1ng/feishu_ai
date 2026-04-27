@@ -11,6 +11,7 @@ from lark_oapi.api.im.v1 import P2ImMessageReceiveV1
 
 from feishu.event_handler import handle_lark_event
 from memory.graphiti_client import GraphitiClient
+# from memory.batch_processor import BatchProcessor  # 批处理器，待实现后取消注释
 
 logging.basicConfig(level=logging.INFO)
 logging.getLogger("neo4j.notifications").setLevel(logging.ERROR)
@@ -47,6 +48,9 @@ async def main():
         event_handler=dispatcher,
         log_level=lark.LogLevel.INFO,
     )
+
+    # 批处理通道：写入侧负责实现 BatchProcessor 后在此启动
+    # asyncio.create_task(BatchProcessor().run())
 
     logger.info("Connecting to Feishu via WebSocket (no tunnel needed)...")
     ws_thread = threading.Thread(target=ws_client.start, daemon=True)
