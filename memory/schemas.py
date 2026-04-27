@@ -47,8 +47,11 @@ class FeishuMessage(BaseModel):
     message_id: str
     sender_id: str
     chat_id: str
+    chat_type: str                          # "group" 或 "p2p"
     text: str
     timestamp: datetime
+    mentions: List[str] = Field(default_factory=list)  # 被 @ 用户的 open_id 列表
+    is_at_bot: bool = False                 # 是否 @ 了机器人，实时触发判断用
 
 
 # ── 批处理通道对象（P0 核心，写入侧负责）─────────────────────────────────────
@@ -81,7 +84,7 @@ class FetchBatch(BaseModel):
     chat_id: str
     fetch_start: datetime
     fetch_end: datetime
-    messages: List[EvidenceMessage]
+    messages: List[EvidenceMessage] = Field(default_factory=list)
 
 
 class EvidenceBlock(BaseModel):
@@ -94,7 +97,7 @@ class EvidenceBlock(BaseModel):
     chat_id: str
     start_time: datetime
     end_time: datetime
-    messages: List[EvidenceMessage]
+    messages: List[EvidenceMessage] = Field(default_factory=list)
     created_at: datetime = Field(default_factory=_now)
 
 
@@ -103,6 +106,7 @@ class MemoryCard(BaseModel):
     从一个或多个 EvidenceBlock 中提炼出的中粒度记忆（对应需求文档 4.6 节）。
     默认检索对象，直接回答"决定了什么、为什么"。
     字段名与需求文档 4.6 输出示例及 4.7 存储规范对齐。
+    记忆间关系统一通过 MemoryRelation 表达，本类不冗余存储。
     """
     memory_id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     chat_id: str
@@ -112,12 +116,11 @@ class MemoryCard(BaseModel):
     reason: str                     # 决策理由
     memory_type: MemoryType = MemoryType.DECISION
     status: CardStatus = CardStatus.ACTIVE
-    source_block_ids: List[str] = []        # 来源 EvidenceBlock 的 block_id 列表
-    related_memory_ids: List[str] = []      # 相关 MemoryCard（related_to / refines）
-    supersedes_memory_id: Optional[str] = None   # 被本卡片覆盖的旧 MemoryCard 的 memory_id
-    effective_from: Optional[datetime] = None    # 生效起始时间
-    effective_until: Optional[datetime] = None   # 生效截止时间（项目结束后可设置）
-    last_retrieved_at: Optional[datetime] = None # 最近一次被检索的时间
+    source_block_ids: List[str] = Field(default_factory=list)       # 来源 EvidenceBlock 的 block_id 列表
+    supersedes_memory_id: Optional[str] = None                      # 被本卡片覆盖的旧 MemoryCard 的 memory_id
+    effective_from: Optional[datetime] = None                       # 生效起始时间
+    effective_until: Optional[datetime] = None                      # 生效截止时间（项目结束后可设置）
+    last_retrieved_at: Optional[datetime] = None                    # 最近一次被检索的时间
     created_at: datetime = Field(default_factory=_now)
     updated_at: datetime = Field(default_factory=_now)
 
@@ -126,6 +129,7 @@ class MemoryRelation(BaseModel):
     """
     两张 MemoryCard 之间的显式关系（对应需求文档 4.7 memory_relations 表）。
     记录 supersedes / refines / related_to / contradicts 等版本链关系。
+    所有记忆间关系统一在此表达，MemoryCard 本身不冗余存储关系字段。
     """
     relation_id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     chat_id: str
@@ -145,9 +149,9 @@ class TopicSummary(BaseModel):
     """
     summary_id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     chat_id: str
-    topic: str                          # 主题标签，如"MVP 产品边界"
-    summary: str                        # 当前状态的聚合描述
-    covered_memory_ids: List[str] = []  # 所覆盖的 MemoryCard 的 memory_id 列表
+    topic: str                                                          # 主题标签，如"MVP 产品边界"
+    summary: str                                                        # 当前状态的聚合描述
+    covered_memory_ids: List[str] = Field(default_factory=list)        # 所覆盖的 MemoryCard 的 memory_id 列表
     created_at: datetime = Field(default_factory=_now)
     updated_at: datetime = Field(default_factory=_now)
 
@@ -165,14 +169,14 @@ class ExtractedMemory(BaseModel):
     decision: str
     reason: str
     memory_type: MemoryType
-    participants: List[str] = []
+    participants: List[str] = Field(default_factory=list)
 
 
 class EventBlock(BaseModel):
     """TimeWindowAccumulator 刷出的实时消息缓冲区（P0 之前的旧链路）。"""
     block_id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     chat_id: str
-    messages: List[FeishuMessage]
+    messages: List[FeishuMessage] = Field(default_factory=list)
     window_start: datetime
     window_end: datetime
 
@@ -185,8 +189,8 @@ class MemoryItem(BaseModel):
     decision: str
     reason: str
     memory_type: MemoryType
-    source_message_ids: List[str] = []
-    participants: List[str] = []
+    source_message_ids: List[str] = Field(default_factory=list)
+    participants: List[str] = Field(default_factory=list)
     version: int = 1
     status: MemoryStatus = MemoryStatus.ACTIVE
     time: datetime = Field(default_factory=_now)
