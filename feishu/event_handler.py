@@ -15,8 +15,9 @@ from memory.schemas import FeishuMessage
 from memory.zep_session import ZepSessionManager
 from openclaw_bridge.client import OpenClawClient
 from openclaw_bridge.context_builder import ContextBuilder
+from realtime.action_handler import RealtimeActionHandler
+from realtime.dispatcher import dispatch_message
 from realtime.query_handler import RealtimeQueryHandler
-from realtime.triggers import classify_realtime_action
 
 logger = logging.getLogger(__name__)
 
@@ -42,18 +43,12 @@ async def handle_raw_event(raw: dict):
 
 
 async def _process(message: FeishuMessage):
-    await dispatch_message(message)
-
-
-async def dispatch_message(message: FeishuMessage):
-    action = classify_realtime_action(message)
-    if action == "query":
-        await handle_realtime_query(message)
-        return
-    if action in {"schedule", "task"}:
-        logger.info("Realtime action '%s' detected but not implemented yet", action)
-        return
-    await handle_legacy_ingest(message)
+    await dispatch_message(
+        message,
+        query_handler=RealtimeQueryHandler(send_text=FeishuAPIClient().send_text),
+        action_handler=RealtimeActionHandler(send_text=FeishuAPIClient().send_text),
+        legacy_ingest=handle_legacy_ingest,
+    )
 
 
 async def handle_realtime_query(message: FeishuMessage):
