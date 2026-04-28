@@ -1,7 +1,8 @@
 import logging
 from typing import List, Optional
 
-from memory.schemas import EvidenceBlock, MemoryCard
+from memory.graphiti_client import GraphitiClient
+from memory.schemas import CardStatus, EvidenceBlock, MemoryCard
 
 logger = logging.getLogger(__name__)
 
@@ -23,9 +24,8 @@ class MemoryRetriever:
         语义检索当前群聊中与 query 相关的 MemoryCard，仅返回 Active 状态。
         查询侧直接调用此接口获取检索结果。
         """
-        # TODO: 实现基于 Graphiti / embedding 的 MemoryCard 检索
-        logger.warning("retrieve() 尚未实现 | chat_id=%s query=%s limit=%d", chat_id, query, limit)
-        return []
+        raw_results = await self.search_active(chat_id, query, limit=limit)
+        return [self._to_memory_card(chat_id, query, raw) for raw in raw_results]
 
     async def retrieve_all(
         self, chat_id: str, query: str, limit: int = 5
@@ -33,9 +33,8 @@ class MemoryRetriever:
         """
         同 retrieve()，但同时返回 Deprecated 状态的旧版本（用于版本链展示）。
         """
-        # TODO: 实现包含 Deprecated 的全量检索
-        logger.warning("retrieve_all() 尚未实现 | chat_id=%s query=%s limit=%d", chat_id, query, limit)
-        return []
+        raw_results = await self.search(chat_id, query, limit=limit)
+        return [self._to_memory_card(chat_id, query, raw) for raw in raw_results]
 
     async def expand_evidence(self, block_id: str) -> Optional[EvidenceBlock]:
         """
@@ -51,3 +50,39 @@ class MemoryRetriever:
         # TODO: 按主键查询
         logger.warning("get_card_by_id() 尚未实现 | memory_id=%s", memory_id)
         return None
+
+    async def search(self, chat_id: str, query: str, limit: int = 5) -> List[dict]:
+        """
+        兼容旧链路的原始检索接口。
+        直接返回 Graphiti 搜索结果 dict，供旧测试和迁移中模块继续使用。
+        """
+        try:
+            return await GraphitiClient().search_memories(chat_id, query, limit=limit)
+        except Exception as e:
+            logger.error("Memory retrieval failed: %s", e)
+            return []
+
+    async def search_active(self, chat_id: str, query: str, limit: int = 5) -> List[dict]:
+        """
+        兼容旧链路的 Active 过滤接口。
+        当前底层尚未完整落地版本状态，先保留接口并做最佳努力过滤。
+        """
+        results = await self.search(chat_id, query, limit=limit * 2)
+        active = [
+            r for r in results
+            if r.get("status", CardStatus.ACTIVE) != CardStatus.DEPRECATED
+        ]
+        return active[:limit]
+
+    def _to_memory_card(self, chat_id: str, query: str, raw: dict) -> MemoryCard:
+        fact = (raw.get("fact") or "").strip()
+        title = fact.splitlines()[0][:80] if fact else query[:80]
+        return MemoryCard(
+            chat_id=chat_id,
+            decision_object=query,
+            title=title or "检索结果",
+            decision=fact or query,
+            reason="",
+            status=CardStatus.ACTIVE,
+            source_block_ids=[],
+        )

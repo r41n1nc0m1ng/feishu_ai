@@ -54,7 +54,7 @@ FeishuAPIClient           向群聊发送文本回复
 - `feishu/api_client.py` — tenant_access_token 缓存、向群聊发送文本消息
 
 ### 3.2 记忆存储层
-- `memory/schemas.py` — 完整数据模型：`FeishuMessage` / `ExtractedMemory` / `MemoryItem` / `EventBlock` / `TopicNode`
+- `memory/schemas.py` — 完整数据模型：`FeishuMessage` / `ExtractedMemory` / `MemoryItem` / `EventBlock` / `TopicSummary`
 - `memory/graphiti_client.py` — Graphiti 初始化（OllamaLLMClient + PassthroughReranker + OpenAIEmbedder）、`add_episode`、`search`
 - `memory/zep_session.py` — 短期上下文缓冲（in-memory，接口与 Zep CE 兼容，可后续替换）
 
@@ -173,7 +173,7 @@ ConflictDetector.find_conflict(chat_id, new_memory)
 
 **两种触发方式**：
 
-1. **`@机器人` 提问**：解析 `@` mention 事件，提取问题文本，调用 `MemoryRetriever.search_active(chat_id, query)` 返回结果卡片
+1. **`@机器人` 提问**：解析 `@` mention 事件，提取问题文本，调用 `MemoryRetriever.retrieve(chat_id, query)` 返回结果卡片
 
 2. **语义相似自动触发**：群聊消息经 LLM 轻量判断是否为「追问/确认/疑问」语意，若是且与已有记忆高相似度则主动推送，若为普通陈述则静默
 
@@ -197,7 +197,7 @@ ConflictDetector.find_conflict(chat_id, new_memory)
 1. 从 Graphiti 拉取该 chat_id 下所有 episodes
 2. 对 episode summary 做向量嵌入
 3. 按余弦相似度聚类（K-means 或 HDBSCAN，K 由信息熵自适应估计）
-4. 每个簇用 Ollama 生成 `TopicNode.title` + `summary`
+4. 每个簇用 Ollama 生成 `TopicSummary.topic` + `summary`
 5. 写入 Graphiti community node（group_id = chat_id）
 
 召回时优先命中 topic 节点，再展开到下属 episodes，兼顾速度与粒度。
