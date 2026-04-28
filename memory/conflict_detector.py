@@ -20,21 +20,21 @@ class ConflictDetector:
         Returns the conflicting existing memory fact dict if found, else None.
         """
         retriever = MemoryRetriever()
-        candidates = await retriever.search_active(chat_id, new_memory.title, limit=3)
+        candidates = await retriever.retrieve(chat_id, new_memory.title, limit=3)
         for candidate in candidates:
             if self._is_conflict(new_memory, candidate):
                 logger.info(
                     "Conflict detected: new='%s' vs existing='%s'",
                     new_memory.title,
-                    candidate.get("fact", "")[:60],
+                    candidate.decision[:60],
                 )
                 return candidate
         return None
 
-    def _is_conflict(self, new_memory: ExtractedMemory, existing: dict) -> bool:
+    def _is_conflict(self, new_memory: ExtractedMemory, existing) -> bool:
         # TODO: replace with LLM-based judgment for higher accuracy.
         # Heuristic: overlapping title or decision text suggests same topic.
-        existing_fact = existing.get("fact", "").lower()
+        existing_fact = existing.decision.lower()
         return (
             new_memory.decision.lower() in existing_fact
             or new_memory.title.lower() in existing_fact
