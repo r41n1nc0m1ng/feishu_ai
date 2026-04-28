@@ -9,7 +9,7 @@ import sqlite3
 from pathlib import Path
 from typing import List, Optional
 
-from memory.schemas import EvidenceBlock, MemoryCard
+from memory.schemas import ChatMemorySpace, EvidenceBlock, MemoryCard
 
 logger = logging.getLogger(__name__)
 
@@ -40,6 +40,14 @@ def init_db() -> None:
                 decision         TEXT,
                 data             TEXT NOT NULL,
                 created_at       TEXT
+            )
+        """)
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS chat_spaces (
+                chat_id       TEXT PRIMARY KEY,
+                group_name    TEXT,
+                created_at    TEXT,
+                last_fetch_at TEXT
             )
         """)
         conn.execute("CREATE INDEX IF NOT EXISTS idx_blocks_chat ON evidence_blocks(chat_id)")
@@ -106,6 +114,37 @@ def get_cards_for_chat(chat_id: str) -> List[MemoryCard]:
             (chat_id,),
         ).fetchall()
     return [MemoryCard.model_validate_json(r["data"]) for r in rows]
+
+
+# ── ChatMemorySpace ───────────────────────────────────────────────────────────
+
+def save_chat_space(space: ChatMemorySpace) -> None:
+    with _conn() as conn:
+        conn.execute(
+            "INSERT OR REPLACE INTO chat_spaces VALUES (?,?,?,?)",
+            (
+                space.chat_id,
+                space.group_name,
+                str(space.created_at),
+                str(space.last_fetch_at) if space.last_fetch_at else None,
+            ),
+        )
+
+
+def load_all_chat_spaces() -> List[ChatMemorySpace]:
+    with _conn() as conn:
+        rows = conn.execute("SELECT * FROM chat_spaces").fetchall()
+    spaces = []
+    for r in rows:
+        space = ChatMemorySpace(chat_id=r["chat_id"], group_name=r["group_name"] or "")
+        if r["last_fetch_at"] and r["last_fetch_at"] != "None":
+            from datetime import datetime
+            try:
+                space.last_fetch_at = datetime.fromisoformat(r["last_fetch_at"])
+            except ValueError:
+                pass
+        spaces.append(space)
+    return spaces
 
 
 # 模块加载时建表

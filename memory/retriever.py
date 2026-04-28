@@ -11,10 +11,10 @@ class MemoryRetriever:
     """
     记忆检索服务接口（写入侧实现，查询侧调用）。
 
-    检索优先级：Active > Deprecated，新版本 > 旧版本，有明确来源 > 来源不完整。
-    两个核心接口：
-      - retrieve()         检索 MemoryCard（回答"之前怎么定的"）
-      - expand_evidence()  展开 EvidenceBlock 来源（回答"谁说的/原话在哪"）
+    retrieve() 流程：
+      1. Graphiti 语义搜索 → 获取相关 fact 列表（决定排序和召回范围）
+      2. 对每条 fact，从内存缓存中匹配真实 MemoryCard（含 source_block_ids）
+      3. 缓存未命中时回退到临时 MemoryCard（兼容旧数据）
     """
 
     async def retrieve(
@@ -25,37 +25,53 @@ class MemoryRetriever:
         查询侧直接调用此接口获取检索结果。
         """
         raw_results = await self.search_active(chat_id, query, limit=limit)
-        return [self._to_memory_card(chat_id, query, raw) for raw in raw_results]
+        cards: List[MemoryCard] = []
+        seen_ids: set[str] = set()
+
+        for raw in raw_results:
+            fact = raw.get("fact", "")
+            # 优先从缓存匹配真实 MemoryCard（有 source_block_ids）
+            card = self._find_card_for_fact(chat_id, fact)
+            if card and card.memory_id not in seen_ids:
+                seen_ids.add(card.memory_id)
+                cards.append(card)
+            elif not card:
+                # 回退：用 Graphiti fact 临时构造（source_block_ids 为空）
+                cards.append(self._to_memory_card(chat_id, query, raw))
+
+        return cards[:limit]
 
     async def retrieve_all(
         self, chat_id: str, query: str, limit: int = 5
     ) -> List[MemoryCard]:
-        """
-        同 retrieve()，但同时返回 Deprecated 状态的旧版本（用于版本链展示）。
-        """
+        """同 retrieve()，但同时返回 Deprecated 状态的旧版本（用于版本链展示）。"""
         raw_results = await self.search(chat_id, query, limit=limit)
         return [self._to_memory_card(chat_id, query, raw) for raw in raw_results]
 
     async def expand_evidence(self, block_id: str) -> Optional[EvidenceBlock]:
         """
         根据 block_id 展开对应的 EvidenceBlock 原始消息列表。
-        查询侧在用户追问"谁说的/原话在哪"时调用。
+        优先走内存缓存，缓存未命中时从 SQLite 查询（重启后仍可用）。
         """
-        # TODO: 从存储层按 block_id 查询 EvidenceBlock
-        logger.warning("expand_evidence() 尚未实现 | block_id=%s", block_id)
-        return None
+        from memory.evidence_store import EvidenceStore
+        block = await EvidenceStore().get(block_id)
+        if not block:
+            logger.warning("expand_evidence: block_id 未命中 | block_id=%s", block_id)
+        return block
 
     async def get_card_by_id(self, memory_id: str) -> Optional[MemoryCard]:
-        """根据 memory_id 精确查询单张 MemoryCard。"""
-        # TODO: 按主键查询
-        logger.warning("get_card_by_id() 尚未实现 | memory_id=%s", memory_id)
-        return None
+        """根据 memory_id 精确查询单张 MemoryCard（缓存或 SQLite）。"""
+        from memory.card_generator import get_card
+        from memory import store
+        card = get_card(memory_id)
+        if not card:
+            card = store.load_memory_card(memory_id)
+            if card:
+                logger.debug("get_card_by_id: SQLite 命中 | memory_id=%s", memory_id)
+        return card
 
     async def search(self, chat_id: str, query: str, limit: int = 5) -> List[dict]:
-        """
-        兼容旧链路的原始检索接口。
-        直接返回 Graphiti 搜索结果 dict，供旧测试和迁移中模块继续使用。
-        """
+        """兼容旧链路：直接返回 Graphiti 搜索结果 dict。"""
         try:
             return await GraphitiClient().search_memories(chat_id, query, limit=limit)
         except Exception as e:
@@ -63,10 +79,7 @@ class MemoryRetriever:
             return []
 
     async def search_active(self, chat_id: str, query: str, limit: int = 5) -> List[dict]:
-        """
-        兼容旧链路的 Active 过滤接口。
-        当前底层尚未完整落地版本状态，先保留接口并做最佳努力过滤。
-        """
+        """同 search()，过滤 Deprecated 条目。"""
         results = await self.search(chat_id, query, limit=limit * 2)
         active = [
             r for r in results
@@ -74,7 +87,37 @@ class MemoryRetriever:
         ]
         return active[:limit]
 
+    # ── 内部辅助 ──────────────────────────────────────────────────────────────
+
+    def _find_card_for_fact(self, chat_id: str, fact: str) -> Optional[MemoryCard]:
+        """
+        从内存缓存中找到与 Graphiti fact 最匹配的 MemoryCard。
+        使用字符级 Jaccard 相似度，适合中文无分词场景。
+        """
+        from memory.card_generator import _card_cache
+        if not fact or len(fact) < 4:
+            return None
+
+        fact_chars = set(fact)
+        best_card: Optional[MemoryCard] = None
+        best_score = 0.0
+
+        for card in _card_cache.values():
+            if card.chat_id != chat_id or not card.decision:
+                continue
+            decision_chars = set(card.decision)
+            inter = len(decision_chars & fact_chars)
+            union = len(decision_chars | fact_chars)
+            score = inter / union if union else 0.0
+            if score > best_score:
+                best_score = score
+                best_card = card
+
+        # 相似度阈值 0.35，避免低质量匹配
+        return best_card if best_score >= 0.35 else None
+
     def _to_memory_card(self, chat_id: str, query: str, raw: dict) -> MemoryCard:
+        """将 Graphiti raw fact 转为临时 MemoryCard（source_block_ids 为空）。"""
         fact = (raw.get("fact") or "").strip()
         title = fact.splitlines()[0][:80] if fact else query[:80]
         return MemoryCard(

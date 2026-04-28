@@ -9,12 +9,8 @@ except ModuleNotFoundError:  # pragma: no cover - enables local non-SDK testing
     class P2ImMessageReceiveV1:  # type: ignore[no-redef]
         pass
 
-from feishu.api_client import FeishuAPIClient
-from memory.graphiti_client import GraphitiClient
+from feishu.api_client import FeishuAPIClient, extract_open_id
 from memory.schemas import FeishuMessage
-from memory.zep_session import ZepSessionManager
-from openclaw_bridge.client import OpenClawClient
-from openclaw_bridge.context_builder import ContextBuilder
 from realtime.action_handler import RealtimeActionHandler
 from realtime.dispatcher import dispatch_message
 from realtime.query_handler import RealtimeQueryHandler
@@ -57,49 +53,23 @@ async def handle_realtime_query(message: FeishuMessage):
 
 
 async def handle_legacy_ingest(message: FeishuMessage):
-    zep = ZepSessionManager()
-    await zep.ensure_session(message.chat_id)
-    await zep.add_message(message)
-
-    context = await ContextBuilder().build(message, zep)
-    extracted = await OpenClawClient().extract_memory(context)
-    if not extracted:
-        logger.info("No memory value detected in message from %s", message.sender_id)
-        return
-
-    await GraphitiClient().add_memory_episode(message.chat_id, extracted, message)
-
-    reply = f"[记忆已记录] {extracted.title}\n决策：{extracted.decision}\n理由：{extracted.reason}"
-    await FeishuAPIClient().send_text(message.chat_id, reply)
+    # 将 chat_id 注册到批处理器的活跃群聊表
+    from memory.batch_processor import BatchProcessor
+    await BatchProcessor().register_chat(message)
 
 
 def _extract_mentions_from_content(content: dict) -> list[str]:
-    mentions: list[str] = []
-    for mention in content.get("mentions", []):
-        if not isinstance(mention, dict):
-            continue
-        mention_id = (
-            mention.get("id")
-            or mention.get("open_id")
-            or mention.get("user_id")
-            or mention.get("key")
-        )
-        if mention_id:
-            mentions.append(str(mention_id))
-    return mentions
+    return [
+        open_id for mention in content.get("mentions", [])
+        if (open_id := extract_open_id(mention))
+    ]
 
 
 def _extract_mentions_from_sdk_message(msg) -> list[str]:
-    mentions = []
-    for mention in getattr(msg, "mentions", []) or []:
-        mention_id = (
-            getattr(mention, "id", None)
-            or getattr(mention, "open_id", None)
-            or getattr(mention, "user_id", None)
-        )
-        if mention_id:
-            mentions.append(str(mention_id))
-    return mentions
+    return [
+        open_id for mention in (getattr(msg, "mentions", []) or [])
+        if (open_id := extract_open_id(mention))
+    ]
 
 
 def _is_at_bot(mentions: list[str]) -> bool:
