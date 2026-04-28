@@ -23,6 +23,7 @@ from memory.schemas import (
     MemoryRelationType,
     MemoryType,
 )
+from memory import store
 
 logger = logging.getLogger(__name__)
 
@@ -34,6 +35,16 @@ _card_cache: dict[str, MemoryCard] = {}
 # 按 decision_object 索引，用于 SUPERSEDE 查找
 _cards_by_object: dict[str, MemoryCard] = {}
 
+
+def _restore_cache() -> None:
+    """启动时从 SQLite 恢复内存缓存。"""
+    cards = store.load_all_memory_cards()
+    for card in cards:
+        _card_cache[card.memory_id] = card
+        _cards_by_object[card.decision_object] = card
+    if cards:
+        logger.info("MemoryCard 缓存已从 SQLite 恢复 | 共 %d 条", len(cards))
+
 _CARD_PROMPT = """\
 你是一个群聊决策记忆提炼助手。根据以下群聊消息片段，判断是否需要生成或更新记忆卡片。
 
@@ -44,6 +55,12 @@ _CARD_PROMPT = """\
 {existing}
 
 【输出规则】只返回 JSON，不要其他内容。
+
+【必须输出 NOOP 的情况】以下内容不具备记忆价值，直接忽略：
+- 纯粹的提问或疑问句（如"为什么不做X""之前怎么定的""X是什么"）
+- 向机器人发起的查询（含 @机器人 的询问）
+- 闲聊、表情包、单纯的"好的""收到""可以"
+- 日程安排、待办事项
 
 操作类型说明：
 - ADD：新决策，之前没有相关记忆
@@ -123,6 +140,10 @@ class CardGenerator:
 
         old.status = CardStatus.DEPRECATED
         _card_cache[old.memory_id] = old
+        try:
+            store.save_memory_card(old)
+        except Exception:
+            logger.exception("SQLite 更新旧卡片状态失败 | memory_id=%s", old.memory_id)
 
         new_card.supersedes_memory_id = old.memory_id
 
@@ -141,9 +162,13 @@ class CardGenerator:
         return new_card
 
     async def _save(self, card: MemoryCard, block: EvidenceBlock) -> None:
-        """写入内存缓存并持久化到 Graphiti。"""
+        """写入内存缓存、SQLite 并持久化到 Graphiti。"""
         _card_cache[card.memory_id] = card
         _cards_by_object[card.decision_object] = card
+        try:
+            store.save_memory_card(card)
+        except Exception:
+            logger.exception("MemoryCard 写入 SQLite 失败 | memory_id=%s", card.memory_id)
 
         g = GraphitiClient()
         if not g.g:
@@ -162,7 +187,7 @@ class CardGenerator:
 
         ref_time = block.end_time
         if ref_time.tzinfo is None:
-            ref_time = ref_time.replace(tzinfo=timezone.utc)
+            ref_time = ref_time.astimezone(timezone.utc)
 
         try:
             await g.g.add_episode(
@@ -206,3 +231,7 @@ class CardGenerator:
 def get_card(memory_id: str) -> Optional[MemoryCard]:
     """模块级查询接口，供 retriever.get_card_by_id() 调用。"""
     return _card_cache.get(memory_id)
+
+
+# 模块加载时从 SQLite 恢复缓存
+_restore_cache()
