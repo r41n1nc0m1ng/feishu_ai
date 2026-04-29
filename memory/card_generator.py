@@ -215,6 +215,37 @@ class CardGenerator:
         )
 
     async def _call_llm(self, prompt: str) -> Optional[dict]:
+        provider = os.getenv("MODEL_PROVIDER", "ollama").strip().lower()
+        if provider == "openai" or os.getenv("OPENAI_API_KEY"):
+            return await self._call_openai_compatible(prompt)
+        return await self._call_ollama(prompt)
+
+    async def _call_openai_compatible(self, prompt: str) -> Optional[dict]:
+        api_key = os.getenv("OPENAI_API_KEY", "")
+        base_url = os.getenv("OPENAI_BASE_URL", "https://api.openai.com/v1").rstrip("/")
+        model = os.getenv("OPENAI_MODEL", CARD_MODEL)
+        if not api_key:
+            logger.error("CardGenerator 云端 LLM 调用失败: OPENAI_API_KEY 未配置")
+            return None
+        try:
+            async with httpx.AsyncClient(timeout=120, trust_env=False) as client:
+                resp = await client.post(
+                    f"{base_url}/chat/completions",
+                    headers={"Authorization": f"Bearer {api_key}"},
+                    json={
+                        "model": model,
+                        "messages": [{"role": "user", "content": prompt}],
+                        "response_format": {"type": "json_object"},
+                    },
+                )
+                resp.raise_for_status()
+                content = resp.json()["choices"][0]["message"]["content"]
+                return json.loads(content)
+        except Exception as e:
+            logger.error("CardGenerator 云端 LLM 调用失败: %s", e)
+            return None
+
+    async def _call_ollama(self, prompt: str) -> Optional[dict]:
         try:
             async with httpx.AsyncClient(timeout=120, trust_env=False) as client:
                 resp = await client.post(
