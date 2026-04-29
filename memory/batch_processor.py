@@ -114,6 +114,7 @@ class BatchProcessor:
 
     async def _process_chat(self, chat_id: str) -> None:
         space = _active_chats[chat_id]
+        logger.info("Batch process start | chat=%s last_fetch_at=%s", chat_id, space.last_fetch_at)
 
         # 1. 拉取增量消息（API 是秒级闭区间，客户端用毫秒精度过滤重复）
         messages, last_raw_ts = await self._feishu.fetch_messages(
@@ -127,7 +128,7 @@ class BatchProcessor:
             if last_raw_ts and (not space.last_fetch_at or last_raw_ts > space.last_fetch_at):
                 space.last_fetch_at = last_raw_ts
                 store.save_chat_space(space)
-                logger.debug("无有效消息，游标已推进至 %s | chat_id=%s", last_raw_ts, chat_id)
+                logger.info("No effective messages; cursor advanced | chat=%s cursor=%s", chat_id, last_raw_ts)
             return
 
         # 2. 构造 FetchBatch，游标取所有原始消息的最后时间（含被过滤的）
@@ -146,11 +147,25 @@ class BatchProcessor:
 
         # 4. 逐块存储证据 + 生成记忆卡片
         for block in blocks:
+            logger.info(
+                "Processing EvidenceBlock | chat=%s block_id=%s start=%s end=%s messages=%d",
+                chat_id,
+                getattr(block, "block_id", ""),
+                getattr(block, "start_time", ""),
+                getattr(block, "end_time", ""),
+                len(getattr(block, "messages", [])),
+            )
             await self._evidence_store.save(block)
             card = await self._card_generator.generate(block)
             if card:
                 logger.info("MemoryCard 生成 | chat_id=%s title=%s op=%s",
                             chat_id, card.title, card.memory_type.value)
+            else:
+                logger.info(
+                    "MemoryCard skipped | chat=%s block_id=%s",
+                    chat_id,
+                    getattr(block, "block_id", ""),
+                )
 
         # 5. 更新游标并持久化到 SQLite
         space.last_fetch_at = fetch_end

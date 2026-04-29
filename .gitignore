@@ -5,3 +5,4 @@ __pycache__/
 .idea/
 .vscode/
 memory_store.db
+logs/

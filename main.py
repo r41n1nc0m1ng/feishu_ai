@@ -2,6 +2,8 @@ import asyncio
 import logging
 import os
 import threading
+from datetime import datetime
+from pathlib import Path
 
 from dotenv import load_dotenv
 load_dotenv()
@@ -15,12 +17,44 @@ from memory.batch_processor import BatchProcessor
 
 _processor: BatchProcessor | None = None
 
-logging.basicConfig(level=logging.INFO)
-logging.getLogger("neo4j.notifications").setLevel(logging.ERROR)
-logging.getLogger("neo4j").setLevel(logging.ERROR)
 logger = logging.getLogger(__name__)
 
 _loop: asyncio.AbstractEventLoop | None = None
+
+
+def setup_logging() -> Path:
+    log_level_name = os.getenv("LOG_LEVEL", "INFO").upper()
+    log_level = getattr(logging, log_level_name, logging.INFO)
+    log_dir = Path(os.getenv("LOG_DIR", "logs"))
+    log_dir.mkdir(parents=True, exist_ok=True)
+    log_path = log_dir / f"run-{datetime.now().strftime('%Y%m%d-%H%M%S')}.log"
+
+    formatter = logging.Formatter(
+        fmt="%(asctime)s %(levelname)s [%(name)s] %(message)s",
+        datefmt="%Y-%m-%d %H:%M:%S",
+    )
+    stream_handler = logging.StreamHandler()
+    stream_handler.setLevel(log_level)
+    stream_handler.setFormatter(formatter)
+
+    file_handler = logging.FileHandler(log_path, encoding="utf-8")
+    file_handler.setLevel(logging.DEBUG)
+    file_handler.setFormatter(formatter)
+
+    latest_handler = logging.FileHandler(log_dir / "latest.log", mode="w", encoding="utf-8")
+    latest_handler.setLevel(logging.DEBUG)
+    latest_handler.setFormatter(formatter)
+
+    root = logging.getLogger()
+    root.handlers.clear()
+    root.setLevel(logging.DEBUG)
+    root.addHandler(stream_handler)
+    root.addHandler(file_handler)
+    root.addHandler(latest_handler)
+
+    logging.getLogger("neo4j.notifications").setLevel(logging.ERROR)
+    logging.getLogger("neo4j").setLevel(logging.ERROR)
+    return log_path
 
 
 def on_message(data: P2ImMessageReceiveV1) -> None:
@@ -49,8 +83,11 @@ def on_bot_added(data: P2ImChatMemberBotAddedV1) -> None:
 
 async def main():
     global _loop, _processor
+    log_path = setup_logging()
     _loop = asyncio.get_running_loop()
     _processor = BatchProcessor()
+    logger.info("Run log file: %s", log_path)
+    logger.info("Latest log file: %s", Path(os.getenv("LOG_DIR", "logs")) / "latest.log")
 
     try:
         await GraphitiClient.initialize()

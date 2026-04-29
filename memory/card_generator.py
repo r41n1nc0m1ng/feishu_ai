@@ -105,6 +105,15 @@ class CardGenerator:
         except ValueError:
             operation = CardOperation.NOOP
 
+        logger.info(
+            "CardGenerator result | chat=%s block_id=%s operation=%s object=%s title=%s",
+            block.chat_id,
+            block.block_id,
+            operation.value,
+            raw.get("decision_object", ""),
+            raw.get("title", ""),
+        )
+
         if operation == CardOperation.NOOP:
             logger.info("CardGenerator: NOOP | block=%s", block.block_id)
             return None

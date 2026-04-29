@@ -78,6 +78,12 @@ class RealtimeQueryHandler:
             top = results[0]
             block = None
             for block_id in getattr(top, "source_block_ids", []):
+                logger.info(
+                    "Source query expanding evidence | chat=%s memory_id=%s block_id=%s",
+                    message.chat_id,
+                    getattr(top, "memory_id", ""),
+                    block_id,
+                )
                 block = await self.retriever.expand_evidence(block_id)
                 if block:
                     break

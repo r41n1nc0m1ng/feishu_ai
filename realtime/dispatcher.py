@@ -2,10 +2,13 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from typing import Awaitable, Callable, Optional
+import logging
 
 from realtime.action_handler import RealtimeActionHandler
 from realtime.query_handler import QueryTrace, RealtimeQueryHandler
 from realtime.triggers import classify_realtime_action
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -24,6 +27,13 @@ async def dispatch_message(
     legacy_ingest: Optional[Callable[[object], Awaitable[None]]] = None,
 ) -> DispatchTrace:
     action = classify_realtime_action(message)
+    logger.info(
+        "Realtime dispatch | chat=%s message_id=%s action=%s text=%s",
+        getattr(message, "chat_id", ""),
+        getattr(message, "message_id", ""),
+        action,
+        getattr(message, "text", "")[:120],
+    )
 
     if action == "query":
         handler = query_handler or RealtimeQueryHandler()

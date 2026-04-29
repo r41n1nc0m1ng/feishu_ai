@@ -129,6 +129,13 @@ class FeishuAPIClient:
             result = resp.json()
             if result.get("code") != 0:
                 logger.error("Feishu send_text failed: %s", result)
+            else:
+                logger.info(
+                    "Feishu send_text succeeded | chat=%s chars=%d preview=%s",
+                    chat_id,
+                    len(text),
+                    text[:120],
+                )
 
     async def fetch_messages(
         self,
@@ -150,6 +157,12 @@ class FeishuAPIClient:
           4. 明显疑问句（正则匹配）—— 解析 body 后过滤
         """
         token = await self._get_token()
+        logger.info(
+            "Start fetch_messages | chat=%s start_time=%s page_size=%d",
+            chat_id,
+            start_time,
+            page_size,
+        )
         params: dict = {
             "container_id_type": "chat",
             "container_id": chat_id,
@@ -163,6 +176,13 @@ class FeishuAPIClient:
         last_raw_ts: Optional[datetime] = None   # 最后一条原始消息的时间戳（含被过滤的）
         page_token: Optional[str] = None
         bot_open_id = os.getenv("FEISHU_BOT_OPEN_ID", "").strip()
+        raw_items = 0
+        skipped_non_text = 0
+        skipped_bot = 0
+        skipped_at_bot = 0
+        skipped_query = 0
+        skipped_empty = 0
+        parse_errors = 0
 
         for _ in range(2):  # 最多拉取两页
             if page_token:
@@ -180,24 +200,28 @@ class FeishuAPIClient:
                 break
 
             for item in data.get("data", {}).get("items", []):
+                raw_items += 1
                 # 时间戳最先提取，确保无论此消息是否被过滤，游标都能推进
                 raw_ts_val = int(item.get("create_time", "0")) / 1000
                 if raw_ts_val > 0:
                     last_raw_ts = datetime.fromtimestamp(raw_ts_val)
 
                 if item.get("msg_type") != "text":
+                    skipped_non_text += 1
                     continue
 
                 sender = item.get("sender", {})
 
                 # 过滤 1：机器人自己发的消息（body 可能格式特殊，直接跳过）
                 if sender.get("sender_type") == "app":
+                    skipped_bot += 1
                     logger.debug("跳过机器人消息 | msg_id=%s", item.get("message_id"))
                     continue
 
                 # 过滤 2：@机器人 的查询消息（在解析 body 之前过滤）
                 if bot_open_id:
                     if any(extract_open_id(m) == bot_open_id for m in item.get("mentions", [])):
+                        skipped_at_bot += 1
                         logger.debug("跳过 @机器人 查询消息 | msg_id=%s", item.get("message_id"))
                         continue
 
@@ -207,10 +231,12 @@ class FeishuAPIClient:
                     body = json.loads(raw_content.strip() or "{}")
                     text = body.get("text", "").strip()
                     if not text:
+                        skipped_empty += 1
                         continue
 
                     # 过滤 3：明显疑问句
                     if _QUERY_RE.search(text):
+                        skipped_query += 1
                         logger.debug("跳过疑问句消息 | text=%s", text[:40])
                         continue
 
@@ -222,6 +248,7 @@ class FeishuAPIClient:
                         text=text,
                     ))
                 except Exception:
+                    parse_errors += 1
                     logger.debug("消息体解析失败，跳过 | msg_id=%s", item.get("message_id"))
 
             if not data.get("data", {}).get("has_more"):
@@ -229,7 +256,19 @@ class FeishuAPIClient:
             page_token = data.get("data", {}).get("page_token")
 
         await self._resolve_sender_names(messages)
-        logger.info("Fetched %d messages for chat %s", len(messages), chat_id)
+        logger.info(
+            "Fetched messages | chat=%s valid=%d raw=%d non_text=%d bot=%d at_bot=%d query=%d empty=%d parse_error=%d last_raw_ts=%s",
+            chat_id,
+            len(messages),
+            raw_items,
+            skipped_non_text,
+            skipped_bot,
+            skipped_at_bot,
+            skipped_query,
+            skipped_empty,
+            parse_errors,
+            last_raw_ts,
+        )
         return messages, last_raw_ts
 
     async def get_bot_open_id(self) -> str:

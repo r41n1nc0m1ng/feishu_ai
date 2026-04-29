@@ -39,6 +39,14 @@ async def handle_raw_event(raw: dict):
 
 
 async def _process(message: FeishuMessage):
+    logger.info(
+        "Message received | chat=%s sender=%s at_bot=%s mentions=%d text=%s",
+        message.chat_id,
+        message.sender_id,
+        message.is_at_bot,
+        len(message.mentions),
+        message.text[:120],
+    )
     await dispatch_message(
         message,
         query_handler=RealtimeQueryHandler(send_text=FeishuAPIClient().send_text),
@@ -55,6 +63,7 @@ async def handle_realtime_query(message: FeishuMessage):
 async def handle_legacy_ingest(message: FeishuMessage):
     # 将 chat_id 注册到批处理器的活跃群聊表
     from memory.batch_processor import BatchProcessor
+    logger.info("Legacy ingest registration | chat=%s message_id=%s", message.chat_id, message.message_id)
     await BatchProcessor().register_chat(message)
 
 

@@ -25,6 +25,13 @@ class MemoryRetriever:
         查询侧直接调用此接口获取检索结果。
         """
         raw_results = await self.search_active(chat_id, query, limit=limit)
+        logger.info(
+            "Memory retrieve start | chat=%s query=%s limit=%d raw_hits=%d",
+            chat_id,
+            query,
+            limit,
+            len(raw_results),
+        )
         cards: List[MemoryCard] = []
         seen_ids: set[str] = set()
 
@@ -35,10 +42,23 @@ class MemoryRetriever:
             if card and card.memory_id not in seen_ids:
                 seen_ids.add(card.memory_id)
                 cards.append(card)
+                logger.info(
+                    "Memory retrieve matched card | chat=%s memory_id=%s title=%s sources=%s",
+                    chat_id,
+                    card.memory_id,
+                    card.title,
+                    card.source_block_ids,
+                )
             elif not card:
                 # 回退：用 Graphiti fact 临时构造（source_block_ids 为空）
                 cards.append(self._to_memory_card(chat_id, query, raw))
+                logger.info(
+                    "Memory retrieve fallback fact | chat=%s fact=%s",
+                    chat_id,
+                    fact[:120],
+                )
 
+        logger.info("Memory retrieve done | chat=%s query=%s cards=%d", chat_id, query, len(cards[:limit]))
         return cards[:limit]
 
     async def retrieve_all(
@@ -57,6 +77,13 @@ class MemoryRetriever:
         block = await EvidenceStore().get(block_id)
         if not block:
             logger.warning("expand_evidence: block_id 未命中 | block_id=%s", block_id)
+        else:
+            logger.info(
+                "expand_evidence hit | block_id=%s chat=%s messages=%d",
+                block_id,
+                block.chat_id,
+                len(block.messages),
+            )
         return block
 
     async def get_card_by_id(self, memory_id: str) -> Optional[MemoryCard]:
