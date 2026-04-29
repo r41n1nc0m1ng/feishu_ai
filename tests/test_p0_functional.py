@@ -211,7 +211,7 @@ class P0FunctionalTest(unittest.IsolatedAsyncioTestCase):
              patch("memory.evidence_store.GraphitiClient") as MockEG, \
              patch("memory.card_generator.GraphitiClient") as MockCG:
 
-            MockClient.return_value.fetch_messages = AsyncMock(return_value=fetched)
+            MockClient.return_value.fetch_messages = AsyncMock(return_value=(fetched, fetched[-1].timestamp))
             MockEG.return_value.g = None
             MockCG.return_value.g = None
 
@@ -307,7 +307,7 @@ class P0FunctionalTest(unittest.IsolatedAsyncioTestCase):
              patch("memory.evidence_store.GraphitiClient") as MockEG, \
              patch("memory.card_generator.GraphitiClient") as MockCG:
 
-            MockClient.return_value.fetch_messages = AsyncMock(return_value=fetched)
+            MockClient.return_value.fetch_messages = AsyncMock(return_value=(fetched, fetched[-1].timestamp))
             MockEG.return_value.g = None
             MockCG.return_value.g = None
 

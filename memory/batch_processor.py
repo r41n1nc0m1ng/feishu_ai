@@ -9,6 +9,7 @@
 """
 import asyncio
 import logging
+import os
 
 from feishu.api_client import FeishuAPIClient
 from memory.card_generator import CardGenerator
@@ -19,7 +20,7 @@ from preprocessor.event_segmenter import segment
 
 logger = logging.getLogger(__name__)
 
-POLL_INTERVAL = 60      # 轮询间隔（秒）
+POLL_INTERVAL = int(os.getenv("BATCH_POLL_INTERVAL", "600"))  # 轮询间隔（秒），默认约 10 分钟
 MIN_MESSAGES = 1        # 增量消息数低于此值则跳过本轮处理
 
 # 活跃群聊注册表：chat_id → ChatMemorySpace
