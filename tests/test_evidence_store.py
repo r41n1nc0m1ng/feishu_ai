@@ -33,6 +33,13 @@ class EvidenceStoreTests(unittest.IsolatedAsyncioTestCase):
 
     def setUp(self):
         store_module._block_cache.clear()
+        self._old_flag = os.environ.get("INDEX_EVIDENCE_IN_GRAPHITI")
+
+    def tearDown(self):
+        if self._old_flag is None:
+            os.environ.pop("INDEX_EVIDENCE_IN_GRAPHITI", None)
+        else:
+            os.environ["INDEX_EVIDENCE_IN_GRAPHITI"] = self._old_flag
 
     async def test_save_puts_block_in_cache(self):
         block = _make_block()
@@ -54,6 +61,7 @@ class EvidenceStoreTests(unittest.IsolatedAsyncioTestCase):
     async def test_save_calls_graphiti_add_episode(self):
         block = _make_block()
         mock_g = AsyncMock()
+        os.environ["INDEX_EVIDENCE_IN_GRAPHITI"] = "true"
         with patch("memory.evidence_store.GraphitiClient") as MockG:
             MockG.return_value.g = mock_g
             await EvidenceStore().save(block)
@@ -61,6 +69,14 @@ class EvidenceStoreTests(unittest.IsolatedAsyncioTestCase):
         kwargs = mock_g.add_episode.call_args.kwargs
         self.assertIn(block.block_id, kwargs["name"])
         self.assertEqual(kwargs["group_id"], block.chat_id)
+
+    async def test_save_skips_graphiti_by_default(self):
+        block = _make_block()
+        mock_g = AsyncMock()
+        with patch("memory.evidence_store.GraphitiClient") as MockG:
+            MockG.return_value.g = mock_g
+            await EvidenceStore().save(block)
+        mock_g.add_episode.assert_not_called()
 
     async def test_save_skips_graphiti_when_not_initialized(self):
         block = _make_block()

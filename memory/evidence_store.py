@@ -4,8 +4,9 @@ EvidenceBlock 存储层。
 三写策略（优先级依次递减）：
 1. 内存缓存（block_id → EvidenceBlock）：O(1) 查询，进程内最快
 2. SQLite（memory_store.db）：持久化，重启后恢复内存缓存
-3. Graphiti episode：语义索引，供"谁说的/原话在哪"的语义检索
+3. Graphiti episode：可选语义索引。P0 默认关闭，来源展开优先走 block_id 精确查询。
 """
+import os
 import logging
 from datetime import timezone
 from typing import Optional
@@ -22,6 +23,10 @@ logger = logging.getLogger(__name__)
 _block_cache: dict[str, EvidenceBlock] = {}
 
 
+def _should_index_in_graphiti() -> bool:
+    return os.getenv("INDEX_EVIDENCE_IN_GRAPHITI", "").strip().lower() in {"1", "true", "yes", "on"}
+
+
 def _restore_cache() -> None:
     """启动时从 SQLite 恢复内存缓存。"""
     blocks = store.load_all_evidence_blocks()
@@ -34,7 +39,7 @@ def _restore_cache() -> None:
 class EvidenceStore:
 
     async def save(self, block: EvidenceBlock) -> None:
-        """将 EvidenceBlock 写入内存缓存、SQLite 和 Graphiti。"""
+        """将 EvidenceBlock 写入内存缓存、SQLite，必要时再写入 Graphiti。"""
         # 1. 内存缓存
         _block_cache[block.block_id] = block
 
@@ -44,7 +49,11 @@ class EvidenceStore:
         except Exception:
             logger.exception("EvidenceBlock 写入 SQLite 失败 | block_id=%s", block.block_id)
 
-        # 3. Graphiti 语义索引
+        # 3. Graphiti 语义索引（P0 默认关闭，避免本地小模型抽边不稳定影响主链）
+        if not _should_index_in_graphiti():
+            logger.info("EvidenceBlock 已保存到本地存储（Graphiti 索引已关闭） | block_id=%s", block.block_id)
+            return
+
         g = GraphitiClient()
         if not g.g:
             logger.warning("Graphiti 未初始化，EvidenceBlock 仅写入本地存储")
