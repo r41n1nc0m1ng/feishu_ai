@@ -17,6 +17,19 @@ QUERY_PATTERNS = [
     ]
 ]
 
+SOURCE_PATTERNS = [
+    re.compile(p)
+    for p in [
+        r"原话",
+        r"谁说的",
+        r"依据(是什么|是啥|呢)?",
+        r"来源",
+        r"证据",
+        r"聊天记录",
+        r"当时.*(怎么说|说了什么)",
+    ]
+]
+
 SCHEDULE_PATTERNS = [
     re.compile(p)
     for p in [
@@ -48,6 +61,13 @@ def is_explicit_query(text: str) -> bool:
     if "?" in normalized or "？" in normalized:
         return True
     return any(pattern.search(normalized) for pattern in QUERY_PATTERNS)
+
+
+def is_source_query(text: str) -> bool:
+    normalized = text.strip()
+    if not normalized:
+        return False
+    return any(pattern.search(normalized) for pattern in SOURCE_PATTERNS)
 
 
 def is_schedule_like(text: str) -> bool:

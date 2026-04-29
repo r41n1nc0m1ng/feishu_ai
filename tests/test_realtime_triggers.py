@@ -3,7 +3,12 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import unittest
 from types import SimpleNamespace
 
-from realtime.triggers import build_query_text, classify_realtime_action, should_trigger_realtime
+from realtime.triggers import (
+    build_query_text,
+    classify_realtime_action,
+    is_source_query,
+    should_trigger_realtime,
+)
 
 
 def _msg(text: str, *, is_at_bot: bool = False):
@@ -39,3 +44,8 @@ class RealtimeTriggerTests(unittest.TestCase):
     def test_build_query_text_strips_simple_mentions(self):
         message = _msg("@机器人 之前怎么定的")
         self.assertEqual(build_query_text(message), "之前怎么定的")
+
+    def test_source_query_detection(self):
+        self.assertTrue(is_source_query("当时是谁说的，原话在哪？"))
+        self.assertTrue(is_source_query("依据是什么"))
+        self.assertFalse(is_source_query("之前怎么定的"))

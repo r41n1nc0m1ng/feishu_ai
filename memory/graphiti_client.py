@@ -57,11 +57,11 @@ def _build_example(model_class) -> dict:
     return result
 
 
-class OllamaLLMClient(OpenAIClient):
+class ChatCompletionsLLMClient(OpenAIClient):
     """
     Forces all Graphiti LLM calls through /v1/chat/completions.
-    The default OpenAIClient uses /v1/responses for structured outputs,
-    which Ollama does not implement.
+    This works for Ollama and most OpenAI-compatible cloud providers, and avoids
+    Graphiti's default structured-output path when a provider does not support it.
     """
 
     async def _generate_response(
@@ -110,26 +110,35 @@ class GraphitiClient:
     async def initialize(cls):
         global _graphiti
 
-        ollama_url = os.getenv("OLLAMA_URL", "http://localhost:11434")
-        llm_model = os.getenv("LOCAL_MODEL", "qwen2.5:7b")
-        embed_model = os.getenv("EMBED_MODEL", "nomic-embed-text")
-
-        # Ollama exposes an OpenAI-compatible API at /v1
-        base_url = f"{ollama_url}/v1"
+        provider = os.getenv("MODEL_PROVIDER", "ollama").strip().lower()
+        if provider == "openai" or os.getenv("OPENAI_API_KEY"):
+            api_key = os.getenv("OPENAI_API_KEY", "")
+            base_url = os.getenv("OPENAI_BASE_URL", "https://api.openai.com/v1").rstrip("/")
+            llm_model = os.getenv("OPENAI_MODEL", os.getenv("LOCAL_MODEL", ""))
+            embed_model = os.getenv("OPENAI_EMBED_MODEL", os.getenv("EMBED_MODEL", ""))
+            provider_name = "openai-compatible"
+        else:
+            ollama_url = os.getenv("OLLAMA_URL", "http://localhost:11434")
+            api_key = "ollama"
+            llm_model = os.getenv("LOCAL_MODEL", "qwen2.5:7b")
+            embed_model = os.getenv("EMBED_MODEL", "nomic-embed-text")
+            # Ollama exposes an OpenAI-compatible API at /v1
+            base_url = f"{ollama_url.rstrip('/')}/v1"
+            provider_name = "ollama"
 
         # Pass a proxy-free httpx client into the openai SDK so that
         # Windows system proxy does not intercept localhost:11434 requests.
         no_proxy_http = httpx.AsyncClient(trust_env=False)
 
-        llm_client = OllamaLLMClient(
+        llm_client = ChatCompletionsLLMClient(
             config=LLMConfig(
-                api_key="ollama",
+                api_key=api_key,
                 model=llm_model,
-                small_model=llm_model,  # prevent fallback to gpt-4.1-nano
+                small_model=llm_model,
                 base_url=base_url,
             ),
             client=AsyncOpenAI(
-                api_key="ollama",
+                api_key=api_key,
                 base_url=base_url,
                 http_client=no_proxy_http,
             ),
@@ -137,12 +146,12 @@ class GraphitiClient:
 
         embedder = OpenAIEmbedder(
             config=OpenAIEmbedderConfig(
-                api_key="ollama",
+                api_key=api_key,
                 embedding_model=embed_model,
                 base_url=base_url,
             ),
             client=AsyncOpenAI(
-                api_key="ollama",
+                api_key=api_key,
                 base_url=base_url,
                 http_client=httpx.AsyncClient(trust_env=False),
             ),
@@ -157,7 +166,7 @@ class GraphitiClient:
             cross_encoder=PassthroughReranker(),
         )
         await _graphiti.build_indices_and_constraints()
-        logger.info("Graphiti ready (LLM=%s, embed=%s)", llm_model, embed_model)
+        logger.info("Graphiti ready (provider=%s, LLM=%s, embed=%s)", provider_name, llm_model, embed_model)
 
     async def add_memory_episode(
         self,
