@@ -174,12 +174,15 @@ class CardGenerator:
             target_id=old.memory_id,
             relation_type=MemoryRelationType.SUPERSEDES,
         )
+        try:
+            store.save_relation(relation)
+        except Exception:
+            logger.exception("MemoryRelation 写入 SQLite 失败 | source=%s target=%s",
+                             new_card.memory_id, old.memory_id)
         logger.info(
             "SUPERSEDE | 新卡片=%s 覆盖旧卡片=%s | object=%s",
             new_card.memory_id, old.memory_id, new_card.decision_object,
         )
-        # relation 暂存日志，P1 写入独立存储
-        _ = relation
         return new_card
 
     async def _save(self, card: MemoryCard, block: EvidenceBlock) -> None:

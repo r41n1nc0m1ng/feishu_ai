@@ -14,7 +14,7 @@ import os
 from feishu.api_client import FeishuAPIClient
 from memory.card_generator import CardGenerator
 from memory.evidence_store import EvidenceStore
-from memory.schemas import ChatMemorySpace, FeishuMessage, FetchBatch
+from memory.schemas import CardStatus, ChatMemorySpace, FeishuMessage, FetchBatch, MemoryType
 from memory import store
 from preprocessor.event_segmenter import segment
 
@@ -146,6 +146,7 @@ class BatchProcessor:
                     chat_id, len(messages), len(blocks))
 
         # 4. 逐块存储证据 + 生成记忆卡片
+        new_active_cards = 0
         for block in blocks:
             logger.info(
                 "Processing EvidenceBlock | chat=%s block_id=%s start=%s end=%s messages=%d",
@@ -160,6 +161,8 @@ class BatchProcessor:
             if card:
                 logger.info("MemoryCard 生成 | chat_id=%s title=%s op=%s",
                             chat_id, card.title, card.memory_type.value)
+                if card.status == CardStatus.ACTIVE and card.memory_type != MemoryType.PROGRESS:
+                    new_active_cards += 1
             else:
                 logger.info(
                     "MemoryCard skipped | chat=%s block_id=%s",
@@ -174,6 +177,14 @@ class BatchProcessor:
         except Exception:
             logger.exception("游标写入 SQLite 失败 | chat_id=%s", chat_id)
         logger.info("批处理完成 | chat_id=%s 游标更新至 %s", chat_id, fetch_end)
+
+        # 6. 按需触发 TopicSummary 重建（失败不阻断主流程）
+        if new_active_cards > 0:
+            try:
+                from memory.topic_manager import TopicManager
+                await TopicManager().rebuild_topics(chat_id)
+            except Exception:
+                logger.exception("TopicSummary 重建失败，跳过 | chat_id=%s", chat_id)
 
 
 # 注：_restore_active_chats() 在 BatchProcessor.__init__() 中调用，不在模块加载时执行

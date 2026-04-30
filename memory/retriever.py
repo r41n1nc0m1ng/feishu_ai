@@ -86,6 +86,26 @@ class MemoryRetriever:
             )
         return block
 
+    async def get_version_chain(self, memory_id: str) -> List[MemoryCard]:
+        """
+        从 memory_id 出发，沿 supersedes_memory_id 向上追溯完整版本链。
+        返回列表从新到旧排列：[当前卡, 上一版本, 更早版本, ...]。
+        """
+        from memory import store
+        chain: List[MemoryCard] = []
+        current_id: Optional[str] = memory_id
+        seen: set[str] = set()
+
+        while current_id and current_id not in seen:
+            seen.add(current_id)
+            card = await self.get_card_by_id(current_id)
+            if not card:
+                break
+            chain.append(card)
+            current_id = card.supersedes_memory_id
+
+        return chain
+
     async def get_card_by_id(self, memory_id: str) -> Optional[MemoryCard]:
         """根据 memory_id 精确查询单张 MemoryCard（缓存或 SQLite）。"""
         from memory.card_generator import get_card

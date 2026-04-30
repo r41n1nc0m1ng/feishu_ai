@@ -245,5 +245,11 @@ def load_topics_by_chat(chat_id: str) -> List[TopicSummary]:
     return [TopicSummary.model_validate_json(r["data"]) for r in rows]
 
 
+def delete_topics_by_chat(chat_id: str) -> None:
+    """清除某群的全部 TopicSummary，rebuild_topics 重建前调用。"""
+    with _conn() as conn:
+        conn.execute("DELETE FROM topic_summaries WHERE chat_id=?", (chat_id,))
+
+
 # 模块加载时建表
 init_db()
