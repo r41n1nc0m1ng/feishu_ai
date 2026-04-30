@@ -1,0 +1,2659 @@
+{
+  "schema_version": "dual_channel_benchmark_v2",
+  "case_id": "full_demo_ai_resume_expanded_001",
+  "description": "扩展端到端测试：围绕 AI 简历初筛项目，模拟同一群聊中多批次、多话题、多决策、半截话题、实时查询、日程待办、冲突/补充更新和多粒度召回。",
+  "chat_id": "oc_demo_ai_resume",
+  "replay_policy": {
+    "mode": "dual_channel_batch_replay",
+    "description": "每个 batch 内的消息先按顺序逐条发送给实时层；该 batch 全部实时处理完成后，再将整个 batch 发送给写入层，模拟每 10 分钟抓取一次群聊记录。",
+    "write_layer_should_ignore": [
+      "@机器人查询消息",
+      "普通历史提问",
+      "日程/待办触发消息",
+      "interactive 噪声卡片",
+      "机器人或系统噪声"
+    ],
+    "partial_topic_policy": "如果 batch 末尾只有半截话题且信息不足，不要求生成正式 MemoryCard；如果半截话题已经包含明确决策信息，则允许按当前包含的信息生成 MemoryCard，后续 batch 再通过 refines/supersedes 补充。"
+  },
+  "batches": [
+    {
+      "batch_id": "batch_001",
+      "fetch_time": "2026-04-29 10:10",
+      "messages": [
+        {
+          "content": "{\"text\": \"我先说下范围，AI 自动晒简历这个项目别做成完整招聘系统，ATS 那套太大了。\"}",
+          "create_time": "2026-04-29 10:00",
+          "deleted": false,
+          "message_id": "om_resume_0001",
+          "msg_type": "text",
+          "sender": {
+            "id": "ou_pm_001",
+            "id_type": "open_id",
+            "sender_type": "user",
+            "tenant_key": "demo_tenant"
+          },
+          "updated": false
+        },
+        {
+          "content": "{\"text\": \"同意，完整 ATS 要做职位发布、候选人池、面试流转、权限，复赛时间根本不够。\"}",
+          "create_time": "2026-04-29 10:00",
+          "deleted": false,
+          "message_id": "om_resume_0002",
+          "msg_type": "text",
+          "sender": {
+            "id": "ou_dev_001",
+            "id_type": "open_id",
+            "sender_type": "user",
+            "tenant_key": "demo_tenant"
+          },
+          "updated": false
+        },
+        {
+          "content": "{\"text\": \"我们先把招聘官最痛的一步拿出来：JD 和简历对不上，要人工一份份看。\"}",
+          "create_time": "2026-04-29 10:01",
+          "deleted": false,
+          "message_id": "om_resume_0003",
+          "msg_type": "text",
+          "sender": {
+            "id": "ou_hr_001",
+            "id_type": "open_id",
+            "sender_type": "user",
+            "tenant_key": "demo_tenant"
+          },
+          "updated": false
+        },
+        {
+          "content": "{\"text\": \"那 MVP 就是 JD-简历匹配分析，输出匹配点、缺失项、风险点，对吧？\"}",
+          "create_time": "2026-04-29 10:01",
+          "deleted": false,
+          "message_id": "om_resume_0004",
+          "msg_type": "text",
+          "sender": {
+            "id": "ou_algo_001",
+            "id_type": "open_id",
+            "sender_type": "user",
+            "tenant_key": "demo_tenant"
+          },
+          "updated": false
+        },
+        {
+          "content": "{\"text\": \"对，先不做完整 ATS，不做候选人生命周期，只做初筛分析。\"}",
+          "create_time": "2026-04-29 10:02",
+          "deleted": false,
+          "message_id": "om_resume_0005",
+          "msg_type": "text",
+          "sender": {
+            "id": "ou_pm_001",
+            "id_type": "open_id",
+            "sender_type": "user",
+            "tenant_key": "demo_tenant"
+          },
+          "updated": false
+        },
+        {
+          "content": "{\"text\": \"这个边界我觉得可以定，Demo 就是上传 JD 和简历，AI 出结构化报告。\"}",
+          "create_time": "2026-04-29 10:02",
+          "deleted": false,
+          "message_id": "om_resume_0006",
+          "msg_type": "text",
+          "sender": {
+            "id": "ou_dev_001",
+            "id_type": "open_id",
+            "sender_type": "user",
+            "tenant_key": "demo_tenant"
+          },
+          "updated": false
+        },
+        {
+          "content": "{\"text\": \"页面也别复杂，先一个 JD 输入区，一个简历上传区，一个分析结果区。\"}",
+          "create_time": "2026-04-29 10:03",
+          "deleted": false,
+          "message_id": "om_resume_0007",
+          "msg_type": "text",
+          "sender": {
+            "id": "ou_design_001",
+            "id_type": "open_id",
+            "sender_type": "user",
+            "tenant_key": "demo_tenant"
+          },
+          "updated": false
+        },
+        {
+          "content": "{\"text\": \"结果里最好不要写‘淘汰’，这个词太敏感。\"}",
+          "create_time": "2026-04-29 10:03",
+          "deleted": false,
+          "message_id": "om_resume_0008",
+          "msg_type": "text",
+          "sender": {
+            "id": "ou_hr_001",
+            "id_type": "open_id",
+            "sender_type": "user",
+            "tenant_key": "demo_tenant"
+          },
+          "updated": false
+        },
+        {
+          "content": "{\"text\": \"同意，AI 不能直接决定候选人命运。可以写‘建议人工复核’。\"}",
+          "create_time": "2026-04-29 10:03",
+          "deleted": false,
+          "message_id": "om_resume_0009",
+          "msg_type": "text",
+          "sender": {
+            "id": "ou_algo_001",
+            "id_type": "open_id",
+            "sender_type": "user",
+            "tenant_key": "demo_tenant"
+          },
+          "updated": false
+        },
+        {
+          "content": "{\"text\": \"那定一下：MVP 不输出自动淘汰/录用结论，只输出辅助判断。\"}",
+          "create_time": "2026-04-29 10:04",
+          "deleted": false,
+          "message_id": "om_resume_0010",
+          "msg_type": "text",
+          "sender": {
+            "id": "ou_pm_001",
+            "id_type": "open_id",
+            "sender_type": "user",
+            "tenant_key": "demo_tenant"
+          },
+          "updated": false
+        },
+        {
+          "content": "{\"text\": \"我记一下，评测时也要看这个，不然很容易被问到公平性问题。\"}",
+          "create_time": "2026-04-29 10:04",
+          "deleted": false,
+          "message_id": "om_resume_0011",
+          "msg_type": "text",
+          "sender": {
+            "id": "ou_qa_001",
+            "id_type": "open_id",
+            "sender_type": "user",
+            "tenant_key": "demo_tenant"
+          },
+          "updated": false
+        },
+        {
+          "content": "{\"text\": \"简历解析字段先定哪些？教育经历、项目经历、实习经历、技能关键词？\"}",
+          "create_time": "2026-04-29 10:05",
+          "deleted": false,
+          "message_id": "om_resume_0012",
+          "msg_type": "text",
+          "sender": {
+            "id": "ou_dev_001",
+            "id_type": "open_id",
+            "sender_type": "user",
+            "tenant_key": "demo_tenant"
+          },
+          "updated": false
+        },
+        {
+          "content": "{\"text\": \"再加工作年限和岗位关键词，不过学生简历可能没有工作年限。\"}",
+          "create_time": "2026-04-29 10:05",
+          "deleted": false,
+          "message_id": "om_resume_0013",
+          "msg_type": "text",
+          "sender": {
+            "id": "ou_algo_001",
+            "id_type": "open_id",
+            "sender_type": "user",
+            "tenant_key": "demo_tenant"
+          },
+          "updated": false
+        },
+        {
+          "content": "{\"text\": \"学生场景先别硬算工作年限，容易误伤。实习经历和项目经历更重要。\"}",
+          "create_time": "2026-04-29 10:05",
+          "deleted": false,
+          "message_id": "om_resume_0014",
+          "msg_type": "text",
+          "sender": {
+            "id": "ou_hr_001",
+            "id_type": "open_id",
+            "sender_type": "user",
+            "tenant_key": "demo_tenant"
+          },
+          "updated": false
+        },
+        {
+          "content": "{\"text\": \"那学生简历先抽教育、项目、实习、技能、获奖证书这五类。\"}",
+          "create_time": "2026-04-29 10:06",
+          "deleted": false,
+          "message_id": "om_resume_0015",
+          "msg_type": "text",
+          "sender": {
+            "id": "ou_pm_001",
+            "id_type": "open_id",
+            "sender_type": "user",
+            "tenant_key": "demo_tenant"
+          },
+          "updated": false
+        },
+        {
+          "content": "{\"text\": \"可以，先按这五类做结构化解析。\"}",
+          "create_time": "2026-04-29 10:06",
+          "deleted": false,
+          "message_id": "om_resume_0016",
+          "msg_type": "text",
+          "sender": {
+            "id": "ou_algo_001",
+            "id_type": "open_id",
+            "sender_type": "user",
+            "tenant_key": "demo_tenant"
+          },
+          "updated": false
+        },
+        {
+          "content": "{\"text\": \"后端我就按这五个字段设计 JSON schema。\"}",
+          "create_time": "2026-04-29 10:06",
+          "deleted": false,
+          "message_id": "om_resume_0017",
+          "msg_type": "text",
+          "sender": {
+            "id": "ou_dev_001",
+            "id_type": "open_id",
+            "sender_type": "user",
+            "tenant_key": "demo_tenant"
+          },
+          "updated": false
+        },
+        {
+          "content": "{\"text\": \"UI 上结果卡片可以分三块：匹配优势、缺失项、风险提醒。\"}",
+          "create_time": "2026-04-29 10:07",
+          "deleted": false,
+          "message_id": "om_resume_0018",
+          "msg_type": "text",
+          "sender": {
+            "id": "ou_design_001",
+            "id_type": "open_id",
+            "sender_type": "user",
+            "tenant_key": "demo_tenant"
+          },
+          "updated": false
+        },
+        {
+          "content": "{\"text\": \"风险提醒要温和一点，比如‘需要进一步确认’，不要写得像判决书。\"}",
+          "create_time": "2026-04-29 10:07",
+          "deleted": false,
+          "message_id": "om_resume_0019",
+          "msg_type": "text",
+          "sender": {
+            "id": "ou_hr_001",
+            "id_type": "open_id",
+            "sender_type": "user",
+            "tenant_key": "demo_tenant"
+          },
+          "updated": false
+        },
+        {
+          "content": "{\"text\": \"好，风险部分统一叫‘需人工确认项’。\"}",
+          "create_time": "2026-04-29 10:07",
+          "deleted": false,
+          "message_id": "om_resume_0020",
+          "msg_type": "text",
+          "sender": {
+            "id": "ou_pm_001",
+            "id_type": "open_id",
+            "sender_type": "user",
+            "tenant_key": "demo_tenant"
+          },
+          "updated": false
+        },
+        {
+          "content": "{\"text\": \"这个我赞同，跟不自动淘汰的原则一致。\"}",
+          "create_time": "2026-04-29 10:08",
+          "deleted": false,
+          "message_id": "om_resume_0021",
+          "msg_type": "text",
+          "sender": {
+            "id": "ou_dev_001",
+            "id_type": "open_id",
+            "sender_type": "user",
+            "tenant_key": "demo_tenant"
+          },
+          "updated": false
+        },
+        {
+          "content": "<card title=\"飞书 AI 校园挑战赛 · 直播提醒\">\\n直播时间：4 月 29 日 18:00 - 19:00\\n分享内容：产品专家分享、复赛时间安排\\n</card>",
+          "create_time": "2026-04-29 10:08",
+          "deleted": false,
+          "message_id": "om_resume_0022",
+          "msg_type": "interactive",
+          "sender": {
+            "id": "ou_noise_001",
+            "id_type": "open_id",
+            "sender_type": "user",
+            "tenant_key": "demo_tenant"
+          },
+          "updated": false
+        },
+        {
+          "content": "{\"text\": \"刚才直播卡片可以忽略，我继续看测试用例。\"}",
+          "create_time": "2026-04-29 10:08",
+          "deleted": false,
+          "message_id": "om_resume_0023",
+          "msg_type": "text",
+          "sender": {
+            "id": "ou_qa_001",
+            "id_type": "open_id",
+            "sender_type": "user",
+            "tenant_key": "demo_tenant"
+          },
+          "updated": false
+        },
+        {
+          "content": "{\"text\": \"还有隐私问题，简历里面手机号、邮箱、身份证这种要不要传给模型？\"}",
+          "create_time": "2026-04-29 10:08",
+          "deleted": false,
+          "message_id": "om_resume_0024",
+          "msg_type": "text",
+          "sender": {
+            "id": "ou_hr_001",
+            "id_type": "open_id",
+            "sender_type": "user",
+            "tenant_key": "demo_tenant"
+          },
+          "updated": false
+        },
+        {
+          "content": "{\"text\": \"这个很关键，但我们先讨论一下怎么脱敏。\"}",
+          "create_time": "2026-04-29 10:09",
+          "deleted": false,
+          "message_id": "om_resume_0025",
+          "msg_type": "text",
+          "sender": {
+            "id": "ou_pm_001",
+            "id_type": "open_id",
+            "sender_type": "user",
+            "tenant_key": "demo_tenant"
+          },
+          "updated": false
+        },
+        {
+          "content": "{\"text\": \"我倾向于上传前先做规则脱敏，手机号和邮箱替换成占位符。\"}",
+          "create_time": "2026-04-29 10:09",
+          "deleted": false,
+          "message_id": "om_resume_0026",
+          "msg_type": "text",
+          "sender": {
+            "id": "ou_algo_001",
+            "id_type": "open_id",
+            "sender_type": "user",
+            "tenant_key": "demo_tenant"
+          },
+          "updated": false
+        },
+        {
+          "content": "{\"text\": \"身份证应该也要脱敏，不过简历里未必有。\"}",
+          "create_time": "2026-04-29 10:09",
+          "deleted": false,
+          "message_id": "om_resume_0027",
+          "msg_type": "text",
+          "sender": {
+            "id": "ou_dev_001",
+            "id_type": "open_id",
+            "sender_type": "user",
+            "tenant_key": "demo_tenant"
+          },
+          "updated": false
+        },
+        {
+          "content": "{\"text\": \"别忘了照片，有些简历有头像。\"}",
+          "create_time": "2026-04-29 10:09",
+          "deleted": false,
+          "message_id": "om_resume_0028",
+          "msg_type": "text",
+          "sender": {
+            "id": "ou_hr_001",
+            "id_type": "open_id",
+            "sender_type": "user",
+            "tenant_key": "demo_tenant"
+          },
+          "updated": false
+        },
+        {
+          "content": "{\"text\": \"头像要不要直接不解析？\"}",
+          "create_time": "2026-04-29 10:10",
+          "deleted": false,
+          "message_id": "om_resume_0029",
+          "msg_type": "text",
+          "sender": {
+            "id": "ou_design_001",
+            "id_type": "open_id",
+            "sender_type": "user",
+            "tenant_key": "demo_tenant"
+          },
+          "updated": false
+        },
+        {
+          "content": "{\"text\": \"先别急，这个话题下一轮继续，我们先把脱敏范围说清楚。\"}",
+          "create_time": "2026-04-29 10:10",
+          "deleted": false,
+          "message_id": "om_resume_0030",
+          "msg_type": "text",
+          "sender": {
+            "id": "ou_pm_001",
+            "id_type": "open_id",
+            "sender_type": "user",
+            "tenant_key": "demo_tenant"
+          },
+          "updated": false
+        },
+        {
+          "content": "{\"text\": \"OK，我先不把隐私这段当最终结论。\"}",
+          "create_time": "2026-04-29 10:10",
+          "deleted": false,
+          "message_id": "om_resume_0031",
+          "msg_type": "text",
+          "sender": {
+            "id": "ou_qa_001",
+            "id_type": "open_id",
+            "sender_type": "user",
+            "tenant_key": "demo_tenant"
+          },
+          "updated": false
+        }
+      ],
+      "expected_realtime_results": [
+        {
+          "message_id": "om_resume_0022",
+          "expected_realtime_action": "none"
+        },
+        {
+          "message_id": "om_resume_0024",
+          "expected_realtime_action": "none"
+        }
+      ],
+      "expected_write_result": {
+        "expected_evidence_blocks": "multiple_allowed",
+        "expected_memory_cards": [
+          {
+            "expected_granularity": "memory_card",
+            "expected_status": "active",
+            "expected_decision_object_keywords": [
+              "MVP 范围",
+              "完整 ATS"
+            ],
+            "expected_keywords": [
+              "不做完整 ATS",
+              "JD",
+              "简历匹配分析",
+              "初筛分析"
+            ],
+            "source_message_ids": [
+              "om_resume_0001",
+              "om_resume_0002",
+              "om_resume_0003",
+              "om_resume_0004",
+              "om_resume_0005",
+              "om_resume_0006"
+            ]
+          },
+          {
+            "expected_granularity": "memory_card",
+            "expected_status": "active",
+            "expected_decision_object_keywords": [
+              "自动淘汰",
+              "辅助判断"
+            ],
+            "expected_keywords": [
+              "不输出自动淘汰",
+              "不输出自动录用",
+              "建议人工复核",
+              "辅助判断"
+            ],
+            "source_message_ids": [
+              "om_resume_0008",
+              "om_resume_0009",
+              "om_resume_0010",
+              "om_resume_0011"
+            ]
+          },
+          {
+            "expected_granularity": "memory_card",
+            "expected_status": "active",
+            "expected_decision_object_keywords": [
+              "简历解析字段",
+              "学生简历"
+            ],
+            "expected_keywords": [
+              "教育经历",
+              "项目经历",
+              "实习经历",
+              "技能",
+              "获奖证书"
+            ],
+            "source_message_ids": [
+              "om_resume_0012",
+              "om_resume_0013",
+              "om_resume_0014",
+              "om_resume_0015",
+              "om_resume_0016",
+              "om_resume_0017"
+            ]
+          },
+          {
+            "expected_granularity": "memory_card",
+            "expected_status": "active",
+            "expected_decision_object_keywords": [
+              "结果展示",
+              "风险提醒"
+            ],
+            "expected_keywords": [
+              "匹配优势",
+              "缺失项",
+              "需人工确认项"
+            ],
+            "source_message_ids": [
+              "om_resume_0018",
+              "om_resume_0019",
+              "om_resume_0020",
+              "om_resume_0021"
+            ]
+          }
+        ],
+        "optional_progress_cards": [
+          {
+            "expected_decision_object_keywords": [
+              "简历隐私",
+              "脱敏"
+            ],
+            "expected_keywords": [
+              "手机号",
+              "邮箱",
+              "身份证",
+              "头像"
+            ],
+            "reason": "batch_001 末尾只开始讨论隐私脱敏，信息尚未收束，可不要求生成正式决策。"
+          }
+        ],
+        "should_ignore_message_ids": [
+          "om_resume_0022"
+        ]
+      }
+    },
+    {
+      "batch_id": "batch_002",
+      "fetch_time": "2026-04-29 10:20",
+      "messages": [
+        {
+          "content": "{\"text\": \"继续刚才隐私，手机号、邮箱、身份证这类个人信息都先脱敏。\"}",
+          "create_time": "2026-04-29 10:11",
+          "deleted": false,
+          "message_id": "om_resume_0032",
+          "msg_type": "text",
+          "sender": {
+            "id": "ou_pm_001",
+            "id_type": "open_id",
+            "sender_type": "user",
+            "tenant_key": "demo_tenant"
+          },
+          "updated": false
+        },
+        {
+          "content": "{\"text\": \"我可以在解析前做正则替换，手机号替换成 PHONE，邮箱替换成 EMAIL。\"}",
+          "create_time": "2026-04-29 10:11",
+          "deleted": false,
+          "message_id": "om_resume_0033",
+          "msg_type": "text",
+          "sender": {
+            "id": "ou_algo_001",
+            "id_type": "open_id",
+            "sender_type": "user",
+            "tenant_key": "demo_tenant"
+          },
+          "updated": false
+        },
+        {
+          "content": "{\"text\": \"身份证和地址也加一下，虽然样例里不一定有。\"}",
+          "create_time": "2026-04-29 10:12",
+          "deleted": false,
+          "message_id": "om_resume_0034",
+          "msg_type": "text",
+          "sender": {
+            "id": "ou_dev_001",
+            "id_type": "open_id",
+            "sender_type": "user",
+            "tenant_key": "demo_tenant"
+          },
+          "updated": false
+        },
+        {
+          "content": "{\"text\": \"照片我建议直接不进模型，先不做头像分析。\"}",
+          "create_time": "2026-04-29 10:12",
+          "deleted": false,
+          "message_id": "om_resume_0035",
+          "msg_type": "text",
+          "sender": {
+            "id": "ou_hr_001",
+            "id_type": "open_id",
+            "sender_type": "user",
+            "tenant_key": "demo_tenant"
+          },
+          "updated": false
+        },
+        {
+          "content": "{\"text\": \"这也能减少偏见争议，不看照片更安全。\"}",
+          "create_time": "2026-04-29 10:12",
+          "deleted": false,
+          "message_id": "om_resume_0036",
+          "msg_type": "text",
+          "sender": {
+            "id": "ou_design_001",
+            "id_type": "open_id",
+            "sender_type": "user",
+            "tenant_key": "demo_tenant"
+          },
+          "updated": false
+        },
+        {
+          "content": "{\"text\": \"那隐私这块定：文本敏感信息脱敏，头像不解析，不作为匹配依据。\"}",
+          "create_time": "2026-04-29 10:13",
+          "deleted": false,
+          "message_id": "om_resume_0037",
+          "msg_type": "text",
+          "sender": {
+            "id": "ou_pm_001",
+            "id_type": "open_id",
+            "sender_type": "user",
+            "tenant_key": "demo_tenant"
+          },
+          "updated": false
+        },
+        {
+          "content": "{\"text\": \"收到，这条我后面会放到风险说明里。\"}",
+          "create_time": "2026-04-29 10:13",
+          "deleted": false,
+          "message_id": "om_resume_0038",
+          "msg_type": "text",
+          "sender": {
+            "id": "ou_qa_001",
+            "id_type": "open_id",
+            "sender_type": "user",
+            "tenant_key": "demo_tenant"
+          },
+          "updated": false
+        },
+        {
+          "content": "{\"text\": \"还有文件格式，PDF 和 docx 都支持吗？\"}",
+          "create_time": "2026-04-29 10:13",
+          "deleted": false,
+          "message_id": "om_resume_0039",
+          "msg_type": "text",
+          "sender": {
+            "id": "ou_dev_001",
+            "id_type": "open_id",
+            "sender_type": "user",
+            "tenant_key": "demo_tenant"
+          },
+          "updated": false
+        },
+        {
+          "content": "{\"text\": \"MVP 先支持 PDF，docx 如果时间够再说。\"}",
+          "create_time": "2026-04-29 10:14",
+          "deleted": false,
+          "message_id": "om_resume_0040",
+          "msg_type": "text",
+          "sender": {
+            "id": "ou_pm_001",
+            "id_type": "open_id",
+            "sender_type": "user",
+            "tenant_key": "demo_tenant"
+          },
+          "updated": false
+        },
+        {
+          "content": "{\"text\": \"PDF 先用 PyMuPDF 或者现成解析库，格式乱了也能兜底。\"}",
+          "create_time": "2026-04-29 10:14",
+          "deleted": false,
+          "message_id": "om_resume_0041",
+          "msg_type": "text",
+          "sender": {
+            "id": "ou_dev_001",
+            "id_type": "open_id",
+            "sender_type": "user",
+            "tenant_key": "demo_tenant"
+          },
+          "updated": false
+        },
+        {
+          "content": "{\"text\": \"很多学生简历就是 PDF，先支持 PDF 没问题。\"}",
+          "create_time": "2026-04-29 10:14",
+          "deleted": false,
+          "message_id": "om_resume_0042",
+          "msg_type": "text",
+          "sender": {
+            "id": "ou_hr_001",
+            "id_type": "open_id",
+            "sender_type": "user",
+            "tenant_key": "demo_tenant"
+          },
+          "updated": false
+        },
+        {
+          "content": "{\"text\": \"那文件格式也定：P0 只保证 PDF 简历。\"}",
+          "create_time": "2026-04-29 10:15",
+          "deleted": false,
+          "message_id": "om_resume_0043",
+          "msg_type": "text",
+          "sender": {
+            "id": "ou_pm_001",
+            "id_type": "open_id",
+            "sender_type": "user",
+            "tenant_key": "demo_tenant"
+          },
+          "updated": false
+        },
+        {
+          "content": "{\"text\": \"页面我画了一下，左边上传，右边分析报告，中间不用搞太多导航。\"}",
+          "create_time": "2026-04-29 10:15",
+          "deleted": false,
+          "message_id": "om_resume_0044",
+          "msg_type": "text",
+          "sender": {
+            "id": "ou_design_001",
+            "id_type": "open_id",
+            "sender_type": "user",
+            "tenant_key": "demo_tenant"
+          },
+          "updated": false
+        },
+        {
+          "content": "{\"text\": \"可以，工作台先不要做列表和历史记录。\"}",
+          "create_time": "2026-04-29 10:15",
+          "deleted": false,
+          "message_id": "om_resume_0045",
+          "msg_type": "text",
+          "sender": {
+            "id": "ou_dev_001",
+            "id_type": "open_id",
+            "sender_type": "user",
+            "tenant_key": "demo_tenant"
+          },
+          "updated": false
+        },
+        {
+          "content": "{\"text\": \"对，P0 不做多职位管理，不做候选人历史库。\"}",
+          "create_time": "2026-04-29 10:16",
+          "deleted": false,
+          "message_id": "om_resume_0046",
+          "msg_type": "text",
+          "sender": {
+            "id": "ou_pm_001",
+            "id_type": "open_id",
+            "sender_type": "user",
+            "tenant_key": "demo_tenant"
+          },
+          "updated": false
+        },
+        {
+          "content": "{\"text\": \"我在想要不要有匹配分，只有文字分析可能不够直观。\"}",
+          "create_time": "2026-04-29 10:16",
+          "deleted": false,
+          "message_id": "om_resume_0047",
+          "msg_type": "text",
+          "sender": {
+            "id": "ou_algo_001",
+            "id_type": "open_id",
+            "sender_type": "user",
+            "tenant_key": "demo_tenant"
+          },
+          "updated": false
+        },
+        {
+          "content": "{\"text\": \"匹配分可以，但我担心大家只看分数，不看解释。\"}",
+          "create_time": "2026-04-29 10:16",
+          "deleted": false,
+          "message_id": "om_resume_0048",
+          "msg_type": "text",
+          "sender": {
+            "id": "ou_hr_001",
+            "id_type": "open_id",
+            "sender_type": "user",
+            "tenant_key": "demo_tenant"
+          },
+          "updated": false
+        },
+        {
+          "content": "{\"text\": \"这个先别定，我想再看看 Demo 表达。\"}",
+          "create_time": "2026-04-29 10:17",
+          "deleted": false,
+          "message_id": "om_resume_0049",
+          "msg_type": "text",
+          "sender": {
+            "id": "ou_pm_001",
+            "id_type": "open_id",
+            "sender_type": "user",
+            "tenant_key": "demo_tenant"
+          },
+          "updated": false
+        },
+        {
+          "content": "{\"text\": \"@机器人 我们刚才为什么不做完整 ATS？\"}",
+          "create_time": "2026-04-29 10:17",
+          "deleted": false,
+          "message_id": "om_resume_0050",
+          "msg_type": "text",
+          "sender": {
+            "id": "ou_dev_001",
+            "id_type": "open_id",
+            "sender_type": "user",
+            "tenant_key": "demo_tenant"
+          },
+          "updated": false
+        },
+        {
+          "content": "{\"text\": \"明天下午 3 点开 Demo 评审会，把上传到分析的链路跑一遍。\"}",
+          "create_time": "2026-04-29 10:18",
+          "deleted": false,
+          "message_id": "om_resume_0051",
+          "msg_type": "text",
+          "sender": {
+            "id": "ou_pm_001",
+            "id_type": "open_id",
+            "sender_type": "user",
+            "tenant_key": "demo_tenant"
+          },
+          "updated": false
+        },
+        {
+          "content": "{\"text\": \"我晚点补一些异常简历，比如图片版 PDF、空白简历。\"}",
+          "create_time": "2026-04-29 10:18",
+          "deleted": false,
+          "message_id": "om_resume_0052",
+          "msg_type": "text",
+          "sender": {
+            "id": "ou_qa_001",
+            "id_type": "open_id",
+            "sender_type": "user",
+            "tenant_key": "demo_tenant"
+          },
+          "updated": false
+        },
+        {
+          "content": "{\"text\": \"我也补 20 份 mock 简历，尽量像真实候选人。\"}",
+          "create_time": "2026-04-29 10:18",
+          "deleted": false,
+          "message_id": "om_resume_0053",
+          "msg_type": "text",
+          "sender": {
+            "id": "ou_hr_001",
+            "id_type": "open_id",
+            "sender_type": "user",
+            "tenant_key": "demo_tenant"
+          },
+          "updated": false
+        },
+        {
+          "content": "{\"text\": \"部署先用本地 demo 吗？还是要上 Vercel？\"}",
+          "create_time": "2026-04-29 10:19",
+          "deleted": false,
+          "message_id": "om_resume_0054",
+          "msg_type": "text",
+          "sender": {
+            "id": "ou_dev_001",
+            "id_type": "open_id",
+            "sender_type": "user",
+            "tenant_key": "demo_tenant"
+          },
+          "updated": false
+        },
+        {
+          "content": "{\"text\": \"先本地 demo，复赛前再看是否需要公开链接。\"}",
+          "create_time": "2026-04-29 10:19",
+          "deleted": false,
+          "message_id": "om_resume_0055",
+          "msg_type": "text",
+          "sender": {
+            "id": "ou_pm_001",
+            "id_type": "open_id",
+            "sender_type": "user",
+            "tenant_key": "demo_tenant"
+          },
+          "updated": false
+        },
+        {
+          "content": "{\"text\": \"我把页面标题改成‘AI 简历初筛助手’，别叫自动淘汰。\"}",
+          "create_time": "2026-04-29 10:19",
+          "deleted": false,
+          "message_id": "om_resume_0056",
+          "msg_type": "text",
+          "sender": {
+            "id": "ou_design_001",
+            "id_type": "open_id",
+            "sender_type": "user",
+            "tenant_key": "demo_tenant"
+          },
+          "updated": false
+        },
+        {
+          "content": "{\"text\": \"这个名字可以，听起来没那么强硬。\"}",
+          "create_time": "2026-04-29 10:20",
+          "deleted": false,
+          "message_id": "om_resume_0057",
+          "msg_type": "text",
+          "sender": {
+            "id": "ou_hr_001",
+            "id_type": "open_id",
+            "sender_type": "user",
+            "tenant_key": "demo_tenant"
+          },
+          "updated": false
+        },
+        {
+          "content": "{\"text\": \"匹配分这件事我先做个草案，下一轮再定。\"}",
+          "create_time": "2026-04-29 10:20",
+          "deleted": false,
+          "message_id": "om_resume_0058",
+          "msg_type": "text",
+          "sender": {
+            "id": "ou_algo_001",
+            "id_type": "open_id",
+            "sender_type": "user",
+            "tenant_key": "demo_tenant"
+          },
+          "updated": false
+        },
+        {
+          "content": "{\"text\": \"OK，匹配分先不写进最终决策。\"}",
+          "create_time": "2026-04-29 10:20",
+          "deleted": false,
+          "message_id": "om_resume_0059",
+          "msg_type": "text",
+          "sender": {
+            "id": "ou_qa_001",
+            "id_type": "open_id",
+            "sender_type": "user",
+            "tenant_key": "demo_tenant"
+          },
+          "updated": false
+        },
+        {
+          "content": "{\"text\": \"收到～\"}",
+          "create_time": "2026-04-29 10:20",
+          "deleted": false,
+          "message_id": "om_resume_0060",
+          "msg_type": "text",
+          "sender": {
+            "id": "ou_noise_001",
+            "id_type": "open_id",
+            "sender_type": "user",
+            "tenant_key": "demo_tenant"
+          },
+          "updated": false
+        },
+        {
+          "content": "{\"text\": \"那我继续写 PDF 解析。\"}",
+          "create_time": "2026-04-29 10:20",
+          "deleted": false,
+          "message_id": "om_resume_0061",
+          "msg_type": "text",
+          "sender": {
+            "id": "ou_dev_001",
+            "id_type": "open_id",
+            "sender_type": "user",
+            "tenant_key": "demo_tenant"
+          },
+          "updated": false
+        }
+      ],
+      "expected_realtime_results": [
+        {
+          "message_id": "om_resume_0050",
+          "expected_realtime_action": "retrieve_memory",
+          "expected_granularity": "memory_card",
+          "expected_keywords": [
+            "不做完整 ATS",
+            "JD",
+            "简历匹配",
+            "初筛"
+          ]
+        },
+        {
+          "message_id": "om_resume_0051",
+          "expected_realtime_action": "schedule_confirm",
+          "expected_keywords": [
+            "Demo 评审会",
+            "明天下午 3 点"
+          ]
+        }
+      ],
+      "expected_write_result": {
+        "expected_evidence_blocks": "multiple_allowed",
+        "expected_memory_cards": [
+          {
+            "expected_granularity": "memory_card",
+            "expected_status": "active",
+            "expected_decision_object_keywords": [
+              "隐私脱敏",
+              "头像解析"
+            ],
+            "expected_keywords": [
+              "手机号",
+              "邮箱",
+              "身份证",
+              "地址",
+              "头像不解析",
+              "不作为匹配依据"
+            ],
+            "source_message_ids": [
+              "om_resume_0032",
+              "om_resume_0033",
+              "om_resume_0034",
+              "om_resume_0035",
+              "om_resume_0036",
+              "om_resume_0037",
+              "om_resume_0038"
+            ]
+          },
+          {
+            "expected_granularity": "memory_card",
+            "expected_status": "active",
+            "expected_decision_object_keywords": [
+              "文件格式",
+              "PDF"
+            ],
+            "expected_keywords": [
+              "P0",
+              "只保证 PDF",
+              "docx 时间够再说"
+            ],
+            "source_message_ids": [
+              "om_resume_0039",
+              "om_resume_0040",
+              "om_resume_0041",
+              "om_resume_0042",
+              "om_resume_0043"
+            ]
+          },
+          {
+            "expected_granularity": "memory_card",
+            "expected_status": "active",
+            "expected_decision_object_keywords": [
+              "页面范围",
+              "工作台"
+            ],
+            "expected_keywords": [
+              "左边上传",
+              "右边分析报告",
+              "不做多职位管理",
+              "不做候选人历史库"
+            ],
+            "source_message_ids": [
+              "om_resume_0044",
+              "om_resume_0045",
+              "om_resume_0046",
+              "om_resume_0047"
+            ]
+          }
+        ],
+        "optional_progress_cards": [
+          {
+            "expected_decision_object_keywords": [
+              "匹配分"
+            ],
+            "expected_keywords": [
+              "匹配分",
+              "分数",
+              "解释"
+            ],
+            "reason": "batch_002 中匹配分只开始讨论，PM 明确说先别定，因此不要求生成正式决策。"
+          }
+        ],
+        "should_ignore_message_ids": [
+          "om_resume_0050",
+          "om_resume_0051",
+          "om_resume_0060"
+        ]
+      }
+    },
+    {
+      "batch_id": "batch_003",
+      "fetch_time": "2026-04-29 10:30",
+      "messages": [
+        {
+          "content": "{\"text\": \"我把匹配分想清楚了，可以输出 0-100 分，但必须强制配解释。\"}",
+          "create_time": "2026-04-29 10:21",
+          "deleted": false,
+          "message_id": "om_resume_0062",
+          "msg_type": "text",
+          "sender": {
+            "id": "ou_algo_001",
+            "id_type": "open_id",
+            "sender_type": "user",
+            "tenant_key": "demo_tenant"
+          },
+          "updated": false
+        },
+        {
+          "content": "{\"text\": \"只要不要写淘汰，我能接受。招聘官可以把分数当排序参考。\"}",
+          "create_time": "2026-04-29 10:21",
+          "deleted": false,
+          "message_id": "om_resume_0063",
+          "msg_type": "text",
+          "sender": {
+            "id": "ou_hr_001",
+            "id_type": "open_id",
+            "sender_type": "user",
+            "tenant_key": "demo_tenant"
+          },
+          "updated": false
+        },
+        {
+          "content": "{\"text\": \"那从产品上写成‘匹配参考分’，不是录用概率。\"}",
+          "create_time": "2026-04-29 10:22",
+          "deleted": false,
+          "message_id": "om_resume_0064",
+          "msg_type": "text",
+          "sender": {
+            "id": "ou_pm_001",
+            "id_type": "open_id",
+            "sender_type": "user",
+            "tenant_key": "demo_tenant"
+          },
+          "updated": false
+        },
+        {
+          "content": "{\"text\": \"字段叫 match_score 和 recommendation_level？\"}",
+          "create_time": "2026-04-29 10:22",
+          "deleted": false,
+          "message_id": "om_resume_0065",
+          "msg_type": "text",
+          "sender": {
+            "id": "ou_dev_001",
+            "id_type": "open_id",
+            "sender_type": "user",
+            "tenant_key": "demo_tenant"
+          },
+          "updated": false
+        },
+        {
+          "content": "{\"text\": \"可以，recommendation_level 就写 strong_match、medium_match、needs_review。\"}",
+          "create_time": "2026-04-29 10:23",
+          "deleted": false,
+          "message_id": "om_resume_0066",
+          "msg_type": "text",
+          "sender": {
+            "id": "ou_algo_001",
+            "id_type": "open_id",
+            "sender_type": "user",
+            "tenant_key": "demo_tenant"
+          },
+          "updated": false
+        },
+        {
+          "content": "{\"text\": \"needs_review 这个好，别叫 weak_match。\"}",
+          "create_time": "2026-04-29 10:23",
+          "deleted": false,
+          "message_id": "om_resume_0067",
+          "msg_type": "text",
+          "sender": {
+            "id": "ou_hr_001",
+            "id_type": "open_id",
+            "sender_type": "user",
+            "tenant_key": "demo_tenant"
+          },
+          "updated": false
+        },
+        {
+          "content": "{\"text\": \"那更新决策：保留匹配参考分和推荐等级，但不输出自动淘汰结论。\"}",
+          "create_time": "2026-04-29 10:23",
+          "deleted": false,
+          "message_id": "om_resume_0068",
+          "msg_type": "text",
+          "sender": {
+            "id": "ou_pm_001",
+            "id_type": "open_id",
+            "sender_type": "user",
+            "tenant_key": "demo_tenant"
+          },
+          "updated": false
+        },
+        {
+          "content": "{\"text\": \"这个和前面不自动淘汰一致，但比完全不打分更容易展示效果。\"}",
+          "create_time": "2026-04-29 10:24",
+          "deleted": false,
+          "message_id": "om_resume_0069",
+          "msg_type": "text",
+          "sender": {
+            "id": "ou_qa_001",
+            "id_type": "open_id",
+            "sender_type": "user",
+            "tenant_key": "demo_tenant"
+          },
+          "updated": false
+        },
+        {
+          "content": "{\"text\": \"我按这个改接口返回字段。\"}",
+          "create_time": "2026-04-29 10:24",
+          "deleted": false,
+          "message_id": "om_resume_0070",
+          "msg_type": "text",
+          "sender": {
+            "id": "ou_dev_001",
+            "id_type": "open_id",
+            "sender_type": "user",
+            "tenant_key": "demo_tenant"
+          },
+          "updated": false
+        },
+        {
+          "content": "{\"text\": \"Prompt 输出里还要有 matched_requirements、missing_requirements、risk_flags。\"}",
+          "create_time": "2026-04-29 10:24",
+          "deleted": false,
+          "message_id": "om_resume_0071",
+          "msg_type": "text",
+          "sender": {
+            "id": "ou_algo_001",
+            "id_type": "open_id",
+            "sender_type": "user",
+            "tenant_key": "demo_tenant"
+          },
+          "updated": false
+        },
+        {
+          "content": "{\"text\": \"缺失项要写具体点，比如‘缺少 B 端 SaaS 实习经历’，不要泛泛说不匹配。\"}",
+          "create_time": "2026-04-29 10:25",
+          "deleted": false,
+          "message_id": "om_resume_0072",
+          "msg_type": "text",
+          "sender": {
+            "id": "ou_hr_001",
+            "id_type": "open_id",
+            "sender_type": "user",
+            "tenant_key": "demo_tenant"
+          },
+          "updated": false
+        },
+        {
+          "content": "{\"text\": \"对，分析结果要可解释。\"}",
+          "create_time": "2026-04-29 10:25",
+          "deleted": false,
+          "message_id": "om_resume_0073",
+          "msg_type": "text",
+          "sender": {
+            "id": "ou_pm_001",
+            "id_type": "open_id",
+            "sender_type": "user",
+            "tenant_key": "demo_tenant"
+          },
+          "updated": false
+        },
+        {
+          "content": "{\"text\": \"报告卡片顺序建议：先总览，再优势，再缺失，再需人工确认项。\"}",
+          "create_time": "2026-04-29 10:25",
+          "deleted": false,
+          "message_id": "om_resume_0074",
+          "msg_type": "text",
+          "sender": {
+            "id": "ou_design_001",
+            "id_type": "open_id",
+            "sender_type": "user",
+            "tenant_key": "demo_tenant"
+          },
+          "updated": false
+        },
+        {
+          "content": "{\"text\": \"这个顺序可以定，先给招聘官结论，再给证据。\"}",
+          "create_time": "2026-04-29 10:26",
+          "deleted": false,
+          "message_id": "om_resume_0075",
+          "msg_type": "text",
+          "sender": {
+            "id": "ou_pm_001",
+            "id_type": "open_id",
+            "sender_type": "user",
+            "tenant_key": "demo_tenant"
+          },
+          "updated": false
+        },
+        {
+          "content": "{\"text\": \"报告结构我记一下：overview、matched、missing、review_items。\"}",
+          "create_time": "2026-04-29 10:26",
+          "deleted": false,
+          "message_id": "om_resume_0076",
+          "msg_type": "text",
+          "sender": {
+            "id": "ou_dev_001",
+            "id_type": "open_id",
+            "sender_type": "user",
+            "tenant_key": "demo_tenant"
+          },
+          "updated": false
+        },
+        {
+          "content": "{\"text\": \"测试时我会检查每块都不能空。\"}",
+          "create_time": "2026-04-29 10:26",
+          "deleted": false,
+          "message_id": "om_resume_0077",
+          "msg_type": "text",
+          "sender": {
+            "id": "ou_qa_001",
+            "id_type": "open_id",
+            "sender_type": "user",
+            "tenant_key": "demo_tenant"
+          },
+          "updated": false
+        },
+        {
+          "content": "{\"text\": \"还有一个问题，要不要允许用户自己调整 JD 权重？比如技能更重要还是项目更重要。\"}",
+          "create_time": "2026-04-29 10:27",
+          "deleted": false,
+          "message_id": "om_resume_0078",
+          "msg_type": "text",
+          "sender": {
+            "id": "ou_hr_001",
+            "id_type": "open_id",
+            "sender_type": "user",
+            "tenant_key": "demo_tenant"
+          },
+          "updated": false
+        },
+        {
+          "content": "{\"text\": \"这个功能挺好，但实现有点多，要加配置面板。\"}",
+          "create_time": "2026-04-29 10:27",
+          "deleted": false,
+          "message_id": "om_resume_0079",
+          "msg_type": "text",
+          "sender": {
+            "id": "ou_algo_001",
+            "id_type": "open_id",
+            "sender_type": "user",
+            "tenant_key": "demo_tenant"
+          },
+          "updated": false
+        },
+        {
+          "content": "{\"text\": \"P0 先不要做权重配置，统一按 JD 原文理解。\"}",
+          "create_time": "2026-04-29 10:28",
+          "deleted": false,
+          "message_id": "om_resume_0080",
+          "msg_type": "text",
+          "sender": {
+            "id": "ou_pm_001",
+            "id_type": "open_id",
+            "sender_type": "user",
+            "tenant_key": "demo_tenant"
+          },
+          "updated": false
+        },
+        {
+          "content": "{\"text\": \"那页面上就不出现权重设置。\"}",
+          "create_time": "2026-04-29 10:28",
+          "deleted": false,
+          "message_id": "om_resume_0081",
+          "msg_type": "text",
+          "sender": {
+            "id": "ou_design_001",
+            "id_type": "open_id",
+            "sender_type": "user",
+            "tenant_key": "demo_tenant"
+          },
+          "updated": false
+        },
+        {
+          "content": "{\"text\": \"少一个配置项挺好，接口也简单。\"}",
+          "create_time": "2026-04-29 10:28",
+          "deleted": false,
+          "message_id": "om_resume_0082",
+          "msg_type": "text",
+          "sender": {
+            "id": "ou_dev_001",
+            "id_type": "open_id",
+            "sender_type": "user",
+            "tenant_key": "demo_tenant"
+          },
+          "updated": false
+        },
+        {
+          "content": "{\"text\": \"我开始想评测了，准确率怎么衡量？人工标注标准要不要先定。\"}",
+          "create_time": "2026-04-29 10:29",
+          "deleted": false,
+          "message_id": "om_resume_0083",
+          "msg_type": "text",
+          "sender": {
+            "id": "ou_qa_001",
+            "id_type": "open_id",
+            "sender_type": "user",
+            "tenant_key": "demo_tenant"
+          },
+          "updated": false
+        },
+        {
+          "content": "{\"text\": \"可以找 10 份简历，我们人工先标哪些是强匹配、中等、需复核。\"}",
+          "create_time": "2026-04-29 10:29",
+          "deleted": false,
+          "message_id": "om_resume_0084",
+          "msg_type": "text",
+          "sender": {
+            "id": "ou_hr_001",
+            "id_type": "open_id",
+            "sender_type": "user",
+            "tenant_key": "demo_tenant"
+          },
+          "updated": false
+        },
+        {
+          "content": "{\"text\": \"但是人工标注也会主观，这个评测可能要多个人投票。\"}",
+          "create_time": "2026-04-29 10:29",
+          "deleted": false,
+          "message_id": "om_resume_0085",
+          "msg_type": "text",
+          "sender": {
+            "id": "ou_algo_001",
+            "id_type": "open_id",
+            "sender_type": "user",
+            "tenant_key": "demo_tenant"
+          },
+          "updated": false
+        },
+        {
+          "content": "{\"text\": \"评测标准这个话题先开着，下一轮专门讨论。\"}",
+          "create_time": "2026-04-29 10:30",
+          "deleted": false,
+          "message_id": "om_resume_0086",
+          "msg_type": "text",
+          "sender": {
+            "id": "ou_pm_001",
+            "id_type": "open_id",
+            "sender_type": "user",
+            "tenant_key": "demo_tenant"
+          },
+          "updated": false
+        },
+        {
+          "content": "{\"text\": \"@机器人 现在简历筛选到底要不要打分？\"}",
+          "create_time": "2026-04-29 10:30",
+          "deleted": false,
+          "message_id": "om_resume_0087",
+          "msg_type": "text",
+          "sender": {
+            "id": "ou_dev_001",
+            "id_type": "open_id",
+            "sender_type": "user",
+            "tenant_key": "demo_tenant"
+          },
+          "updated": false
+        },
+        {
+          "content": "{\"text\": \"我先去找几份真实匿名简历格式参考。\"}",
+          "create_time": "2026-04-29 10:30",
+          "deleted": false,
+          "message_id": "om_resume_0088",
+          "msg_type": "text",
+          "sender": {
+            "id": "ou_hr_001",
+            "id_type": "open_id",
+            "sender_type": "user",
+            "tenant_key": "demo_tenant"
+          },
+          "updated": false
+        },
+        {
+          "content": "<card title=\"系统提醒\">\\n今日 18:00 有产品分享直播\\n</card>",
+          "create_time": "2026-04-29 10:30",
+          "deleted": false,
+          "message_id": "om_resume_0089",
+          "msg_type": "interactive",
+          "sender": {
+            "id": "ou_noise_001",
+            "id_type": "open_id",
+            "sender_type": "user",
+            "tenant_key": "demo_tenant"
+          },
+          "updated": false
+        },
+        {
+          "content": "{\"text\": \"直播卡片先忽略。\"}",
+          "create_time": "2026-04-29 10:30",
+          "deleted": false,
+          "message_id": "om_resume_0090",
+          "msg_type": "text",
+          "sender": {
+            "id": "ou_design_001",
+            "id_type": "open_id",
+            "sender_type": "user",
+            "tenant_key": "demo_tenant"
+          },
+          "updated": false
+        }
+      ],
+      "expected_realtime_results": [
+        {
+          "message_id": "om_resume_0087",
+          "expected_realtime_action": "retrieve_memory",
+          "expected_granularity": "memory_card",
+          "expected_keywords": [
+            "匹配参考分",
+            "推荐等级",
+            "不输出自动淘汰"
+          ]
+        },
+        {
+          "message_id": "om_resume_0089",
+          "expected_realtime_action": "none"
+        }
+      ],
+      "expected_write_result": {
+        "expected_evidence_blocks": "multiple_allowed",
+        "expected_memory_cards": [
+          {
+            "expected_granularity": "memory_card",
+            "expected_status": "active",
+            "expected_decision_object_keywords": [
+              "匹配分",
+              "推荐等级"
+            ],
+            "expected_keywords": [
+              "匹配参考分",
+              "recommendation_level",
+              "strong_match",
+              "medium_match",
+              "needs_review",
+              "不输出自动淘汰"
+            ],
+            "forbidden_keywords": [
+              "录用概率",
+              "weak_match"
+            ],
+            "source_message_ids": [
+              "om_resume_0062",
+              "om_resume_0063",
+              "om_resume_0064",
+              "om_resume_0065",
+              "om_resume_0066",
+              "om_resume_0067",
+              "om_resume_0068",
+              "om_resume_0069",
+              "om_resume_0070"
+            ]
+          },
+          {
+            "expected_granularity": "memory_card",
+            "expected_status": "active",
+            "expected_decision_object_keywords": [
+              "报告结构",
+              "分析结果"
+            ],
+            "expected_keywords": [
+              "overview",
+              "matched",
+              "missing",
+              "review_items",
+              "先总览"
+            ],
+            "source_message_ids": [
+              "om_resume_0071",
+              "om_resume_0072",
+              "om_resume_0073",
+              "om_resume_0074",
+              "om_resume_0075",
+              "om_resume_0076",
+              "om_resume_0077"
+            ]
+          },
+          {
+            "expected_granularity": "memory_card",
+            "expected_status": "active",
+            "expected_decision_object_keywords": [
+              "JD 权重配置",
+              "P0"
+            ],
+            "expected_keywords": [
+              "P0 先不要做权重配置",
+              "统一按 JD 原文理解",
+              "不出现权重设置"
+            ],
+            "source_message_ids": [
+              "om_resume_0078",
+              "om_resume_0079",
+              "om_resume_0080",
+              "om_resume_0081",
+              "om_resume_0082"
+            ]
+          }
+        ],
+        "optional_progress_cards": [
+          {
+            "expected_decision_object_keywords": [
+              "评测标准",
+              "人工标注"
+            ],
+            "expected_keywords": [
+              "10 份简历",
+              "强匹配",
+              "中等",
+              "需复核",
+              "多人投票"
+            ],
+            "reason": "batch_003 末尾刚开始讨论评测标准，PM 明确下一轮专门讨论，因此可只作为进度或不生成。"
+          }
+        ],
+        "expected_relations": [
+          {
+            "relation_type": "refines",
+            "old_expected_keywords": [
+              "不输出自动淘汰",
+              "辅助判断"
+            ],
+            "new_expected_keywords": [
+              "匹配参考分",
+              "推荐等级",
+              "needs_review"
+            ]
+          }
+        ],
+        "should_ignore_message_ids": [
+          "om_resume_0087",
+          "om_resume_0089"
+        ]
+      }
+    },
+    {
+      "batch_id": "batch_004",
+      "fetch_time": "2026-04-29 10:40",
+      "messages": [
+        {
+          "content": "{\"text\": \"继续评测标准，不能只看模型说得像不像，得有人工基准。\"}",
+          "create_time": "2026-04-29 10:31",
+          "deleted": false,
+          "message_id": "om_resume_0091",
+          "msg_type": "text",
+          "sender": {
+            "id": "ou_pm_001",
+            "id_type": "open_id",
+            "sender_type": "user",
+            "tenant_key": "demo_tenant"
+          },
+          "updated": false
+        },
+        {
+          "content": "{\"text\": \"我建议 20 份 mock 简历，3 个 JD，每份简历人工标一个推荐等级。\"}",
+          "create_time": "2026-04-29 10:31",
+          "deleted": false,
+          "message_id": "om_resume_0092",
+          "msg_type": "text",
+          "sender": {
+            "id": "ou_hr_001",
+            "id_type": "open_id",
+            "sender_type": "user",
+            "tenant_key": "demo_tenant"
+          },
+          "updated": false
+        },
+        {
+          "content": "{\"text\": \"推荐等级就按 strong_match、medium_match、needs_review 三类。\"}",
+          "create_time": "2026-04-29 10:32",
+          "deleted": false,
+          "message_id": "om_resume_0093",
+          "msg_type": "text",
+          "sender": {
+            "id": "ou_qa_001",
+            "id_type": "open_id",
+            "sender_type": "user",
+            "tenant_key": "demo_tenant"
+          },
+          "updated": false
+        },
+        {
+          "content": "{\"text\": \"然后看 AI 输出等级和人工标注的一致率？\"}",
+          "create_time": "2026-04-29 10:32",
+          "deleted": false,
+          "message_id": "om_resume_0094",
+          "msg_type": "text",
+          "sender": {
+            "id": "ou_algo_001",
+            "id_type": "open_id",
+            "sender_type": "user",
+            "tenant_key": "demo_tenant"
+          },
+          "updated": false
+        },
+        {
+          "content": "{\"text\": \"对，P0 评测先用等级一致率，加上理由覆盖率。\"}",
+          "create_time": "2026-04-29 10:33",
+          "deleted": false,
+          "message_id": "om_resume_0095",
+          "msg_type": "text",
+          "sender": {
+            "id": "ou_pm_001",
+            "id_type": "open_id",
+            "sender_type": "user",
+            "tenant_key": "demo_tenant"
+          },
+          "updated": false
+        },
+        {
+          "content": "{\"text\": \"理由覆盖率怎么定义？\"}",
+          "create_time": "2026-04-29 10:33",
+          "deleted": false,
+          "message_id": "om_resume_0096",
+          "msg_type": "text",
+          "sender": {
+            "id": "ou_hr_001",
+            "id_type": "open_id",
+            "sender_type": "user",
+            "tenant_key": "demo_tenant"
+          },
+          "updated": false
+        },
+        {
+          "content": "{\"text\": \"比如人工标注里写‘缺少 B 端经验’，AI 也提到这个缺失项，就算覆盖。\"}",
+          "create_time": "2026-04-29 10:33",
+          "deleted": false,
+          "message_id": "om_resume_0097",
+          "msg_type": "text",
+          "sender": {
+            "id": "ou_qa_001",
+            "id_type": "open_id",
+            "sender_type": "user",
+            "tenant_key": "demo_tenant"
+          },
+          "updated": false
+        },
+        {
+          "content": "{\"text\": \"可以，先别搞太复杂的公平性指标，时间不够。\"}",
+          "create_time": "2026-04-29 10:34",
+          "deleted": false,
+          "message_id": "om_resume_0098",
+          "msg_type": "text",
+          "sender": {
+            "id": "ou_algo_001",
+            "id_type": "open_id",
+            "sender_type": "user",
+            "tenant_key": "demo_tenant"
+          },
+          "updated": false
+        },
+        {
+          "content": "{\"text\": \"那评测方案定：等级一致率 + 关键理由覆盖率。\"}",
+          "create_time": "2026-04-29 10:34",
+          "deleted": false,
+          "message_id": "om_resume_0099",
+          "msg_type": "text",
+          "sender": {
+            "id": "ou_pm_001",
+            "id_type": "open_id",
+            "sender_type": "user",
+            "tenant_key": "demo_tenant"
+          },
+          "updated": false
+        },
+        {
+          "content": "{\"text\": \"这个我可以写进 benchmark report。\"}",
+          "create_time": "2026-04-29 10:34",
+          "deleted": false,
+          "message_id": "om_resume_0100",
+          "msg_type": "text",
+          "sender": {
+            "id": "ou_dev_001",
+            "id_type": "open_id",
+            "sender_type": "user",
+            "tenant_key": "demo_tenant"
+          },
+          "updated": false
+        },
+        {
+          "content": "{\"text\": \"王五周五前把 20 份 mock 简历和 3 个 JD 样例补齐。\"}",
+          "create_time": "2026-04-29 10:35",
+          "deleted": false,
+          "message_id": "om_resume_0101",
+          "msg_type": "text",
+          "sender": {
+            "id": "ou_hr_001",
+            "id_type": "open_id",
+            "sender_type": "user",
+            "tenant_key": "demo_tenant"
+          },
+          "updated": false
+        },
+        {
+          "content": "{\"text\": \"我来做人工标注模板，今晚发出来。\"}",
+          "create_time": "2026-04-29 10:35",
+          "deleted": false,
+          "message_id": "om_resume_0102",
+          "msg_type": "text",
+          "sender": {
+            "id": "ou_qa_001",
+            "id_type": "open_id",
+            "sender_type": "user",
+            "tenant_key": "demo_tenant"
+          },
+          "updated": false
+        },
+        {
+          "content": "{\"text\": \"@机器人 当前这个 AI 自动晒简历 MVP 的整体边界是什么？\"}",
+          "create_time": "2026-04-29 10:36",
+          "deleted": false,
+          "message_id": "om_resume_0103",
+          "msg_type": "text",
+          "sender": {
+            "id": "ou_pm_001",
+            "id_type": "open_id",
+            "sender_type": "user",
+            "tenant_key": "demo_tenant"
+          },
+          "updated": false
+        },
+        {
+          "content": "{\"text\": \"当时是谁说不要自动淘汰候选人的？原话能看一下吗？\"}",
+          "create_time": "2026-04-29 10:36",
+          "deleted": false,
+          "message_id": "om_resume_0104",
+          "msg_type": "text",
+          "sender": {
+            "id": "ou_dev_001",
+            "id_type": "open_id",
+            "sender_type": "user",
+            "tenant_key": "demo_tenant"
+          },
+          "updated": false
+        },
+        {
+          "content": "{\"text\": \"我现在按‘AI 简历初筛助手’这个名字出高保真。\"}",
+          "create_time": "2026-04-29 10:37",
+          "deleted": false,
+          "message_id": "om_resume_0105",
+          "msg_type": "text",
+          "sender": {
+            "id": "ou_design_001",
+            "id_type": "open_id",
+            "sender_type": "user",
+            "tenant_key": "demo_tenant"
+          },
+          "updated": false
+        },
+        {
+          "content": "{\"text\": \"名字定了，就叫 AI 简历初筛助手，不叫自动晒简历了，那个听起来像错别字。\"}",
+          "create_time": "2026-04-29 10:37",
+          "deleted": false,
+          "message_id": "om_resume_0106",
+          "msg_type": "text",
+          "sender": {
+            "id": "ou_pm_001",
+            "id_type": "open_id",
+            "sender_type": "user",
+            "tenant_key": "demo_tenant"
+          },
+          "updated": false
+        },
+        {
+          "content": "{\"text\": \"哈哈确实，自动晒简历像把简历拿去晒太阳。\"}",
+          "create_time": "2026-04-29 10:37",
+          "deleted": false,
+          "message_id": "om_resume_0107",
+          "msg_type": "text",
+          "sender": {
+            "id": "ou_hr_001",
+            "id_type": "open_id",
+            "sender_type": "user",
+            "tenant_key": "demo_tenant"
+          },
+          "updated": false
+        },
+        {
+          "content": "{\"text\": \"部署这块要不要先接真实简历文件？还是用 mock 数据跑？\"}",
+          "create_time": "2026-04-29 10:38",
+          "deleted": false,
+          "message_id": "om_resume_0108",
+          "msg_type": "text",
+          "sender": {
+            "id": "ou_algo_001",
+            "id_type": "open_id",
+            "sender_type": "user",
+            "tenant_key": "demo_tenant"
+          },
+          "updated": false
+        },
+        {
+          "content": "{\"text\": \"真实文件上传要处理存储，可能麻烦。\"}",
+          "create_time": "2026-04-29 10:38",
+          "deleted": false,
+          "message_id": "om_resume_0109",
+          "msg_type": "text",
+          "sender": {
+            "id": "ou_dev_001",
+            "id_type": "open_id",
+            "sender_type": "user",
+            "tenant_key": "demo_tenant"
+          },
+          "updated": false
+        },
+        {
+          "content": "{\"text\": \"先用 mock 文件，Demo 时模拟上传。\"}",
+          "create_time": "2026-04-29 10:38",
+          "deleted": false,
+          "message_id": "om_resume_0110",
+          "msg_type": "text",
+          "sender": {
+            "id": "ou_pm_001",
+            "id_type": "open_id",
+            "sender_type": "user",
+            "tenant_key": "demo_tenant"
+          },
+          "updated": false
+        },
+        {
+          "content": "{\"text\": \"那如果评委问真实上传呢？\"}",
+          "create_time": "2026-04-29 10:39",
+          "deleted": false,
+          "message_id": "om_resume_0111",
+          "msg_type": "text",
+          "sender": {
+            "id": "ou_qa_001",
+            "id_type": "open_id",
+            "sender_type": "user",
+            "tenant_key": "demo_tenant"
+          },
+          "updated": false
+        },
+        {
+          "content": "{\"text\": \"我们可以说下一阶段接对象存储。\"}",
+          "create_time": "2026-04-29 10:39",
+          "deleted": false,
+          "message_id": "om_resume_0112",
+          "msg_type": "text",
+          "sender": {
+            "id": "ou_dev_001",
+            "id_type": "open_id",
+            "sender_type": "user",
+            "tenant_key": "demo_tenant"
+          },
+          "updated": false
+        },
+        {
+          "content": "{\"text\": \"这个还没定，部署和文件存储下一轮再说。\"}",
+          "create_time": "2026-04-29 10:39",
+          "deleted": false,
+          "message_id": "om_resume_0113",
+          "msg_type": "text",
+          "sender": {
+            "id": "ou_pm_001",
+            "id_type": "open_id",
+            "sender_type": "user",
+            "tenant_key": "demo_tenant"
+          },
+          "updated": false
+        },
+        {
+          "content": "{\"text\": \"收到，我去吃饭了。\"}",
+          "create_time": "2026-04-29 10:39",
+          "deleted": false,
+          "message_id": "om_resume_0114",
+          "msg_type": "text",
+          "sender": {
+            "id": "ou_noise_001",
+            "id_type": "open_id",
+            "sender_type": "user",
+            "tenant_key": "demo_tenant"
+          },
+          "updated": false
+        },
+        {
+          "content": "{\"text\": \"我先把页面标题改掉。\"}",
+          "create_time": "2026-04-29 10:40",
+          "deleted": false,
+          "message_id": "om_resume_0115",
+          "msg_type": "text",
+          "sender": {
+            "id": "ou_design_001",
+            "id_type": "open_id",
+            "sender_type": "user",
+            "tenant_key": "demo_tenant"
+          },
+          "updated": false
+        },
+        {
+          "content": "{\"text\": \"我也去整理样例。\"}",
+          "create_time": "2026-04-29 10:40",
+          "deleted": false,
+          "message_id": "om_resume_0116",
+          "msg_type": "text",
+          "sender": {
+            "id": "ou_hr_001",
+            "id_type": "open_id",
+            "sender_type": "user",
+            "tenant_key": "demo_tenant"
+          },
+          "updated": false
+        },
+        {
+          "content": "{\"text\": \"API 返回字段我今天能先写完。\"}",
+          "create_time": "2026-04-29 10:40",
+          "deleted": false,
+          "message_id": "om_resume_0117",
+          "msg_type": "text",
+          "sender": {
+            "id": "ou_dev_001",
+            "id_type": "open_id",
+            "sender_type": "user",
+            "tenant_key": "demo_tenant"
+          },
+          "updated": false
+        }
+      ],
+      "expected_realtime_results": [
+        {
+          "message_id": "om_resume_0103",
+          "expected_realtime_action": "task_confirm",
+          "expected_keywords": [
+            "20 份 mock 简历",
+            "3 个 JD",
+            "周五",
+            "王五"
+          ]
+        },
+        {
+          "message_id": "om_resume_0105",
+          "expected_realtime_action": "retrieve_memory",
+          "expected_granularity": "topic_summary",
+          "expected_keywords": [
+            "不做完整 ATS",
+            "JD",
+            "简历匹配",
+            "匹配参考分",
+            "人工复核"
+          ]
+        },
+        {
+          "message_id": "om_resume_0106",
+          "expected_realtime_action": "retrieve_memory",
+          "expected_granularity": "evidence_block",
+          "expected_keywords": [
+            "不要自动淘汰",
+            "AI 不能直接决定候选人"
+          ]
+        }
+      ],
+      "expected_write_result": {
+        "expected_evidence_blocks": "multiple_allowed",
+        "expected_memory_cards": [
+          {
+            "expected_granularity": "memory_card",
+            "expected_status": "active",
+            "expected_decision_object_keywords": [
+              "评测方案",
+              "benchmark"
+            ],
+            "expected_keywords": [
+              "20 份 mock 简历",
+              "3 个 JD",
+              "等级一致率",
+              "关键理由覆盖率"
+            ],
+            "source_message_ids": [
+              "om_resume_0091",
+              "om_resume_0092",
+              "om_resume_0093",
+              "om_resume_0094",
+              "om_resume_0095",
+              "om_resume_0096",
+              "om_resume_0097",
+              "om_resume_0098",
+              "om_resume_0099",
+              "om_resume_0100",
+              "om_resume_0101"
+            ]
+          },
+          {
+            "expected_granularity": "memory_card",
+            "expected_status": "active",
+            "expected_decision_object_keywords": [
+              "产品命名"
+            ],
+            "expected_keywords": [
+              "AI 简历初筛助手",
+              "不叫自动晒简历"
+            ],
+            "source_message_ids": [
+              "om_resume_0107",
+              "om_resume_0108",
+              "om_resume_0109"
+            ]
+          }
+        ],
+        "optional_progress_cards": [
+          {
+            "expected_decision_object_keywords": [
+              "部署",
+              "文件存储"
+            ],
+            "expected_keywords": [
+              "mock 文件",
+              "真实上传",
+              "对象存储"
+            ],
+            "reason": "batch_004 中部署与文件存储只讨论到一半，PM 明确下一轮再说，因此不要求正式决策。"
+          }
+        ],
+        "should_ignore_message_ids": [
+          "om_resume_0103",
+          "om_resume_0105",
+          "om_resume_0106",
+          "om_resume_0115"
+        ]
+      }
+    },
+    {
+      "batch_id": "batch_005",
+      "fetch_time": "2026-04-29 10:50",
+      "messages": [
+        {
+          "content": "{\"text\": \"继续部署和文件存储，复赛 Demo 先不要接真实上传链路。\"}",
+          "create_time": "2026-04-29 10:41",
+          "deleted": false,
+          "message_id": "om_resume_0118",
+          "msg_type": "text",
+          "sender": {
+            "id": "ou_pm_001",
+            "id_type": "open_id",
+            "sender_type": "user",
+            "tenant_key": "demo_tenant"
+          },
+          "updated": false
+        },
+        {
+          "content": "{\"text\": \"那我做一个本地 mock upload，文件从 examples/resumes 读取。\"}",
+          "create_time": "2026-04-29 10:41",
+          "deleted": false,
+          "message_id": "om_resume_0119",
+          "msg_type": "text",
+          "sender": {
+            "id": "ou_dev_001",
+            "id_type": "open_id",
+            "sender_type": "user",
+            "tenant_key": "demo_tenant"
+          },
+          "updated": false
+        },
+        {
+          "content": "{\"text\": \"这样稳定，评委现场也不会因为上传失败翻车。\"}",
+          "create_time": "2026-04-29 10:42",
+          "deleted": false,
+          "message_id": "om_resume_0120",
+          "msg_type": "text",
+          "sender": {
+            "id": "ou_qa_001",
+            "id_type": "open_id",
+            "sender_type": "user",
+            "tenant_key": "demo_tenant"
+          },
+          "updated": false
+        },
+        {
+          "content": "{\"text\": \"可以，真实上传放后续规划。\"}",
+          "create_time": "2026-04-29 10:42",
+          "deleted": false,
+          "message_id": "om_resume_0121",
+          "msg_type": "text",
+          "sender": {
+            "id": "ou_hr_001",
+            "id_type": "open_id",
+            "sender_type": "user",
+            "tenant_key": "demo_tenant"
+          },
+          "updated": false
+        },
+        {
+          "content": "{\"text\": \"定：复赛用 mock 文件路径模拟上传，不接对象存储，决赛再看真实上传。\"}",
+          "create_time": "2026-04-29 10:43",
+          "deleted": false,
+          "message_id": "om_resume_0122",
+          "msg_type": "text",
+          "sender": {
+            "id": "ou_pm_001",
+            "id_type": "open_id",
+            "sender_type": "user",
+            "tenant_key": "demo_tenant"
+          },
+          "updated": false
+        },
+        {
+          "content": "{\"text\": \"收到，我把配置写成 RESUME_FIXTURE_DIR。\"}",
+          "create_time": "2026-04-29 10:43",
+          "deleted": false,
+          "message_id": "om_resume_0123",
+          "msg_type": "text",
+          "sender": {
+            "id": "ou_dev_001",
+            "id_type": "open_id",
+            "sender_type": "user",
+            "tenant_key": "demo_tenant"
+          },
+          "updated": false
+        },
+        {
+          "content": "{\"text\": \"模型这块我先用本地 LLM 生成分析，后面再接云模型也行。\"}",
+          "create_time": "2026-04-29 10:44",
+          "deleted": false,
+          "message_id": "om_resume_0124",
+          "msg_type": "text",
+          "sender": {
+            "id": "ou_algo_001",
+            "id_type": "open_id",
+            "sender_type": "user",
+            "tenant_key": "demo_tenant"
+          },
+          "updated": false
+        },
+        {
+          "content": "{\"text\": \"本地 LLM 先够，演示可控。\"}",
+          "create_time": "2026-04-29 10:44",
+          "deleted": false,
+          "message_id": "om_resume_0125",
+          "msg_type": "text",
+          "sender": {
+            "id": "ou_pm_001",
+            "id_type": "open_id",
+            "sender_type": "user",
+            "tenant_key": "demo_tenant"
+          },
+          "updated": false
+        },
+        {
+          "content": "{\"text\": \"我会测一下空简历、乱码 PDF、只有图片的 PDF。\"}",
+          "create_time": "2026-04-29 10:44",
+          "deleted": false,
+          "message_id": "om_resume_0126",
+          "msg_type": "text",
+          "sender": {
+            "id": "ou_qa_001",
+            "id_type": "open_id",
+            "sender_type": "user",
+            "tenant_key": "demo_tenant"
+          },
+          "updated": false
+        },
+        {
+          "content": "{\"text\": \"结果页如果解析失败，要给‘请换一个清晰 PDF’的提示。\"}",
+          "create_time": "2026-04-29 10:45",
+          "deleted": false,
+          "message_id": "om_resume_0127",
+          "msg_type": "text",
+          "sender": {
+            "id": "ou_design_001",
+            "id_type": "open_id",
+            "sender_type": "user",
+            "tenant_key": "demo_tenant"
+          },
+          "updated": false
+        },
+        {
+          "content": "{\"text\": \"可以，失败态我加。\"}",
+          "create_time": "2026-04-29 10:45",
+          "deleted": false,
+          "message_id": "om_resume_0128",
+          "msg_type": "text",
+          "sender": {
+            "id": "ou_dev_001",
+            "id_type": "open_id",
+            "sender_type": "user",
+            "tenant_key": "demo_tenant"
+          },
+          "updated": false
+        },
+        {
+          "content": "{\"text\": \"@机器人 复赛 Demo 文件上传到底怎么处理？\"}",
+          "create_time": "2026-04-29 10:46",
+          "deleted": false,
+          "message_id": "om_resume_0129",
+          "msg_type": "text",
+          "sender": {
+            "id": "ou_pm_001",
+            "id_type": "open_id",
+            "sender_type": "user",
+            "tenant_key": "demo_tenant"
+          },
+          "updated": false
+        },
+        {
+          "content": "{\"text\": \"@机器人 现在项目整体有哪些已经定下来的边界？\"}",
+          "create_time": "2026-04-29 10:46",
+          "deleted": false,
+          "message_id": "om_resume_0130",
+          "msg_type": "text",
+          "sender": {
+            "id": "ou_hr_001",
+            "id_type": "open_id",
+            "sender_type": "user",
+            "tenant_key": "demo_tenant"
+          },
+          "updated": false
+        },
+        {
+          "content": "{\"text\": \"@机器人 评测方案怎么定的？\"}",
+          "create_time": "2026-04-29 10:47",
+          "deleted": false,
+          "message_id": "om_resume_0131",
+          "msg_type": "text",
+          "sender": {
+            "id": "ou_dev_001",
+            "id_type": "open_id",
+            "sender_type": "user",
+            "tenant_key": "demo_tenant"
+          },
+          "updated": false
+        },
+        {
+          "content": "{\"text\": \"我再确认一下，日程是明天下午三点对吧？\"}",
+          "create_time": "2026-04-29 10:47",
+          "deleted": false,
+          "message_id": "om_resume_0132",
+          "msg_type": "text",
+          "sender": {
+            "id": "ou_qa_001",
+            "id_type": "open_id",
+            "sender_type": "user",
+            "tenant_key": "demo_tenant"
+          },
+          "updated": false
+        },
+        {
+          "content": "{\"text\": \"对，明天下午 3 点 Demo 评审会，不变。\"}",
+          "create_time": "2026-04-29 10:48",
+          "deleted": false,
+          "message_id": "om_resume_0133",
+          "msg_type": "text",
+          "sender": {
+            "id": "ou_pm_001",
+            "id_type": "open_id",
+            "sender_type": "user",
+            "tenant_key": "demo_tenant"
+          },
+          "updated": false
+        },
+        {
+          "content": "<card title=\"直播通知\">\\n今晚有产品主题分享\\n</card>",
+          "create_time": "2026-04-29 10:48",
+          "deleted": false,
+          "message_id": "om_resume_0134",
+          "msg_type": "interactive",
+          "sender": {
+            "id": "ou_noise_001",
+            "id_type": "open_id",
+            "sender_type": "user",
+            "tenant_key": "demo_tenant"
+          },
+          "updated": false
+        },
+        {
+          "content": "{\"text\": \"我把高保真链接晚点发。\"}",
+          "create_time": "2026-04-29 10:49",
+          "deleted": false,
+          "message_id": "om_resume_0135",
+          "msg_type": "text",
+          "sender": {
+            "id": "ou_design_001",
+            "id_type": "open_id",
+            "sender_type": "user",
+            "tenant_key": "demo_tenant"
+          },
+          "updated": false
+        },
+        {
+          "content": "{\"text\": \"Prompt 我晚上再调一下语气，别太像 HR 判官。\"}",
+          "create_time": "2026-04-29 10:49",
+          "deleted": false,
+          "message_id": "om_resume_0136",
+          "msg_type": "text",
+          "sender": {
+            "id": "ou_algo_001",
+            "id_type": "open_id",
+            "sender_type": "user",
+            "tenant_key": "demo_tenant"
+          },
+          "updated": false
+        },
+        {
+          "content": "{\"text\": \"这个说法好，语气要像助手，不像审判。\"}",
+          "create_time": "2026-04-29 10:50",
+          "deleted": false,
+          "message_id": "om_resume_0137",
+          "msg_type": "text",
+          "sender": {
+            "id": "ou_hr_001",
+            "id_type": "open_id",
+            "sender_type": "user",
+            "tenant_key": "demo_tenant"
+          },
+          "updated": false
+        },
+        {
+          "content": "{\"text\": \"我觉得测试集已经够用了。\"}",
+          "create_time": "2026-04-29 10:50",
+          "deleted": false,
+          "message_id": "om_resume_0138",
+          "msg_type": "text",
+          "sender": {
+            "id": "ou_qa_001",
+            "id_type": "open_id",
+            "sender_type": "user",
+            "tenant_key": "demo_tenant"
+          },
+          "updated": false
+        },
+        {
+          "content": "{\"text\": \"好，那今天先这样，晚上各自补材料。\"}",
+          "create_time": "2026-04-29 10:50",
+          "deleted": false,
+          "message_id": "om_resume_0139",
+          "msg_type": "text",
+          "sender": {
+            "id": "ou_pm_001",
+            "id_type": "open_id",
+            "sender_type": "user",
+            "tenant_key": "demo_tenant"
+          },
+          "updated": false
+        }
+      ],
+      "expected_realtime_results": [
+        {
+          "message_id": "om_resume_0125",
+          "expected_realtime_action": "retrieve_memory",
+          "expected_granularity": "memory_card",
+          "expected_keywords": [
+            "mock 文件路径",
+            "不接对象存储",
+            "真实上传后续规划"
+          ]
+        },
+        {
+          "message_id": "om_resume_0126",
+          "expected_realtime_action": "retrieve_memory",
+          "expected_granularity": "topic_summary",
+          "expected_keywords": [
+            "不做完整 ATS",
+            "JD",
+            "简历匹配",
+            "匹配参考分",
+            "PDF",
+            "mock 文件"
+          ]
+        },
+        {
+          "message_id": "om_resume_0127",
+          "expected_realtime_action": "retrieve_memory",
+          "expected_granularity": "memory_card",
+          "expected_keywords": [
+            "20 份 mock 简历",
+            "3 个 JD",
+            "等级一致率",
+            "关键理由覆盖率"
+          ]
+        },
+        {
+          "message_id": "om_resume_0130",
+          "expected_realtime_action": "none"
+        }
+      ],
+      "expected_write_result": {
+        "expected_evidence_blocks": "multiple_allowed",
+        "expected_memory_cards": [
+          {
+            "expected_granularity": "memory_card",
+            "expected_status": "active",
+            "expected_decision_object_keywords": [
+              "复赛 Demo",
+              "文件上传",
+              "对象存储"
+            ],
+            "expected_keywords": [
+              "mock 文件路径",
+              "examples/resumes",
+              "不接对象存储",
+              "决赛再看真实上传"
+            ],
+            "source_message_ids": [
+              "om_resume_0118",
+              "om_resume_0119",
+              "om_resume_0120",
+              "om_resume_0121",
+              "om_resume_0122",
+              "om_resume_0123"
+            ]
+          },
+          {
+            "expected_granularity": "memory_card",
+            "expected_status": "active",
+            "expected_decision_object_keywords": [
+              "解析失败",
+              "失败态"
+            ],
+            "expected_keywords": [
+              "空简历",
+              "乱码 PDF",
+              "图片 PDF",
+              "请换一个清晰 PDF"
+            ],
+            "source_message_ids": [
+              "om_resume_0122",
+              "om_resume_0123",
+              "om_resume_0124"
+            ]
+          }
+        ],
+        "should_ignore_message_ids": [
+          "om_resume_0125",
+          "om_resume_0126",
+          "om_resume_0127",
+          "om_resume_0130"
+        ]
+      }
+    }
+  ],
+  "expected": {
+    "final_memory_checks": [
+      {
+        "query": "我们为什么不做完整 ATS？",
+        "expected_granularity": "memory_card",
+        "expected_keywords": [
+          "不做完整 ATS",
+          "JD",
+          "简历匹配分析",
+          "初筛"
+        ],
+        "forbidden_keywords": []
+      },
+      {
+        "query": "现在 AI 简历初筛要不要打分？",
+        "expected_granularity": "memory_card",
+        "expected_keywords": [
+          "匹配参考分",
+          "推荐等级",
+          "不输出自动淘汰"
+        ],
+        "forbidden_keywords": [
+          "录用概率",
+          "weak_match"
+        ]
+      },
+      {
+        "query": "当前 AI 简历初筛 MVP 的整体边界是什么？",
+        "expected_granularity": "topic_summary",
+        "expected_keywords": [
+          "不做完整 ATS",
+          "PDF",
+          "JD",
+          "简历匹配",
+          "匹配参考分",
+          "人工复核",
+          "mock 文件"
+        ],
+        "forbidden_keywords": []
+      },
+      {
+        "query": "复赛 Demo 文件上传怎么处理？",
+        "expected_granularity": "memory_card",
+        "expected_keywords": [
+          "mock 文件路径",
+          "examples/resumes",
+          "不接对象存储"
+        ],
+        "forbidden_keywords": []
+      }
+    ],
+    "relation_checks": [
+      {
+        "relation_type": "refines",
+        "old_expected_keywords": [
+          "不输出自动淘汰",
+          "辅助判断"
+        ],
+        "new_expected_keywords": [
+          "匹配参考分",
+          "推荐等级",
+          "needs_review"
+        ]
+      },
+      {
+        "relation_type": "refines",
+        "old_expected_keywords": [
+          "隐私",
+          "脱敏"
+        ],
+        "new_expected_keywords": [
+          "头像不解析",
+          "不作为匹配依据"
+        ]
+      }
+    ],
+    "action_checks": [
+      {
+        "trigger_message_id": "om_resume_0051",
+        "expected_action_type": "schedule",
+        "expected_keywords": [
+          "Demo 评审会",
+          "明天下午 3 点"
+        ]
+      },
+      {
+        "trigger_message_id": "om_resume_0103",
+        "expected_action_type": "task",
+        "expected_keywords": [
+          "20 份 mock 简历",
+          "3 个 JD",
+          "周五"
+        ]
+      }
+    ],
+    "evidence_checks": [
+      {
+        "query": "当时是谁说不要自动淘汰候选人的？",
+        "expected_granularity": "evidence_block",
+        "expected_source_message_ids": [
+          "om_resume_0008",
+          "om_resume_0009",
+          "om_resume_0010",
+          "om_resume_0068",
+          "om_resume_0069"
+        ],
+        "expected_keywords": [
+          "AI 不能直接决定候选人命运",
+          "不输出自动淘汰结论"
+        ]
+      }
+    ]
+  }
+}
