@@ -7,6 +7,7 @@ MemoryCard 生成层（对应需求文档 4.6 多粒度记忆生成层）。
 import json
 import logging
 import os
+import re
 from datetime import timezone
 from typing import Optional
 
@@ -32,8 +33,15 @@ CARD_MODEL = os.getenv("LOCAL_MODEL", "qwen2.5:7b")
 
 # 内存缓存：memory_id → MemoryCard
 _card_cache: dict[str, MemoryCard] = {}
-# 按 decision_object 索引，用于 SUPERSEDE 查找
+# 按 decision_object_key（归一化主键）索引，用于 SUPERSEDE 查找和 Topic 聚合
 _cards_by_object: dict[str, MemoryCard] = {}
+
+
+def _normalize_decision_key(text: str) -> str:
+    """将 decision_object 归一化为稳定的业务主键，去除空白与非中英文字符，截断至 48 字。"""
+    key = re.sub(r'[\s　]+', '_', text.strip())
+    key = re.sub(r'[^\w一-鿿]', '', key)
+    return key[:48].lower()
 
 
 def _restore_cache() -> None:
@@ -41,7 +49,8 @@ def _restore_cache() -> None:
     cards = store.load_all_memory_cards()
     for card in cards:
         _card_cache[card.memory_id] = card
-        _cards_by_object[card.decision_object] = card
+        key = card.decision_object_key or _normalize_decision_key(card.decision_object)
+        _cards_by_object[key] = card
     if cards:
         logger.info("MemoryCard 缓存已从 SQLite 恢复 | 共 %d 条", len(cards))
 
@@ -123,9 +132,11 @@ class CardGenerator:
         if raw_type not in MemoryType._value2member_map_:
             raw_type = "decision"
 
+        decision_object = raw.get("decision_object", "未知议题")
         card = MemoryCard(
             chat_id=block.chat_id,
-            decision_object=raw.get("decision_object", "未知议题"),
+            decision_object=decision_object,
+            decision_object_key=_normalize_decision_key(decision_object),
             title=raw.get("title", ""),
             decision=raw.get("decision", ""),
             reason=raw.get("reason", ""),
@@ -142,7 +153,8 @@ class CardGenerator:
 
     async def _handle_supersede(self, new_card: MemoryCard) -> MemoryCard:
         """将旧卡片标记为 Deprecated，并建立 supersedes 关系。"""
-        old = _cards_by_object.get(new_card.decision_object)
+        lookup_key = new_card.decision_object_key or _normalize_decision_key(new_card.decision_object)
+        old = _cards_by_object.get(lookup_key)
         if not old:
             logger.info("SUPERSEDE 未找到旧卡片，按 ADD 处理 | object=%s", new_card.decision_object)
             return new_card
@@ -173,7 +185,8 @@ class CardGenerator:
     async def _save(self, card: MemoryCard, block: EvidenceBlock) -> None:
         """写入内存缓存、SQLite 并持久化到 Graphiti。"""
         _card_cache[card.memory_id] = card
-        _cards_by_object[card.decision_object] = card
+        key = card.decision_object_key or _normalize_decision_key(card.decision_object)
+        _cards_by_object[key] = card
         try:
             store.save_memory_card(card)
         except Exception:

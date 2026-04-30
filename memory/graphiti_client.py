@@ -99,6 +99,16 @@ from memory.schemas import ExtractedMemory, FeishuMessage
 
 logger = logging.getLogger(__name__)
 
+# ── 架构职责说明 ──────────────────────────────────────────────────────────────
+# Graphiti 在本项目只负责「语义候选召回」：
+#   - search_memories() 返回语义相关的 fact 候选列表
+#   - add_episode() / add_memory_episode() 将记忆体写入知识图谱
+# Graphiti 不作为：
+#   - 状态真相源（Active / Deprecated 状态以 SQLite memory_cards 表为准）
+#   - 版本真相源（supersedes 关系以 SQLite memory_relations 表为准）
+#   - TopicSummary 真相源（P1 只写 SQLite topic_summaries 表）
+# ──────────────────────────────────────────────────────────────────────────────
+
 _graphiti: Optional[Graphiti] = None
 
 

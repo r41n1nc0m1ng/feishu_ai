@@ -106,18 +106,19 @@ class MemoryCard(BaseModel):
     从一个或多个 EvidenceBlock 中提炼出的中粒度记忆（对应需求文档 4.6 节）。
     默认检索对象，直接回答"决定了什么、为什么"。
     字段名与需求文档 4.6 输出示例及 4.7 存储规范对齐。
-    记忆间关系统一通过 MemoryRelation 表达，本类不冗余存储。
+    记忆间关系统一通过 MemoryRelation 表达，本类不冗余存储关系。
     """
     memory_id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     chat_id: str
-    decision_object: str            # 该决策所属的议题，如"企业级记忆是否进入 MVP"
+    decision_object: str            # 该决策所属的议题（展示用），如"企业级记忆是否进入 MVP"
+    decision_object_key: Optional[str] = None   # 归一化业务主键：版本判断锚点 / Topic 聚合锚点 / 检索映射锚点
     title: str                      # 一句话标题
     decision: str                   # 决策内容
     reason: str                     # 决策理由
     memory_type: MemoryType = MemoryType.DECISION
     status: CardStatus = CardStatus.ACTIVE
     source_block_ids: List[str] = Field(default_factory=list)       # 来源 EvidenceBlock 的 block_id 列表
-    supersedes_memory_id: Optional[str] = None                      # 被本卡片覆盖的旧 MemoryCard 的 memory_id
+    supersedes_memory_id: Optional[str] = None                      # 冗余索引字段，真相源为 MemoryRelation 表
     effective_from: Optional[datetime] = None                       # 生效起始时间
     effective_until: Optional[datetime] = None                      # 生效截止时间（项目结束后可设置）
     last_retrieved_at: Optional[datetime] = None                    # 最近一次被检索的时间
@@ -129,7 +130,12 @@ class MemoryRelation(BaseModel):
     """
     两张 MemoryCard 之间的显式关系（对应需求文档 4.7 memory_relations 表）。
     记录 supersedes / refines / related_to / contradicts 等版本链关系。
-    所有记忆间关系统一在此表达，MemoryCard 本身不冗余存储关系字段。
+
+    【关系真相源】所有记忆间关系统一在此表达，MemoryCard 本冗余存储的字段
+    （如 supersedes_memory_id）仅作便捷索引，以本表为准。
+
+    P1 只保证 supersedes 关系落地；refines / related_to / contradicts 保留 schema，
+    不纳入 P1 验收。
     """
     relation_id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     chat_id: str
