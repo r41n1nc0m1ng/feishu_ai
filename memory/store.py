@@ -1,7 +1,12 @@
 """
-SQLite 持久化层，解决进程重启后内存缓存清空的问题。
+SQLite 持久化层 — 系统的结构化事实真相源。
 
-存储 EvidenceBlock 和 MemoryCard 的完整 JSON，启动时自动恢复到内存缓存。
+三层架构中的职责：
+  - SQLite（本模块）：EvidenceBlock / MemoryCard / MemoryRelation / TopicSummary
+    的完整 JSON 存储，负责生命周期状态管理与精确 ID 查询，重启后恢复内存缓存。
+  - Graphiti（memory/graphiti_client.py）：仅作语义候选召回，不作状态真相源。
+  - LLM（card_generator / topic_manager）：负责抽取与摘要，不独占主键与状态定义。
+
 数据库文件默认位于项目根目录 memory_store.db。
 """
 import logging
@@ -9,7 +14,13 @@ import sqlite3
 from pathlib import Path
 from typing import List, Optional
 
-from memory.schemas import ChatMemorySpace, EvidenceBlock, MemoryCard
+from memory.schemas import (
+    ChatMemorySpace,
+    EvidenceBlock,
+    MemoryCard,
+    MemoryRelation,
+    TopicSummary,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -50,8 +61,33 @@ def init_db() -> None:
                 last_fetch_at TEXT
             )
         """)
-        conn.execute("CREATE INDEX IF NOT EXISTS idx_blocks_chat ON evidence_blocks(chat_id)")
-        conn.execute("CREATE INDEX IF NOT EXISTS idx_cards_chat  ON memory_cards(chat_id)")
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS memory_relations (
+                relation_id  TEXT PRIMARY KEY,
+                chat_id      TEXT NOT NULL,
+                source_id    TEXT NOT NULL,
+                target_id    TEXT NOT NULL,
+                relation_type TEXT NOT NULL,
+                data         TEXT NOT NULL,
+                created_at   TEXT
+            )
+        """)
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS topic_summaries (
+                summary_id   TEXT PRIMARY KEY,
+                chat_id      TEXT NOT NULL,
+                topic        TEXT,
+                data         TEXT NOT NULL,
+                created_at   TEXT,
+                updated_at   TEXT
+            )
+        """)
+        conn.execute("CREATE INDEX IF NOT EXISTS idx_blocks_chat    ON evidence_blocks(chat_id)")
+        conn.execute("CREATE INDEX IF NOT EXISTS idx_cards_chat     ON memory_cards(chat_id)")
+        conn.execute("CREATE INDEX IF NOT EXISTS idx_relations_src  ON memory_relations(source_id)")
+        conn.execute("CREATE INDEX IF NOT EXISTS idx_relations_tgt  ON memory_relations(target_id)")
+        conn.execute("CREATE INDEX IF NOT EXISTS idx_relations_chat ON memory_relations(chat_id)")
+        conn.execute("CREATE INDEX IF NOT EXISTS idx_summaries_chat ON topic_summaries(chat_id)")
     logger.debug("SQLite 数据库已初始化 | path=%s", DB_PATH)
 
 
@@ -145,6 +181,68 @@ def load_all_chat_spaces() -> List[ChatMemorySpace]:
                 pass
         spaces.append(space)
     return spaces
+
+
+# ── MemoryRelation ────────────────────────────────────────────────────────────
+
+def save_relation(relation: MemoryRelation) -> None:
+    with _conn() as conn:
+        conn.execute(
+            "INSERT OR REPLACE INTO memory_relations VALUES (?,?,?,?,?,?,?)",
+            (
+                relation.relation_id,
+                relation.chat_id,
+                relation.source_id,
+                relation.target_id,
+                relation.relation_type.value,
+                relation.model_dump_json(),
+                str(relation.created_at),
+            ),
+        )
+
+
+def load_relations_by_card(memory_id: str) -> List[MemoryRelation]:
+    """返回以 memory_id 为 source 或 target 的全部关系。"""
+    with _conn() as conn:
+        rows = conn.execute(
+            "SELECT data FROM memory_relations WHERE source_id=? OR target_id=?",
+            (memory_id, memory_id),
+        ).fetchall()
+    return [MemoryRelation.model_validate_json(r["data"]) for r in rows]
+
+
+def load_relations_by_chat(chat_id: str) -> List[MemoryRelation]:
+    with _conn() as conn:
+        rows = conn.execute(
+            "SELECT data FROM memory_relations WHERE chat_id=?", (chat_id,)
+        ).fetchall()
+    return [MemoryRelation.model_validate_json(r["data"]) for r in rows]
+
+
+# ── TopicSummary ──────────────────────────────────────────────────────────────
+
+def save_topic_summary(topic: TopicSummary) -> None:
+    with _conn() as conn:
+        conn.execute(
+            "INSERT OR REPLACE INTO topic_summaries VALUES (?,?,?,?,?,?)",
+            (
+                topic.summary_id,
+                topic.chat_id,
+                topic.topic,
+                topic.model_dump_json(),
+                str(topic.created_at),
+                str(topic.updated_at),
+            ),
+        )
+
+
+def load_topics_by_chat(chat_id: str) -> List[TopicSummary]:
+    with _conn() as conn:
+        rows = conn.execute(
+            "SELECT data FROM topic_summaries WHERE chat_id=? ORDER BY updated_at DESC",
+            (chat_id,),
+        ).fetchall()
+    return [TopicSummary.model_validate_json(r["data"]) for r in rows]
 
 
 # 模块加载时建表

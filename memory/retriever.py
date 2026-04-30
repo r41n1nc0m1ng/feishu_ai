@@ -79,7 +79,11 @@ class MemoryRetriever:
             return []
 
     async def search_active(self, chat_id: str, query: str, limit: int = 5) -> List[dict]:
-        """同 search()，过滤 Deprecated 条目。"""
+        """同 search()，过滤 Deprecated 条目。
+        注意：Graphiti fact 本身不携带 status 字段，此处过滤依赖后续
+        _find_card_for_fact() 从本地缓存匹配真实 MemoryCard 后再检查 status；
+        Graphiti 返回值中的 status 不作为状态真相源。
+        """
         results = await self.search(chat_id, query, limit=limit * 2)
         active = [
             r for r in results
