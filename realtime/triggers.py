@@ -30,6 +30,21 @@ SOURCE_PATTERNS = [
     ]
 ]
 
+VERSION_PATTERNS = [
+    re.compile(p)
+    for p in [
+        r"后来.*改了",
+        r"改了吗",
+        r"有没有.*(变|改|更新)",
+        r"之前.*版本",
+        r"历史版本",
+        r"旧版本",
+        r"最新版本",
+        r"还是.*原来",
+        r"更新了吗",
+    ]
+]
+
 SUMMARY_PATTERNS = [
     re.compile(p)
     for p in [
@@ -81,6 +96,13 @@ def is_source_query(text: str) -> bool:
     if not normalized:
         return False
     return any(pattern.search(normalized) for pattern in SOURCE_PATTERNS)
+
+
+def is_version_query(text: str) -> bool:
+    normalized = text.strip()
+    if not normalized:
+        return False
+    return any(pattern.search(normalized) for pattern in VERSION_PATTERNS)
 
 
 def is_summary_query(text: str) -> bool:
