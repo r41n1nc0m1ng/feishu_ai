@@ -4,7 +4,7 @@ import logging
 from dataclasses import dataclass
 from typing import Callable, Optional
 
-from realtime.triggers import build_query_text, is_source_query, is_summary_query
+from realtime.triggers import build_query_text, is_source_query, is_summary_query, is_version_query
 
 logger = logging.getLogger(__name__)
 
@@ -51,6 +51,22 @@ def render_evidence_reply(query: str, card, block) -> str:
     remaining = len(block.messages) - 6
     if remaining > 0:
         lines.append(f"还有 {remaining} 条来源消息未展开。")
+    return "\n".join(lines)
+
+
+def render_version_reply(query: str, chain: list) -> str:
+    if not chain:
+        return f"当前没有查到与“{query}”相关的记忆。"
+    current = chain[0]
+    lines = ["当前生效版本：" + current.decision]
+    if current.reason:
+        lines.append("理由：" + current.reason)
+    if len(chain) == 1:
+        lines.append("没有发现历史更新记录。")
+    else:
+        lines.append(f"\n历史版本（共更新过 {len(chain) - 1} 次）：")
+        for i, old in enumerate(chain[1:], 1):
+            lines.append(f"  [{i}] {old.decision}（已被覆盖）")
     return "\n".join(lines)
 
 
@@ -107,6 +123,14 @@ class RealtimeQueryHandler:
                     if block:
                         break
                 reply = render_evidence_reply(query, top, block)
+        elif is_version_query(query):
+            action = "version"
+            results = await self.retriever.retrieve(message.chat_id, query, limit=1)
+            if results:
+                chain = await self.retriever.get_version_chain(results[0].memory_id)
+                reply = render_version_reply(query, chain)
+            else:
+                reply = f"当前没有查到与“{query}”相关的记忆。"
         elif is_summary_query(query):
             action = "summary"
             results = await self.retriever.retrieve_topic_summary(message.chat_id, query, limit=3)
