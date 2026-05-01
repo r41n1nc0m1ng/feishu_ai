@@ -2,7 +2,7 @@ import logging
 from typing import List, Optional
 
 from memory.graphiti_client import GraphitiClient
-from memory.schemas import CardStatus, EvidenceBlock, MemoryCard
+from memory.schemas import CardStatus, EvidenceBlock, MemoryCard, TopicSummary
 
 logger = logging.getLogger(__name__)
 
@@ -67,6 +67,33 @@ class MemoryRetriever:
         """同 retrieve()，但同时返回 Deprecated 状态的旧版本（用于版本链展示）。"""
         raw_results = await self.search(chat_id, query, limit=limit)
         return [self._to_memory_card(chat_id, query, raw) for raw in raw_results]
+
+    async def retrieve_topic_summary(
+        self, chat_id: str, query: str, limit: int = 3
+    ) -> List[TopicSummary]:
+        """
+        读取当前群的 TopicSummary，并按轻量字符重叠排序。
+        P1 约定：TopicSummary 直接读取 SQLite 真相源，不复用 Graphiti fact 映射链路。
+        """
+        from memory.topic_manager import TopicManager
+
+        summaries = await TopicManager().get_topics(chat_id)
+        if not summaries:
+            return []
+
+        query_chars = set((query or "").strip())
+        scored: list[tuple[float, TopicSummary]] = []
+        for summary in summaries:
+            haystack = f"{summary.topic} {summary.summary}"
+            haystack_chars = set(haystack)
+            inter = len(query_chars & haystack_chars)
+            union = len(query_chars | haystack_chars) or 1
+            score = inter / union if query_chars else 0.0
+            scored.append((score, summary))
+
+        scored.sort(key=lambda item: item[0], reverse=True)
+        top = [summary for score, summary in scored if score > 0][:limit]
+        return top if top else summaries[:limit]
 
     async def expand_evidence(self, block_id: str) -> Optional[EvidenceBlock]:
         """

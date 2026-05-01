@@ -3,7 +3,7 @@ import logging
 import os
 import re
 import time
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import List, Optional
 
 import httpx
@@ -136,6 +136,151 @@ class FeishuAPIClient:
                     len(text),
                     text[:120],
                 )
+
+    async def send_card(self, chat_id: str, card: dict):
+        token = await self._get_token()
+        async with httpx.AsyncClient(trust_env=False) as client:
+            resp = await client.post(
+                f"{self.base}/im/v1/messages",
+                headers={"Authorization": f"Bearer {token}"},
+                params={"receive_id_type": "chat_id"},
+                json={
+                    "receive_id": chat_id,
+                    "msg_type": "interactive",
+                    "content": json.dumps(card, ensure_ascii=False),
+                },
+            )
+            result = resp.json()
+            if result.get("code") != 0:
+                logger.error("Feishu send_card failed: %s", result)
+            else:
+                logger.info(
+                    "Feishu send_card succeeded | chat=%s header=%s",
+                    chat_id,
+                    (((card.get("header") or {}).get("title") or {}).get("content", ""))[:80],
+                )
+            return result
+
+    async def get_primary_calendar_id(self, user_open_id: str) -> str:
+        token = await self._get_token()
+        async with httpx.AsyncClient(trust_env=False, timeout=30) as client:
+            resp = await client.post(
+                f"{self.base}/calendar/v4/calendars/primarys",
+                headers={"Authorization": f"Bearer {token}"},
+                params={"user_id_type": "open_id"},
+                json={"user_ids": [user_open_id]},
+            )
+        data = resp.json()
+        if data.get("code") != 0:
+            logger.error("get_primary_calendar_id failed: %s", data)
+            return ""
+        calendars = data.get("data", {}).get("calendars", [])
+        if not calendars:
+            return ""
+        calendar_id = ((calendars[0] or {}).get("calendar") or {}).get("calendar_id", "")
+        logger.info("Primary calendar resolved | user=%s calendar=%s", user_open_id, calendar_id)
+        return calendar_id
+
+    async def create_calendar_event(self, candidate, operator_open_id: str) -> dict:
+        calendar_id = await self.get_primary_calendar_id(operator_open_id)
+        if not calendar_id:
+            return {"ok": False, "message": "无法获取确认人的主日历"}
+
+        if not candidate.start_time:
+            return {"ok": False, "message": "未解析到日程时间"}
+
+        token = await self._get_token()
+        end_time = candidate.start_time + timedelta(minutes=candidate.duration_minutes or 60)
+        attendees = []
+        participant_ids = list(dict.fromkeys([operator_open_id] + list(candidate.participants or [])))
+        for participant_id in participant_ids:
+            attendees.append({"type": "user", "user_id": participant_id})
+
+        payload = {
+            "summary": candidate.title,
+            "description": f"来自群聊 {candidate.chat_id}\n原消息：{candidate.raw_text}",
+            "start_time": {
+                "timestamp": str(int(candidate.start_time.timestamp() * 1000)),
+                "timezone": os.getenv("APP_TIMEZONE", "Asia/Shanghai"),
+            },
+            "end_time": {
+                "timestamp": str(int(end_time.timestamp() * 1000)),
+                "timezone": os.getenv("APP_TIMEZONE", "Asia/Shanghai"),
+            },
+            "need_notification": True,
+            "attendees": attendees,
+        }
+
+        async with httpx.AsyncClient(trust_env=False, timeout=30) as client:
+            resp = await client.post(
+                f"{self.base}/calendar/v4/calendars/{calendar_id}/events",
+                headers={"Authorization": f"Bearer {token}"},
+                params={
+                    "user_id_type": "open_id",
+                    "idempotency_key": candidate.candidate_id,
+                },
+                json=payload,
+            )
+        data = resp.json()
+        if data.get("code") != 0:
+            logger.error("create_calendar_event failed: %s", data)
+            return {"ok": False, "message": data.get("msg", "calendar api error")}
+        event = data.get("data", {}).get("event", {})
+        logger.info(
+            "Calendar event created | candidate=%s event_id=%s calendar=%s",
+            candidate.candidate_id,
+            event.get("event_id", ""),
+            calendar_id,
+        )
+        return {
+            "ok": True,
+            "event_id": event.get("event_id", ""),
+            "calendar_id": calendar_id,
+            "url": event.get("app_link", ""),
+        }
+
+    async def create_task(self, candidate, operator_open_id: str) -> dict:
+        token = await self._get_token()
+        members = []
+        if candidate.assignee_id:
+            members.append({"id": candidate.assignee_id, "type": "user"})
+        elif operator_open_id:
+            members.append({"id": operator_open_id, "type": "user"})
+
+        payload = {
+            "summary": candidate.title,
+            "description": f"来自群聊 {candidate.chat_id}\n原消息：{candidate.raw_text}",
+            "client_token": candidate.candidate_id,
+            "members": members,
+        }
+        if candidate.due_date:
+            payload["due"] = {
+                "timestamp": int(candidate.due_date.timestamp() * 1000),
+                "is_all_day": False,
+            }
+
+        async with httpx.AsyncClient(trust_env=False, timeout=30) as client:
+            resp = await client.post(
+                f"{self.base}/task/v2/tasks",
+                headers={"Authorization": f"Bearer {token}"},
+                params={"user_id_type": "open_id"},
+                json=payload,
+            )
+        data = resp.json()
+        if data.get("code") != 0:
+            logger.error("create_task failed: %s", data)
+            return {"ok": False, "message": data.get("msg", "task api error")}
+        task = data.get("data", {}).get("task", {})
+        logger.info(
+            "Task created | candidate=%s task_guid=%s",
+            candidate.candidate_id,
+            task.get("guid", ""),
+        )
+        return {
+            "ok": True,
+            "task_guid": task.get("guid", ""),
+            "url": task.get("url", ""),
+        }
 
     async def fetch_messages(
         self,

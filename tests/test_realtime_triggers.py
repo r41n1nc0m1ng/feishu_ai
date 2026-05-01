@@ -7,6 +7,7 @@ from realtime.triggers import (
     build_query_text,
     classify_realtime_action,
     is_source_query,
+    is_summary_query,
     should_trigger_realtime,
 )
 
@@ -49,3 +50,8 @@ class RealtimeTriggerTests(unittest.TestCase):
         self.assertTrue(is_source_query("当时是谁说的，原话在哪？"))
         self.assertTrue(is_source_query("依据是什么"))
         self.assertFalse(is_source_query("之前怎么定的"))
+
+    def test_summary_query_detection(self):
+        self.assertTrue(is_summary_query("当前整体方案是什么"))
+        self.assertTrue(is_summary_query("总结一下现在怎么定的"))
+        self.assertFalse(is_summary_query("原话在哪"))

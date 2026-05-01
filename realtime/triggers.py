@@ -30,6 +30,19 @@ SOURCE_PATTERNS = [
     ]
 ]
 
+SUMMARY_PATTERNS = [
+    re.compile(p)
+    for p in [
+        r"整体",
+        r"总结",
+        r"当前.*方案",
+        r"当前.*边界",
+        r"现在.*怎么定",
+        r"整体.*怎么定",
+        r"方向.*怎么定",
+    ]
+]
+
 SCHEDULE_PATTERNS = [
     re.compile(p)
     for p in [
@@ -68,6 +81,13 @@ def is_source_query(text: str) -> bool:
     if not normalized:
         return False
     return any(pattern.search(normalized) for pattern in SOURCE_PATTERNS)
+
+
+def is_summary_query(text: str) -> bool:
+    normalized = text.strip()
+    if not normalized:
+        return False
+    return any(pattern.search(normalized) for pattern in SUMMARY_PATTERNS)
 
 
 def is_schedule_like(text: str) -> bool:

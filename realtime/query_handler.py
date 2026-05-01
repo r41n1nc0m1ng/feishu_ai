@@ -4,7 +4,7 @@ import logging
 from dataclasses import dataclass
 from typing import Callable, Optional
 
-from realtime.triggers import build_query_text, is_source_query
+from realtime.triggers import build_query_text, is_source_query, is_summary_query
 
 logger = logging.getLogger(__name__)
 
@@ -54,6 +54,23 @@ def render_evidence_reply(query: str, card, block) -> str:
     return "\n".join(lines)
 
 
+def render_summary_reply(query: str, summaries: list) -> str:
+    if not summaries:
+        return f"当前没有查到与“{query}”相关的整体摘要。"
+
+    top = summaries[0]
+    topic = getattr(top, "topic", query)
+    summary = getattr(top, "summary", "")
+    covered = len(getattr(top, "covered_memory_ids", []) or [])
+
+    lines = [f"根据当前群整体记忆，主题“{topic}”：{summary}"]
+    if covered:
+        lines.append(f"该摘要覆盖 {covered} 条相关记忆。")
+    if len(summaries) > 1:
+        lines.append(f"另外还命中 {len(summaries) - 1} 个相关主题摘要。")
+    return "\n".join(lines)
+
+
 class RealtimeQueryHandler:
     def __init__(
         self,
@@ -69,25 +86,34 @@ class RealtimeQueryHandler:
 
     async def handle_query_message(self, message) -> QueryTrace:
         query = build_query_text(message)
-        results = await self.retriever.retrieve(message.chat_id, query, limit=3)
+        results = []
         action = "query"
-        reply = render_query_reply(query, results)
 
-        if results and is_source_query(query):
+        if is_source_query(query):
+            results = await self.retriever.retrieve(message.chat_id, query, limit=3)
             action = "source"
-            top = results[0]
-            block = None
-            for block_id in getattr(top, "source_block_ids", []):
-                logger.info(
-                    "Source query expanding evidence | chat=%s memory_id=%s block_id=%s",
-                    message.chat_id,
-                    getattr(top, "memory_id", ""),
-                    block_id,
-                )
-                block = await self.retriever.expand_evidence(block_id)
-                if block:
-                    break
-            reply = render_evidence_reply(query, top, block)
+            reply = render_query_reply(query, results)
+            if results:
+                top = results[0]
+                block = None
+                for block_id in getattr(top, "source_block_ids", []):
+                    logger.info(
+                        "Source query expanding evidence | chat=%s memory_id=%s block_id=%s",
+                        message.chat_id,
+                        getattr(top, "memory_id", ""),
+                        block_id,
+                    )
+                    block = await self.retriever.expand_evidence(block_id)
+                    if block:
+                        break
+                reply = render_evidence_reply(query, top, block)
+        elif is_summary_query(query):
+            action = "summary"
+            results = await self.retriever.retrieve_topic_summary(message.chat_id, query, limit=3)
+            reply = render_summary_reply(query, results)
+        else:
+            results = await self.retriever.retrieve(message.chat_id, query, limit=3)
+            reply = render_query_reply(query, results)
 
         if self.send_text:
             await self.send_text(message.chat_id, reply)

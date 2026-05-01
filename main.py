@@ -11,7 +11,7 @@ load_dotenv()
 import lark_oapi as lark
 from lark_oapi.api.im.v1 import P2ImChatMemberBotAddedV1, P2ImMessageReceiveV1
 
-from feishu.event_handler import handle_lark_event
+from feishu.event_handler import handle_lark_card_action, handle_lark_event
 from memory.graphiti_client import GraphitiClient
 from memory.batch_processor import BatchProcessor
 
@@ -63,6 +63,14 @@ def on_message(data: P2ImMessageReceiveV1) -> None:
         asyncio.run_coroutine_threadsafe(handle_lark_event(data), _loop)
 
 
+def on_card_action(data):
+    """Sync callback from lark SDK — bridge to async handler with response."""
+    if not _loop:
+        return None
+    future = asyncio.run_coroutine_threadsafe(handle_lark_card_action(data), _loop)
+    return future.result(timeout=15)
+
+
 async def _on_bot_added_async(chat_id: str, group_name: str) -> None:
     """注册群聊后立即消化历史消息，不等待下一个轮询周期。"""
     await _processor.register_chat_by_id(chat_id, group_name)
@@ -108,6 +116,7 @@ async def main():
     dispatcher = (
         lark.EventDispatcherHandler.builder("", "")
         .register_p2_im_message_receive_v1(on_message)
+        .register_p2_card_action_trigger(on_card_action)
         .register_p2_im_chat_member_bot_added_v1(on_bot_added)
         .build()
     )

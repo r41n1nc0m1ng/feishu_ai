@@ -1,5 +1,18 @@
 {
-  "_comment": "TODO: Feishu card template for in-progress discussion (no consensus yet)",
-  "config": { "wide_screen_mode": true },
-  "elements": []
+  "config": {
+    "wide_screen_mode": true
+  },
+  "header": {
+    "title": {
+      "tag": "plain_text",
+      "content": "讨论进展"
+    },
+    "template": "wathet"
+  },
+  "elements": [
+    {
+      "tag": "markdown",
+      "content": "**主题**：{{title}}\n**当前进度**：{{decision}}\n**备注**：{{reason}}"
+    }
+  ]
 }

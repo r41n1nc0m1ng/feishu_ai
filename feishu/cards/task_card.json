@@ -1,0 +1,60 @@
+{
+  "config": {
+    "wide_screen_mode": true
+  },
+  "header": {
+    "title": {
+      "tag": "plain_text",
+      "content": "待办确认"
+    },
+    "template": "orange"
+  },
+  "elements": [
+    {
+      "tag": "markdown",
+      "content": "**任务**：{{title}}\n**负责人**：{{assignee_text}}\n**截止时间**：{{due_text}}\n**原消息**：{{raw_text}}"
+    },
+    {
+      "tag": "note",
+      "elements": [
+        {
+          "tag": "plain_text",
+          "content": "确认后将直接调用飞书待办创建接口。"
+        }
+      ]
+    },
+    {
+      "tag": "action",
+      "actions": [
+        {
+          "tag": "button",
+          "text": {
+            "tag": "plain_text",
+            "content": "创建待办"
+          },
+          "type": "primary",
+          "value": {
+            "action_type": "confirm_task",
+            "candidate_type": "task",
+            "candidate_id": "{{candidate_id}}",
+            "chat_id": "{{chat_id}}"
+          }
+        },
+        {
+          "tag": "button",
+          "text": {
+            "tag": "plain_text",
+            "content": "忽略"
+          },
+          "type": "default",
+          "value": {
+            "action_type": "reject",
+            "candidate_type": "task",
+            "candidate_id": "{{candidate_id}}",
+            "chat_id": "{{chat_id}}"
+          }
+        }
+      ]
+    }
+  ]
+}

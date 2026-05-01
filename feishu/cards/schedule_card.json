@@ -1,0 +1,60 @@
+{
+  "config": {
+    "wide_screen_mode": true
+  },
+  "header": {
+    "title": {
+      "tag": "plain_text",
+      "content": "日程确认"
+    },
+    "template": "blue"
+  },
+  "elements": [
+    {
+      "tag": "markdown",
+      "content": "**主题**：{{title}}\n**时间**：{{time_text}}\n**时长**：{{duration_text}} 分钟\n**原消息**：{{raw_text}}"
+    },
+    {
+      "tag": "note",
+      "elements": [
+        {
+          "tag": "plain_text",
+          "content": "确认后将直接调用飞书日程创建接口。"
+        }
+      ]
+    },
+    {
+      "tag": "action",
+      "actions": [
+        {
+          "tag": "button",
+          "text": {
+            "tag": "plain_text",
+            "content": "创建日程"
+          },
+          "type": "primary",
+          "value": {
+            "action_type": "confirm_schedule",
+            "candidate_type": "schedule",
+            "candidate_id": "{{candidate_id}}",
+            "chat_id": "{{chat_id}}"
+          }
+        },
+        {
+          "tag": "button",
+          "text": {
+            "tag": "plain_text",
+            "content": "忽略"
+          },
+          "type": "default",
+          "value": {
+            "action_type": "reject",
+            "candidate_type": "schedule",
+            "candidate_id": "{{candidate_id}}",
+            "chat_id": "{{chat_id}}"
+          }
+        }
+      ]
+    }
+  ]
+}

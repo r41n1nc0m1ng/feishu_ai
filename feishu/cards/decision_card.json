@@ -1,5 +1,18 @@
 {
-  "_comment": "TODO: Feishu card template for confirmed decision memory",
-  "config": { "wide_screen_mode": true },
-  "elements": []
+  "config": {
+    "wide_screen_mode": true
+  },
+  "header": {
+    "title": {
+      "tag": "plain_text",
+      "content": "决策记忆"
+    },
+    "template": "green"
+  },
+  "elements": [
+    {
+      "tag": "markdown",
+      "content": "**标题**：{{title}}\n**结论**：{{decision}}\n**理由**：{{reason}}"
+    }
+  ]
 }

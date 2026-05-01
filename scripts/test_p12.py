@@ -1,8 +1,14 @@
 """P1-2 集成测试：TopicSummary 生成、持久化、重建"""
 import asyncio
 import sqlite3
+import sys
 import uuid
+from pathlib import Path
 from unittest.mock import AsyncMock, patch
+
+ROOT = Path(__file__).resolve().parents[1]
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
 
 from memory import store
 from memory.schemas import CardStatus, MemoryCard, MemoryType, TopicSummary

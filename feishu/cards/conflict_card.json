@@ -1,5 +1,18 @@
 {
-  "_comment": "TODO: Feishu card template for conflict update (new decision vs old)",
-  "config": { "wide_screen_mode": true },
-  "elements": []
+  "config": {
+    "wide_screen_mode": true
+  },
+  "header": {
+    "title": {
+      "tag": "plain_text",
+      "content": "版本更新提醒"
+    },
+    "template": "red"
+  },
+  "elements": [
+    {
+      "tag": "markdown",
+      "content": "**新结论**：{{title}}\n**当前版本**：{{decision}}\n**说明**：{{reason}}"
+    }
+  ]
 }

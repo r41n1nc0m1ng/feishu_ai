@@ -8,15 +8,18 @@ from realtime.query_handler import (
     RealtimeQueryHandler,
     render_evidence_reply,
     render_query_reply,
+    render_summary_reply,
 )
 
 
 class FakeRetriever:
-    def __init__(self, results, evidence=None):
+    def __init__(self, results, evidence=None, summaries=None):
         self.results = results
         self.evidence = evidence or {}
+        self.summaries = summaries or []
         self.calls = []
         self.evidence_calls = []
+        self.summary_calls = []
 
     async def retrieve(self, chat_id: str, query: str, limit: int = 3):
         self.calls.append((chat_id, query, limit))
@@ -25,6 +28,10 @@ class FakeRetriever:
     async def expand_evidence(self, block_id: str):
         self.evidence_calls.append(block_id)
         return self.evidence.get(block_id)
+
+    async def retrieve_topic_summary(self, chat_id: str, query: str, limit: int = 3):
+        self.summary_calls.append((chat_id, query, limit))
+        return self.summaries
 
 
 class FakeSender:
@@ -78,6 +85,15 @@ def _block():
     )
 
 
+def _summary():
+    return SimpleNamespace(
+        chat_id="c1",
+        topic="MVP产品边界",
+        summary="当前 MVP 聚焦群聊决策记忆，不做企业级记忆。",
+        covered_memory_ids=["m1", "m2"],
+    )
+
+
 class RealtimeQueryHandlerTests(unittest.IsolatedAsyncioTestCase):
     async def test_handle_query_message_with_hits(self):
         retriever = FakeRetriever([_card("MVP 阶段不做企业级记忆", "权限太复杂")])
@@ -117,6 +133,19 @@ class RealtimeQueryHandlerTests(unittest.IsolatedAsyncioTestCase):
         self.assertIn("来源记录", sender.calls[0][1])
         self.assertIn("权限太复杂", sender.calls[0][1])
 
+    async def test_handle_summary_query_routes_to_topic_summary(self):
+        retriever = FakeRetriever([], summaries=[_summary()])
+        sender = FakeSender()
+        handler = RealtimeQueryHandler(retriever=retriever, send_text=sender)
+
+        trace = await handler.handle_query_message(_msg("@机器人 当前整体方案是什么"))
+
+        self.assertEqual(trace.action, "summary")
+        self.assertEqual(trace.retrieved_count, 1)
+        self.assertEqual(retriever.summary_calls[0][0], "c1")
+        self.assertIn("整体记忆", sender.calls[0][1])
+        self.assertIn("MVP 聚焦群聊决策记忆", sender.calls[0][1])
+
 
 class RenderReplyTests(unittest.TestCase):
     def test_render_query_reply(self):
@@ -132,3 +161,8 @@ class RenderReplyTests(unittest.TestCase):
         reply = render_evidence_reply("原话在哪", _card("不做企业级记忆"), _block())
         self.assertIn("来源记录", reply)
         self.assertIn("小王", reply)
+
+    def test_render_summary_reply(self):
+        reply = render_summary_reply("当前整体方案是什么", [_summary()])
+        self.assertIn("整体记忆", reply)
+        self.assertIn("MVP产品边界", reply)

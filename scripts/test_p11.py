@@ -1,7 +1,13 @@
 """P1-1 集成测试：MemoryRelation 持久化 + get_version_chain"""
 import asyncio
 import sqlite3
+import sys
 import uuid
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parents[1]
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
 
 from memory import store
 from memory.schemas import (
