@@ -37,14 +37,16 @@ _TOPIC_PROMPT = """\
 卡片列表：
 {cards_json}
 
-【输出规则】只返回 JSON 数组，不要其他内容，不要包裹在对象里：
-[
-  {{
-    "topic": "主题标签",
-    "summary": "当前状态描述",
-    "covered_memory_ids": ["memory_id_1", "memory_id_2"]
-  }}
-]
+【输出规则】以 JSON 格式返回，根对象包含 "topics" 数组，不要其他内容：
+{{
+  "topics": [
+    {{
+      "topic": "主题标签",
+      "summary": "当前状态描述",
+      "covered_memory_ids": ["memory_id_1", "memory_id_2"]
+    }}
+  ]
+}}
 """
 
 

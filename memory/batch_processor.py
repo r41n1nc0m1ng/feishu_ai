@@ -16,7 +16,7 @@ from memory.card_generator import CardGenerator
 from memory.evidence_store import EvidenceStore
 from memory.schemas import CardStatus, ChatMemorySpace, FeishuMessage, FetchBatch, MemoryType
 from memory import store
-from preprocessor.event_segmenter import segment
+from preprocessor.event_segmenter import segment_async
 
 logger = logging.getLogger(__name__)
 
@@ -150,7 +150,7 @@ class BatchProcessor:
         )
 
         # 3. 事件切分 → EvidenceBlock 列表
-        blocks = segment(batch)
+        blocks = await segment_async(batch)
         logger.info("事件切分完成 | chat_id=%s 消息数=%d 块数=%d",
                     chat_id, len(messages), len(blocks))
 
