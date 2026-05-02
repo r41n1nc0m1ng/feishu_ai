@@ -123,7 +123,12 @@ def is_task_like(text: str) -> bool:
 def should_trigger_realtime(message) -> bool:
     if message.is_at_bot:
         return True
-    return is_explicit_query(message.text)
+    text = message.text
+    # Source / summary patterns are semantically unambiguous queries;
+    # check them first so they don't require a trailing "?" to trigger.
+    if is_source_query(text) or is_summary_query(text):
+        return True
+    return is_explicit_query(text)
 
 
 def classify_realtime_action(message) -> str:

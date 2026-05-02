@@ -1,4 +1,4 @@
-from __future__ import annotations
+﻿from __future__ import annotations
 
 import logging
 from dataclasses import dataclass
@@ -37,10 +37,10 @@ def render_query_reply(query: str, results: list) -> str:
 def render_evidence_reply(query: str, card, block) -> str:
     if not block or not getattr(block, "messages", None):
         title = getattr(card, "title", query)
-        return f"查到了相关记忆“{title}”，但没有找到可展开的原始聊天记录。"
+        return f'查到了相关记忆“{title}”，但没有找到可展开的原始聊天记录。'
 
     title = getattr(card, "title", query)
-    lines = [f"“{title}”的来源记录："]
+    lines = [f'“{title}”的来源记录：']
     for message in block.messages[:6]:
         sender = getattr(message, "sender_name", "") or getattr(message, "sender_id", "unknown")
         timestamp = getattr(message, "timestamp", None)
@@ -56,7 +56,7 @@ def render_evidence_reply(query: str, card, block) -> str:
 
 def render_version_reply(query: str, chain: list) -> str:
     if not chain:
-        return f"当前没有查到与“{query}”相关的记忆。"
+        return f'当前没有查到与“{query}”相关的记忆。'
     current = chain[0]
     lines = ["当前生效版本：" + current.decision]
     if current.reason:
@@ -72,18 +72,16 @@ def render_version_reply(query: str, chain: list) -> str:
 
 def render_summary_reply(query: str, summaries: list) -> str:
     if not summaries:
-        return f"当前没有查到与“{query}”相关的整体摘要。"
+        return f'当前没有查到与“{query}”相关的整体摘要。'
 
-    top = summaries[0]
-    topic = getattr(top, "topic", query)
-    summary = getattr(top, "summary", "")
-    covered = len(getattr(top, "covered_memory_ids", []) or [])
-
-    lines = [f"根据当前群整体记忆，主题“{topic}”：{summary}"]
-    if covered:
-        lines.append(f"该摘要覆盖 {covered} 条相关记忆。")
-    if len(summaries) > 1:
-        lines.append(f"另外还命中 {len(summaries) - 1} 个相关主题摘要。")
+    lines = [f"根据当前群整体记忆，共 {len(summaries)} 个主题：\n"]
+    for s in summaries:
+        topic = getattr(s, "topic", "")
+        summary = getattr(s, "summary", "")
+        covered = len(getattr(s, "covered_memory_ids", []) or [])
+        lines.append(f"【{topic}】{summary}")
+        if covered:
+            lines.append(f"  覆盖 {covered} 条相关记忆。")
     return "\n".join(lines)
 
 
@@ -130,7 +128,7 @@ class RealtimeQueryHandler:
                 chain = await self.retriever.get_version_chain(results[0].memory_id)
                 reply = render_version_reply(query, chain)
             else:
-                reply = f"当前没有查到与“{query}”相关的记忆。"
+                reply = f'当前没有查到与“{query}”相关的记忆。'
         elif is_summary_query(query):
             action = "summary"
             results = await self.retriever.retrieve_topic_summary(message.chat_id, query, limit=3)
