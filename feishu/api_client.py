@@ -4,7 +4,7 @@ import os
 import re
 import time
 from datetime import datetime, timedelta
-from typing import List, Optional
+from typing import Any, List, Optional
 
 import httpx
 
@@ -14,6 +14,67 @@ logger = logging.getLogger(__name__)
 
 # 进程级昵称缓存：open_id → 显示名称，避免对同一用户重复调用接口
 _name_cache: dict[str, str] = {}
+
+
+class InvalidChatError(RuntimeError):
+    """飞书返回 container_id 无效时抛出，调用方可据此清理本地注册表。"""
+
+
+_WRITABLE_CALENDAR_ROLES = {"owner", "writer", "editor"}
+
+
+def _extract_calendar(entry: dict[str, Any]) -> dict[str, Any]:
+    if not isinstance(entry, dict):
+        return {}
+    calendar = entry.get("calendar")
+    return calendar if isinstance(calendar, dict) else entry
+
+
+def _extract_calendar_id(entry: dict[str, Any]) -> str:
+    calendar = _extract_calendar(entry)
+    return str(calendar.get("calendar_id") or entry.get("calendar_id") or "").strip()
+
+
+def _extract_calendar_role(entry: dict[str, Any]) -> str:
+    calendar = _extract_calendar(entry)
+    role = (
+        calendar.get("access_role")
+        or calendar.get("role")
+        or entry.get("access_role")
+        or entry.get("role")
+        or ""
+    )
+    return str(role).strip().lower()
+
+
+def _is_primary_calendar(entry: dict[str, Any]) -> bool:
+    calendar = _extract_calendar(entry)
+    return bool(calendar.get("is_primary") or entry.get("is_primary"))
+
+
+def _is_writable_calendar(entry: dict[str, Any]) -> bool:
+    return _extract_calendar_role(entry) in _WRITABLE_CALENDAR_ROLES
+
+
+def _pick_writable_calendar_id(calendars: list[dict[str, Any]]) -> str:
+    if not calendars:
+        return ""
+
+    for entry in calendars:
+        if _is_primary_calendar(entry) and _is_writable_calendar(entry):
+            return _extract_calendar_id(entry)
+    for entry in calendars:
+        if _is_writable_calendar(entry):
+            return _extract_calendar_id(entry)
+    return ""
+
+
+def _build_calendar_attendees(participant_ids: list[str]) -> list[dict[str, str]]:
+    attendees: list[dict[str, str]] = []
+    for participant_id in participant_ids:
+        if participant_id:
+            attendees.append({"type": "user", "user_id": participant_id})
+    return attendees
 
 def extract_open_id(mention) -> str:
     """
@@ -54,6 +115,7 @@ _QUERY_RE = re.compile(
 class FeishuAPIClient:
     _token: str = ""
     _token_expires_at: float = 0.0
+    _app_calendar_id: str = ""
 
     def __init__(self):
         self.app_id = os.getenv("FEISHU_APP_ID", "")
@@ -176,40 +238,137 @@ class FeishuAPIClient:
             return ""
         calendars = data.get("data", {}).get("calendars", [])
         if not calendars:
+            logger.warning("Primary calendar empty | user=%s", user_open_id)
             return ""
-        calendar_id = ((calendars[0] or {}).get("calendar") or {}).get("calendar_id", "")
+        calendar_id = _pick_writable_calendar_id(calendars)
+        if not calendar_id:
+            role_preview = [
+                {
+                    "calendar_id": _extract_calendar_id(entry),
+                    "role": _extract_calendar_role(entry),
+                    "is_primary": _is_primary_calendar(entry),
+                }
+                for entry in calendars
+            ]
+            logger.warning(
+                "No writable primary calendar found | user=%s calendars=%s",
+                user_open_id,
+                role_preview,
+            )
+            return ""
         logger.info("Primary calendar resolved | user=%s calendar=%s", user_open_id, calendar_id)
         return calendar_id
 
-    async def create_calendar_event(self, candidate, operator_open_id: str) -> dict:
-        calendar_id = await self.get_primary_calendar_id(operator_open_id)
+    async def get_app_calendar_id(self) -> str:
+        configured_id = os.getenv("FEISHU_CALENDAR_ID", "").strip()
+        if configured_id:
+            logger.info("Use configured application calendar | calendar=%s", configured_id)
+            return configured_id
+
+        if FeishuAPIClient._app_calendar_id:
+            return FeishuAPIClient._app_calendar_id
+
+        token = await self._get_token()
+        async with httpx.AsyncClient(trust_env=False, timeout=30) as client:
+            resp = await client.post(
+                f"{self.base}/calendar/v4/calendars/primary",
+                headers={"Authorization": f"Bearer {token}"},
+            )
+        data = resp.json()
+        if data.get("code") != 0:
+            logger.error("get_app_calendar_id failed: %s", data)
+            return ""
+
+        data_block = data.get("data", {}) or {}
+        calendar_id = ""
+        calendars = data_block.get("calendars")
+        if isinstance(calendars, list) and calendars:
+            calendar_id = _pick_writable_calendar_id(calendars)
+            if not calendar_id:
+                calendar_id = _extract_calendar_id(calendars[0])
         if not calendar_id:
-            return {"ok": False, "message": "无法获取确认人的主日历"}
+            calendar_entry = data_block.get("calendar") or data_block
+            calendar_id = _extract_calendar_id(calendar_entry)
+        if not calendar_id:
+            logger.warning("Application primary calendar missing | data=%s", data_block)
+            return ""
+
+        FeishuAPIClient._app_calendar_id = calendar_id
+        logger.info("Application calendar resolved | calendar=%s", calendar_id)
+        return calendar_id
+
+    async def _resolve_calendar_target(
+        self, operator_open_id: str
+    ) -> tuple[str, str]:
+        target = os.getenv("FEISHU_CALENDAR_TARGET", "app").strip().lower()
+        if target in {"user", "user_primary", "operator"}:
+            return await self.get_primary_calendar_id(operator_open_id), "user_primary"
+        return await self.get_app_calendar_id(), "app"
+
+    def _build_calendar_event_payload(self, candidate) -> dict:
+        end_time = candidate.start_time + timedelta(minutes=candidate.duration_minutes or 60)
+        timezone_name = os.getenv("APP_TIMEZONE", "Asia/Shanghai")
+        return {
+            "summary": candidate.title,
+            "description": f"来自群聊 {candidate.chat_id}\n原消息：{candidate.raw_text}",
+            "start_time": {
+                "timestamp": str(int(candidate.start_time.timestamp())),
+                "timezone": timezone_name,
+            },
+            "end_time": {
+                "timestamp": str(int(end_time.timestamp())),
+                "timezone": timezone_name,
+            },
+            "need_notification": True,
+        }
+
+    async def _add_calendar_attendees(
+        self,
+        calendar_id: str,
+        event_id: str,
+        participant_ids: list[str],
+    ) -> Optional[str]:
+        attendees = _build_calendar_attendees(participant_ids)
+        if not attendees:
+            return None
+
+        token = await self._get_token()
+        async with httpx.AsyncClient(trust_env=False, timeout=30) as client:
+            resp = await client.post(
+                f"{self.base}/calendar/v4/calendars/{calendar_id}/events/{event_id}/attendees",
+                headers={"Authorization": f"Bearer {token}"},
+                params={"user_id_type": "open_id"},
+                json={
+                    "attendees": attendees,
+                    "need_notification": True,
+                },
+            )
+        data = resp.json()
+        if data.get("code") != 0:
+            logger.warning("add_calendar_attendees failed: %s", data)
+            return data.get("msg", "attendee api error")
+
+        logger.info(
+            "Calendar attendees added | calendar=%s event_id=%s attendees=%d",
+            calendar_id,
+            event_id,
+            len(attendees),
+        )
+        return None
+
+    async def create_calendar_event(self, candidate, operator_open_id: str) -> dict:
+        calendar_id, calendar_target = await self._resolve_calendar_target(operator_open_id)
+        if not calendar_id:
+            if calendar_target == "user_primary":
+                return {"ok": False, "message": "未找到当前账号可写入的主日历，请检查日历写权限"}
+            return {"ok": False, "message": "未找到应用可写入的日历，请配置 FEISHU_CALENDAR_ID 或检查日历权限"}
 
         if not candidate.start_time:
             return {"ok": False, "message": "未解析到日程时间"}
 
         token = await self._get_token()
-        end_time = candidate.start_time + timedelta(minutes=candidate.duration_minutes or 60)
-        attendees = []
         participant_ids = list(dict.fromkeys([operator_open_id] + list(candidate.participants or [])))
-        for participant_id in participant_ids:
-            attendees.append({"type": "user", "user_id": participant_id})
-
-        payload = {
-            "summary": candidate.title,
-            "description": f"来自群聊 {candidate.chat_id}\n原消息：{candidate.raw_text}",
-            "start_time": {
-                "timestamp": str(int(candidate.start_time.timestamp() * 1000)),
-                "timezone": os.getenv("APP_TIMEZONE", "Asia/Shanghai"),
-            },
-            "end_time": {
-                "timestamp": str(int(end_time.timestamp() * 1000)),
-                "timezone": os.getenv("APP_TIMEZONE", "Asia/Shanghai"),
-            },
-            "need_notification": True,
-            "attendees": attendees,
-        }
+        payload = self._build_calendar_event_payload(candidate)
 
         async with httpx.AsyncClient(trust_env=False, timeout=30) as client:
             resp = await client.post(
@@ -224,35 +383,34 @@ class FeishuAPIClient:
         data = resp.json()
         if data.get("code") != 0:
             logger.error("create_calendar_event failed: %s", data)
+            if data.get("code") == 191002:
+                return {"ok": False, "message": "当前应用无权写入该日历，请检查日历写权限"}
             return {"ok": False, "message": data.get("msg", "calendar api error")}
         event = data.get("data", {}).get("event", {})
+        event_id = event.get("event_id", "")
+        attendee_warning = None
+        if event_id:
+            attendee_warning = await self._add_calendar_attendees(calendar_id, event_id, participant_ids)
         logger.info(
-            "Calendar event created | candidate=%s event_id=%s calendar=%s",
+            "Calendar event created | candidate=%s event_id=%s calendar=%s target=%s",
             candidate.candidate_id,
-            event.get("event_id", ""),
+            event_id,
             calendar_id,
+            calendar_target,
         )
-        return {
+        result = {
             "ok": True,
-            "event_id": event.get("event_id", ""),
+            "event_id": event_id,
             "calendar_id": calendar_id,
             "url": event.get("app_link", ""),
         }
+        if attendee_warning:
+            result["warning"] = f"日程已创建，但添加参与人失败：{attendee_warning}"
+        return result
 
     async def create_task(self, candidate, operator_open_id: str) -> dict:
         token = await self._get_token()
-        members = []
-        if candidate.assignee_id:
-            members.append({"id": candidate.assignee_id, "type": "user"})
-        elif operator_open_id:
-            members.append({"id": operator_open_id, "type": "user"})
-
-        payload = {
-            "summary": candidate.title,
-            "description": f"来自群聊 {candidate.chat_id}\n原消息：{candidate.raw_text}",
-            "client_token": candidate.candidate_id,
-            "members": members,
-        }
+        payload = self._build_task_payload(candidate, operator_open_id)
         if candidate.due_date:
             payload["due"] = {
                 "timestamp": int(candidate.due_date.timestamp() * 1000),
@@ -272,15 +430,32 @@ class FeishuAPIClient:
             return {"ok": False, "message": data.get("msg", "task api error")}
         task = data.get("data", {}).get("task", {})
         logger.info(
-            "Task created | candidate=%s task_guid=%s",
+            "Task created | candidate=%s task_guid=%s url=%s members=%s",
             candidate.candidate_id,
             task.get("guid", ""),
+            task.get("url", ""),
+            payload.get("members", []),
         )
         return {
             "ok": True,
             "task_guid": task.get("guid", ""),
             "url": task.get("url", ""),
         }
+
+    def _build_task_payload(self, candidate, operator_open_id: str = "") -> dict:
+        payload = {
+            "summary": candidate.title,
+            "description": f"来自群聊 {candidate.chat_id}\n原消息：{candidate.raw_text}",
+            "client_token": candidate.candidate_id,
+        }
+        assignee_id = candidate.assignee_id or operator_open_id
+        if assignee_id:
+            payload["members"] = [{
+                "id": assignee_id,
+                "type": "user",
+                "role": "assignee",
+            }]
+        return payload
 
     async def fetch_messages(
         self,
@@ -342,6 +517,8 @@ class FeishuAPIClient:
             data = resp.json()
             if data.get("code") != 0:
                 logger.error("fetch_messages failed: %s", data)
+                if data.get("code") == 230001:
+                    raise InvalidChatError(chat_id)
                 break
 
             for item in data.get("data", {}).get("items", []):

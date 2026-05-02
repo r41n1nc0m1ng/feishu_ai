@@ -11,7 +11,7 @@ import asyncio
 import logging
 import os
 
-from feishu.api_client import FeishuAPIClient
+from feishu.api_client import FeishuAPIClient, InvalidChatError
 from memory.card_generator import CardGenerator
 from memory.evidence_store import EvidenceStore
 from memory.schemas import CardStatus, ChatMemorySpace, FeishuMessage, FetchBatch, MemoryType
@@ -117,9 +117,18 @@ class BatchProcessor:
         logger.info("Batch process start | chat=%s last_fetch_at=%s", chat_id, space.last_fetch_at)
 
         # 1. 拉取增量消息（API 是秒级闭区间，客户端用毫秒精度过滤重复）
-        messages, last_raw_ts = await self._feishu.fetch_messages(
-            chat_id, start_time=space.last_fetch_at
-        )
+        try:
+            messages, last_raw_ts = await self._feishu.fetch_messages(
+                chat_id, start_time=space.last_fetch_at
+            )
+        except InvalidChatError:
+            _active_chats.pop(chat_id, None)
+            try:
+                store.delete_chat_space(chat_id)
+            except Exception:
+                logger.exception("无效群聊清理失败 | chat_id=%s", chat_id)
+            logger.warning("Invalid chat unregistered | chat=%s", chat_id)
+            return
         if space.last_fetch_at:
             messages = [m for m in messages if m.timestamp > space.last_fetch_at]
 

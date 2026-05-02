@@ -57,7 +57,12 @@ def _title_from_schedule_text(text: str) -> str:
 
 
 def _title_from_task_text(text: str) -> str:
-    cleaned = re.sub(r"^[^，。,.\s]{1,12}负责", "", text).strip()
+    cleaned = re.sub(
+        r"^[A-Za-z0-9_\-\u4e00-\u9fa5]{1,12}?(?=(负责|周[一二三四五六日天]|今天|明天|后天|本周|下周|完成|提交|处理|搞定))",
+        "",
+        text,
+    ).strip()
+    cleaned = re.sub(r"^负责", "", cleaned).strip()
     cleaned = re.sub(r"(今天|明天|后天|本周|下周|周[一二三四五六日天])前?", " ", cleaned)
     cleaned = re.sub(r"(截止|完成|搞定|提交|处理)", " ", cleaned)
     cleaned = re.sub(r"[，。,.！？!?]", " ", cleaned)
@@ -153,7 +158,10 @@ def extract_task_candidate(message) -> TaskCandidate:
     mentions = list(getattr(message, "mentions", []) or [])
     if mentions:
         assignee_id = mentions[0]
-    match = re.search(r"^([A-Za-z0-9_\-\u4e00-\u9fa5]{1,12})负责", text)
+    match = re.search(
+        r"^([A-Za-z0-9_\-\u4e00-\u9fa5]{1,12}?)(?=(负责|周[一二三四五六日天]|今天|明天|后天|本周|下周|完成|提交|处理|搞定))",
+        text,
+    )
     if match:
         assignee_name = match.group(1)
 
@@ -257,6 +265,12 @@ def _pop_candidate(candidate_type: str, candidate_id: str):
     return _TASK_CANDIDATES.pop(candidate_id, None)
 
 
+def _get_candidate(candidate_type: str, candidate_id: str):
+    if candidate_type == "schedule":
+        return _SCHEDULE_CANDIDATES.get(candidate_id)
+    return _TASK_CANDIDATES.get(candidate_id)
+
+
 class RealtimeActionHandler:
     def __init__(
         self,
@@ -333,7 +347,7 @@ class RealtimeActionHandler:
             )
             return ActionTrace(True, "reject", reply, "card rejected")
 
-        candidate = _pop_candidate(payload.candidate_type, payload.candidate_id)
+        candidate = _get_candidate(payload.candidate_type, payload.candidate_id)
         if not candidate:
             reply = "这张确认卡已失效，请重新发送原消息触发。"
             logger.warning(
@@ -349,18 +363,28 @@ class RealtimeActionHandler:
                 reply = "没有解析到可创建的日程时间，请补充更明确的时间后重试。"
                 return ActionTrace(True, payload.action_type, reply, "missing schedule time")
             result = await self.api_client.create_calendar_event(candidate, payload.operator_id)
+            if result.get("ok"):
+                _pop_candidate(payload.candidate_type, payload.candidate_id)
             reply = (
                 f"已创建日程：{candidate.title}（{_format_time(candidate.start_time)}）"
                 if result.get("ok")
                 else f"创建日程失败：{result.get('message', 'unknown error')}"
             )
+            if result.get("ok") and result.get("warning"):
+                reply = f"{reply}\n{result['warning']}"
         elif payload.action_type == "confirm_task":
             result = await self.api_client.create_task(candidate, payload.operator_id)
-            reply = (
-                f"已创建待办：{candidate.title}"
-                if result.get("ok")
-                else f"创建待办失败：{result.get('message', 'unknown error')}"
-            )
+            if result.get("ok"):
+                _pop_candidate(payload.candidate_type, payload.candidate_id)
+            if result.get("ok"):
+                location = result.get("url") or result.get("task_guid") or ""
+                reply = f"已创建待办：{candidate.title}"
+                if result.get("url"):
+                    reply = f"{reply}\n打开链接：{result['url']}"
+                elif location:
+                    reply = f"{reply}\n待办ID：{location}"
+            else:
+                reply = f"创建待办失败：{result.get('message', 'unknown error')}"
         else:
             reply = f"未识别的卡片动作：{payload.action_type}"
 

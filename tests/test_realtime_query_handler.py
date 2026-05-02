@@ -146,6 +146,19 @@ class RealtimeQueryHandlerTests(unittest.IsolatedAsyncioTestCase):
         self.assertIn("整体记忆", sender.calls[0][1])
         self.assertIn("MVP 聚焦群聊决策记忆", sender.calls[0][1])
 
+    async def test_handle_summary_query_falls_back_to_memory_cards(self):
+        retriever = FakeRetriever([_card("P1 当前先做企业级记忆最小演示", "已改范围")], summaries=[])
+        sender = FakeSender()
+        handler = RealtimeQueryHandler(retriever=retriever, send_text=sender)
+
+        trace = await handler.handle_query_message(_msg("@机器人 现在这个P1怎么定的"))
+
+        self.assertEqual(trace.action, "summary_fallback")
+        self.assertEqual(trace.retrieved_count, 1)
+        self.assertEqual(retriever.summary_calls[0][0], "c1")
+        self.assertEqual(retriever.calls[0][0], "c1")
+        self.assertIn("P1 当前先做企业级记忆最小演示", sender.calls[0][1])
+
 
 class RenderReplyTests(unittest.TestCase):
     def test_render_query_reply(self):

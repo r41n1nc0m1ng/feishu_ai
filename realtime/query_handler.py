@@ -134,7 +134,12 @@ class RealtimeQueryHandler:
         elif is_summary_query(query):
             action = "summary"
             results = await self.retriever.retrieve_topic_summary(message.chat_id, query, limit=3)
-            reply = render_summary_reply(query, results)
+            if results:
+                reply = render_summary_reply(query, results)
+            else:
+                action = "summary_fallback"
+                results = await self.retriever.retrieve(message.chat_id, query, limit=3)
+                reply = render_query_reply(query, results)
         else:
             results = await self.retriever.retrieve(message.chat_id, query, limit=3)
             reply = render_query_reply(query, results)

@@ -183,6 +183,11 @@ def load_all_chat_spaces() -> List[ChatMemorySpace]:
     return spaces
 
 
+def delete_chat_space(chat_id: str) -> None:
+    with _conn() as conn:
+        conn.execute("DELETE FROM chat_spaces WHERE chat_id=?", (chat_id,))
+
+
 # ── MemoryRelation ────────────────────────────────────────────────────────────
 
 def save_relation(relation: MemoryRelation) -> None:

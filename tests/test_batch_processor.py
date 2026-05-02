@@ -11,12 +11,14 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import memory.batch_processor as bp_module
 import memory.store as store_module
 from memory.batch_processor import BatchProcessor
+from feishu.api_client import InvalidChatError
 from memory.schemas import EvidenceBlock, EvidenceMessage, FeishuMessage
 
 # 测试期间 mock 掉 store 的 SQLite 读写，避免污染生产数据库
 _STORE_PATCHES = [
     patch.object(store_module, "save_chat_space"),
     patch.object(store_module, "load_all_chat_spaces", return_value=[]),
+    patch.object(store_module, "delete_chat_space"),
 ]
 
 BASE = datetime(2026, 4, 28, 10, 0, tzinfo=timezone.utc)
@@ -169,6 +171,20 @@ class BatchProcessorPipelineTests(unittest.IsolatedAsyncioTestCase):
             bp_module._active_chats["oc_cursor"].last_fetch_at,
             fetched[-1].timestamp,
         )
+
+    async def test_process_chat_unregisters_invalid_chat(self):
+        from memory.schemas import ChatMemorySpace
+        bp_module._active_chats["oc_invalid"] = ChatMemorySpace(chat_id="oc_invalid")
+
+        with patch("memory.batch_processor.FeishuAPIClient") as MockClient, \
+             patch("memory.batch_processor.segment") as mock_seg:
+            MockClient.return_value.fetch_messages = AsyncMock(side_effect=InvalidChatError("oc_invalid"))
+
+            await BatchProcessor()._process_chat("oc_invalid")
+
+        self.assertNotIn("oc_invalid", bp_module._active_chats)
+        store_module.delete_chat_space.assert_called_once_with("oc_invalid")
+        mock_seg.assert_not_called()
 
 
 class ProcessNowTests(unittest.IsolatedAsyncioTestCase):
