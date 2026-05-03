@@ -26,10 +26,10 @@ MAX_BLOCK_MESSAGES = int(os.getenv("MAX_BLOCK_MESSAGES", "30"))
 # 单块消息数上限，超过则强制截断。
 
 # ── P1-6 语义切分参数（可通过环境变量覆盖）────────────────────────────────────
-SEMANTIC_THRESHOLD = float(os.getenv("SEMANTIC_THRESHOLD", "0.50"))
-# 新消息与当前 block 中心向量余弦相似度低于此值视为话题切换。
-# 0.50 对同项目不同议题（语言选型 vs 评审规则）更有效；
-# 若误切过多可调高至 0.60。
+SEMANTIC_THRESHOLD = float(os.getenv("SEMANTIC_THRESHOLD", "0.60"))
+# 新消息与最近 MIN_BLOCK_MESSAGES 条消息质心的余弦相似度低于此值视为话题切换。
+# 越高越容易切分：0.60 对"同项目不同议题"（语言选型 vs 评审规则 vs 截止日期）通常有效。
+# 若同话题消息被误切可适当降低；若不同话题仍合并可适当升高（0.65~0.70）。
 MIN_BLOCK_MESSAGES = int(os.getenv("MIN_BLOCK_MESSAGES", "3"))
 # 至少积累此数量的消息后才允许语义切分，避免首条消息误触发。
 
@@ -88,13 +88,18 @@ def _segment_time(batch: FetchBatch) -> List[EvidenceBlock]:
 
 async def _segment_semantic(batch: FetchBatch) -> List[EvidenceBlock]:
     """
-    Embedding 语义相似度切分。
+    First-anchor 语义切分：以每个 block 第一条消息的 embedding 作为话题锚点，
+    新消息与锚点余弦相似度低于 SEMANTIC_THRESHOLD 时切块。
 
-    算法：
+    为什么不用质心（centroid）：
+      短确认句（"好""定了""就这样"）与多种话题的相似度都很高（nomic-embed-text 实测 0.67-0.80），
+      一旦混入质心就会使质心漂移到通用空间，导致后续所有消息都无法触发切分。
+      锚点固定在 block 第一条消息，不受后续消息污染。
+
+    流程：
     1. 为每条消息获取 embedding（失败则置 None）
-    2. 维护当前 block 的 embedding 中心向量
-    3. 当新消息与当前中心的余弦相似度 < SEMANTIC_THRESHOLD 且已积累
-       足够消息（>= MIN_BLOCK_MESSAGES）时，关闭当前块
+    2. 每个 block 记录第一条消息的 embedding 作为话题锚点
+    3. 当新消息与锚点相似度 < SEMANTIC_THRESHOLD 且已积累 >= MIN_BLOCK_MESSAGES 条时切块
     4. P0 时间间隔 / 消息数量阈值始终作为强制切块的硬上限
     5. 全部 embedding 失败时整体回退到 _segment_time
     """
@@ -113,13 +118,12 @@ async def _segment_semantic(batch: FetchBatch) -> List[EvidenceBlock]:
 
     blocks: List[EvidenceBlock] = []
     current_msgs: List[EvidenceMessage] = []
-    current_embs: List[List[float]] = []
+    anchor_emb: Optional[List[float]] = None   # 当前 block 第一条消息的 embedding
 
     for msg, emb in zip(messages, embeddings):
         if not current_msgs:
             current_msgs.append(msg)
-            if emb is not None:
-                current_embs.append(emb)
+            anchor_emb = emb   # 锚点 = block 第一条消息
             continue
 
         gap = (msg.timestamp - current_msgs[-1].timestamp).total_seconds()
@@ -129,25 +133,23 @@ async def _segment_semantic(batch: FetchBatch) -> List[EvidenceBlock]:
         if (
             not force_cut
             and emb is not None
-            and current_embs
+            and anchor_emb is not None
             and len(current_msgs) >= MIN_BLOCK_MESSAGES
         ):
-            sim = _cosine(emb, _centroid(current_embs))
+            sim = _cosine(emb, anchor_emb)
             semantic_cut = sim < SEMANTIC_THRESHOLD
             if semantic_cut:
                 logger.debug(
-                    "语义边界 | chat=%s sim=%.3f threshold=%.2f text=%s",
+                    "语义边界(first-anchor) | chat=%s sim=%.3f threshold=%.2f text=%s",
                     batch.chat_id, sim, SEMANTIC_THRESHOLD, msg.text[:40],
                 )
 
         if force_cut or semantic_cut:
             blocks.append(_make_block(batch.chat_id, current_msgs))
             current_msgs = [msg]
-            current_embs = [emb] if emb is not None else []
+            anchor_emb = emb   # 新 block 的锚点
         else:
             current_msgs.append(msg)
-            if emb is not None:
-                current_embs.append(emb)
 
     if current_msgs:
         blocks.append(_make_block(batch.chat_id, current_msgs))

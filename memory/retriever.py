@@ -183,6 +183,8 @@ class MemoryRetriever:
         for card in _card_cache.values():
             if card.chat_id != chat_id or not card.decision:
                 continue
+            if card.status == CardStatus.DEPRECATED:
+                continue
             decision_chars = set(card.decision)
             inter = len(decision_chars & fact_chars)
             union = len(decision_chars | fact_chars)

@@ -11,12 +11,40 @@ import asyncio
 import logging
 import os
 
+# Per-chat processing locks: prevents duplicate runs when process_now and run()
+# overlap (e.g. bot-join fires while the periodic loop is also awake).
+_process_locks: dict[str, asyncio.Lock] = {}
+
 from feishu.api_client import FeishuAPIClient, InvalidChatError
 from memory.card_generator import CardGenerator
 from memory.evidence_store import EvidenceStore
 from memory.schemas import CardStatus, ChatMemorySpace, FeishuMessage, FetchBatch, MemoryType
 from memory import store
 from preprocessor.event_segmenter import segment_async
+from realtime.triggers import has_explicit_bot_mention
+
+
+def _should_skip_message(text: str, sender_id: str) -> bool:
+    """
+    Returns True if this message should be excluded from batch memory extraction.
+
+    Active filters:
+      - Bot's own replies (sender_id == FEISHU_BOT_OPEN_ID)
+      - Messages that @mention the bot (already handled by realtime handler)
+
+    Commented out (pattern-based query detection — disable until realtime
+    trigger is re-enabled for query patterns):
+      # from realtime.triggers import is_explicit_query, is_source_query, is_summary_query, is_version_query
+      # is_source_query(text) or is_summary_query(text)
+      # or is_version_query(text) or is_explicit_query(text)
+    """
+    bot_id = os.getenv("FEISHU_BOT_OPEN_ID", "")
+    if bot_id and sender_id == bot_id:
+        return True
+    if has_explicit_bot_mention(text):
+        return True
+    return False
+
 
 logger = logging.getLogger(__name__)
 
@@ -113,6 +141,14 @@ class BatchProcessor:
     # ── 单群处理流水线 ────────────────────────────────────────────────────────
 
     async def _process_chat(self, chat_id: str) -> None:
+        lock = _process_locks.setdefault(chat_id, asyncio.Lock())
+        if lock.locked():
+            logger.info("_process_chat already running, skipping | chat=%s", chat_id)
+            return
+        async with lock:
+            await self.__process_chat_inner(chat_id)
+
+    async def __process_chat_inner(self, chat_id: str) -> None:
         space = _active_chats[chat_id]
         logger.info("Batch process start | chat=%s last_fetch_at=%s", chat_id, space.last_fetch_at)
 
@@ -131,6 +167,12 @@ class BatchProcessor:
             return
         if space.last_fetch_at:
             messages = [m for m in messages if m.timestamp > space.last_fetch_at]
+
+        # 过滤 bot 自身回复和 @bot 消息（不应进入记忆提取管道）
+        skipped = [m for m in messages if _should_skip_message(m.text, m.sender_id)]
+        if skipped:
+            logger.info("Skipped %d bot/@bot messages | chat=%s", len(skipped), chat_id)
+        messages = [m for m in messages if not _should_skip_message(m.text, m.sender_id)]
 
         # 即使消息全部被过滤（机器人回复/查询语句），仍推进游标，避免重复拉取
         if len(messages) < MIN_MESSAGES:
