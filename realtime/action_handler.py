@@ -29,6 +29,20 @@ _WEEKDAY_MAP = {
     "天": 6,
 }
 
+_CHINESE_DIGITS = {
+    "零": 0,
+    "一": 1,
+    "二": 2,
+    "两": 2,
+    "三": 3,
+    "四": 4,
+    "五": 5,
+    "六": 6,
+    "七": 7,
+    "八": 8,
+    "九": 9,
+}
+
 
 @dataclass
 class ActionTrace:
@@ -48,10 +62,11 @@ def _now_local() -> datetime:
 
 def _title_from_schedule_text(text: str) -> str:
     title = re.sub(r"[，。,.！？!?]", " ", text).strip()
-    title = re.sub(r"(今天|明天|后天|本周|下周|周[一二三四五六日天])", " ", title)
+    title = re.sub(r"(今天|明天|后天|本周|下周|周[一二三四五六日天]|\d{1,2}号)", " ", title)
     title = re.sub(r"(上午|中午|下午|晚上|早上)", " ", title)
     title = re.sub(r"\d{1,2}[:：]\d{2}", " ", title)
-    title = re.sub(r"\d{1,2}点半?", " ", title)
+    title = re.sub(r"[零一二两三四五六七八九十百\d]{1,3}点(半|[零一二两三四五六七八九十百\d]{1,2}分?)?", " ", title)
+    title = re.sub(r"(半小时|\d+\s*(小时|分钟)|[零一二两三四五六七八九十百]+分钟)", " ", title)
     title = re.sub(r"\s+", " ", title).strip()
     return title or text.strip()
 
@@ -63,11 +78,34 @@ def _title_from_task_text(text: str) -> str:
         text,
     ).strip()
     cleaned = re.sub(r"^负责", "", cleaned).strip()
-    cleaned = re.sub(r"(今天|明天|后天|本周|下周|周[一二三四五六日天])前?", " ", cleaned)
-    cleaned = re.sub(r"(截止|完成|搞定|提交|处理)", " ", cleaned)
+    cleaned = re.sub(r"(今天|明天|后天|本周|下周|周[一二三四五六日天]|\d{1,2}号)(之前?|前)?", " ", cleaned)
+    cleaned = re.sub(r"(截止|完成|搞定|提交|处理|必须|需要)", " ", cleaned)
+    cleaned = re.sub(r"(上午|中午|下午|晚上|早上)", " ", cleaned)
+    cleaned = re.sub(r"\d{1,2}[:：]\d{2}", " ", cleaned)
+    cleaned = re.sub(r"[零一二两三四五六七八九十百\d]{1,3}点(半|[零一二两三四五六七八九十百\d]{1,2}分?)?", " ", cleaned)
     cleaned = re.sub(r"[，。,.！？!?]", " ", cleaned)
     cleaned = re.sub(r"\s+", " ", cleaned).strip()
     return cleaned or text.strip()
+
+
+def _parse_chinese_number(text: str) -> Optional[int]:
+    if not text:
+        return None
+    if text.isdigit():
+        return int(text)
+    if text == "十":
+        return 10
+    if "十" in text:
+        left, _, right = text.partition("十")
+        tens = _CHINESE_DIGITS.get(left, 1) if left else 1
+        ones = _CHINESE_DIGITS.get(right, 0) if right else 0
+        return tens * 10 + ones
+    total = 0
+    for ch in text:
+        if ch not in _CHINESE_DIGITS:
+            return None
+        total = total * 10 + _CHINESE_DIGITS[ch]
+    return total
 
 
 def _extract_relative_day(text: str, base: datetime) -> Optional[datetime]:
@@ -77,6 +115,26 @@ def _extract_relative_day(text: str, base: datetime) -> Optional[datetime]:
         return base + timedelta(days=1)
     if "今天" in text:
         return base
+
+    match = re.search(r"(\d{1,2})号", text)
+    if match:
+        day = int(match.group(1))
+        year = base.year
+        month = base.month
+        try:
+            candidate = base.replace(year=year, month=month, day=day)
+        except ValueError:
+            return None
+        if candidate.date() < base.date():
+            month += 1
+            if month == 13:
+                month = 1
+                year += 1
+            try:
+                candidate = candidate.replace(year=year, month=month, day=day)
+            except ValueError:
+                return None
+        return candidate
 
     match = re.search(r"(本周|下周)?周([一二三四五六日天])", text)
     if not match:
@@ -98,13 +156,17 @@ def _extract_time_of_day(text: str) -> tuple[int, int]:
         hour = int(match.group(1))
         minute = int(match.group(2))
     else:
-        match = re.search(r"(\d{1,2})点(半|(\d{1,2})分?)?", text)
+        match = re.search(r"([零一二两三四五六七八九十百\d]{1,3})点(半|([零一二两三四五六七八九十百\d]{1,2})分?)?", text)
         if match:
-            hour = int(match.group(1))
+            parsed_hour = _parse_chinese_number(match.group(1))
+            if parsed_hour is not None:
+                hour = parsed_hour
             if match.group(2) == "半":
                 minute = 30
             elif match.group(3):
-                minute = int(match.group(3))
+                parsed_minute = _parse_chinese_number(match.group(3))
+                if parsed_minute is not None:
+                    minute = parsed_minute
 
     if any(token in text for token in ("下午", "晚上")) and hour < 12:
         hour += 12
@@ -119,9 +181,19 @@ def _extract_duration_minutes(text: str) -> Optional[int]:
     match = re.search(r"(\d+)\s*小时", text)
     if match:
         return int(match.group(1)) * 60
+    match = re.search(r"([零一二两三四五六七八九十百]+)\s*小时", text)
+    if match:
+        parsed = _parse_chinese_number(match.group(1))
+        if parsed is not None:
+            return parsed * 60
     match = re.search(r"(\d+)\s*分钟", text)
     if match:
         return int(match.group(1))
+    match = re.search(r"([零一二两三四五六七八九十百]+)\s*分钟", text)
+    if match:
+        parsed = _parse_chinese_number(match.group(1))
+        if parsed is not None:
+            return parsed
     return 60
 
 
@@ -151,7 +223,11 @@ def extract_task_candidate(message) -> TaskCandidate:
     due_anchor = _extract_relative_day(text, now)
     due_date = None
     if due_anchor:
-        due_date = due_anchor.replace(hour=18, minute=0, second=0, microsecond=0)
+        due_hour, due_minute = _extract_time_of_day(text)
+        if re.search(r"(前|之前|截止|必须|需要|提交|完成)", text):
+            due_date = due_anchor.replace(hour=due_hour, minute=due_minute, second=0, microsecond=0)
+        else:
+            due_date = due_anchor.replace(hour=18, minute=0, second=0, microsecond=0)
 
     assignee_id = None
     assignee_name = ""

@@ -4,7 +4,13 @@ import logging
 from dataclasses import dataclass
 from typing import Callable, Optional
 
-from realtime.triggers import build_query_text, is_source_query, is_summary_query, is_version_query
+from realtime.triggers import (
+    build_query_text,
+    is_source_query,
+    is_summary_query,
+    is_topic_list_query,
+    is_version_query,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -85,6 +91,16 @@ def render_summary_reply(query: str, summaries: list) -> str:
     return "\n".join(lines)
 
 
+def render_topic_list_reply(summary, index: int) -> str:
+    topic = getattr(summary, "topic", "") or f"Topic {index}"
+    body = getattr(summary, "summary", "")
+    covered = len(getattr(summary, "covered_memory_ids", []) or [])
+    lines = [f"【Topic {index}｜{topic}】", body]
+    if covered:
+        lines.append(f"覆盖 {covered} 条相关记忆。")
+    return "\n".join(lines)
+
+
 class RealtimeQueryHandler:
     def __init__(
         self,
@@ -129,6 +145,32 @@ class RealtimeQueryHandler:
                 reply = render_version_reply(query, chain)
             else:
                 reply = f'当前没有查到与“{query}”相关的记忆。'
+        elif is_topic_list_query(query):
+            action = "topic_list"
+            results = await self.retriever.retrieve_topic_summary(message.chat_id, "", limit=50)
+            if results:
+                reply = f"当前共 {len(results)} 个 TopicSummary，按主题逐条发送。"
+                if self.send_text:
+                    await self.send_text(message.chat_id, reply)
+                    for idx, summary in enumerate(results, 1):
+                        await self.send_text(message.chat_id, render_topic_list_reply(summary, idx))
+                    logger.info(
+                        "Realtime query handled | chat=%s action=%s query=%s hits=%d",
+                        message.chat_id,
+                        action,
+                        query,
+                        len(results),
+                    )
+                    return QueryTrace(
+                        triggered=True,
+                        action=action,
+                        query_text=query,
+                        retrieved_count=len(results),
+                        reply_preview=reply[:120],
+                        reason="is_at_bot or explicit query",
+                    )
+            else:
+                reply = "当前还没有生成 TopicSummary。"
         elif is_summary_query(query):
             action = "summary"
             results = await self.retriever.retrieve_topic_summary(message.chat_id, query, limit=3)

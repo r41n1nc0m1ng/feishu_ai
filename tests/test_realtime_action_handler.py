@@ -196,6 +196,22 @@ class ExtractCandidateTests(unittest.TestCase):
         self.assertIsNotNone(candidate.due_date)
         self.assertEqual(candidate.title, "benchmark")
 
+    def test_extract_schedule_candidate_with_chinese_time_and_duration(self):
+        candidate = extract_schedule_candidate(_msg("后天下午十点半要开个半小时的碰头会"))
+        self.assertIsNotNone(candidate.start_time)
+        self.assertEqual(candidate.start_time.hour, 22)
+        self.assertEqual(candidate.start_time.minute, 30)
+        self.assertEqual(candidate.duration_minutes, 30)
+        self.assertIn("碰头会", candidate.title)
+
+    def test_extract_task_candidate_with_absolute_day_and_deadline_time(self):
+        candidate = extract_task_candidate(_msg("7号中午十二点之前必须提交demo"))
+        self.assertIsNotNone(candidate.due_date)
+        self.assertEqual(candidate.due_date.day, 7)
+        self.assertEqual(candidate.due_date.hour, 12)
+        self.assertEqual(candidate.due_date.minute, 0)
+        self.assertEqual(candidate.title, "demo")
+
 
 class RenderActionReplyTests(unittest.TestCase):
     def test_render_schedule_reply(self):

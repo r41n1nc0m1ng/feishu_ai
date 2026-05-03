@@ -58,6 +58,19 @@ SUMMARY_PATTERNS = [
     ]
 ]
 
+TOPIC_LIST_PATTERNS = [
+    re.compile(p)
+    for p in [
+        r"当前.*topic",
+        r"所有.*topic",
+        r"全部.*topic",
+        r"topic\s*summary",
+        r"topicsummary",
+        r"topic列表",
+        r"topic总览",
+    ]
+]
+
 SCHEDULE_PATTERNS = [
     re.compile(p)
     for p in [
@@ -76,8 +89,11 @@ TASK_PATTERNS = [
         r"负责",
         r"截止",
         r"完成",
+        r"提交",
+        r"必须",
         r"待办",
         r"周[一二三四五六日天]",
+        r"\d{1,2}号",
     ]
 ]
 
@@ -112,6 +128,13 @@ def is_summary_query(text: str) -> bool:
     return any(pattern.search(normalized) for pattern in SUMMARY_PATTERNS)
 
 
+def is_topic_list_query(text: str) -> bool:
+    normalized = text.strip().lower()
+    if not normalized:
+        return False
+    return any(pattern.search(normalized) for pattern in TOPIC_LIST_PATTERNS)
+
+
 def is_schedule_like(text: str) -> bool:
     return any(pattern.search(text) for pattern in SCHEDULE_PATTERNS)
 
@@ -121,23 +144,16 @@ def is_task_like(text: str) -> bool:
 
 
 def should_trigger_realtime(message) -> bool:
-    if message.is_at_bot:
-        return True
-    text = message.text
-    # Source / summary patterns are semantically unambiguous queries;
-    # check them first so they don't require a trailing "?" to trigger.
-    if is_source_query(text) or is_summary_query(text):
-        return True
-    return is_explicit_query(text)
+    return bool(getattr(message, "is_at_bot", False))
 
 
 def classify_realtime_action(message) -> str:
     if should_trigger_realtime(message):
         return "query"
-    if is_schedule_like(message.text):
-        return "schedule"
     if is_task_like(message.text):
         return "task"
+    if is_schedule_like(message.text):
+        return "schedule"
     return "noop"
 
 

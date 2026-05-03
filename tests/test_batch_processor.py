@@ -120,7 +120,7 @@ class BatchProcessorPipelineTests(unittest.IsolatedAsyncioTestCase):
         mock_block.end_time = BASE
 
         with patch("memory.batch_processor.FeishuAPIClient") as MockClient, \
-             patch("memory.batch_processor.segment", return_value=[mock_block]) as mock_seg, \
+             patch("memory.batch_processor.segment_async", AsyncMock(return_value=[mock_block])) as mock_seg, \
              patch("memory.batch_processor.EvidenceStore") as MockStore, \
              patch("memory.batch_processor.CardGenerator") as MockGen:
 
@@ -130,7 +130,7 @@ class BatchProcessorPipelineTests(unittest.IsolatedAsyncioTestCase):
 
             await BatchProcessor()._process_chat("oc_pipe")
 
-        mock_seg.assert_called_once()
+        mock_seg.assert_awaited_once()
         MockStore.return_value.save.assert_called_once_with(mock_block)
         MockGen.return_value.generate.assert_called_once_with(mock_block)
 
@@ -139,12 +139,12 @@ class BatchProcessorPipelineTests(unittest.IsolatedAsyncioTestCase):
         bp_module._active_chats["oc_empty"] = ChatMemorySpace(chat_id="oc_empty")
 
         with patch("memory.batch_processor.FeishuAPIClient") as MockClient, \
-             patch("memory.batch_processor.segment") as mock_seg:
+             patch("memory.batch_processor.segment_async", AsyncMock(return_value=[])) as mock_seg:
 
             MockClient.return_value.fetch_messages = AsyncMock(return_value=([], None))
             await BatchProcessor()._process_chat("oc_empty")
 
-        mock_seg.assert_not_called()
+        mock_seg.assert_not_awaited()
 
     async def test_process_chat_updates_cursor(self):
         from memory.schemas import ChatMemorySpace
@@ -156,7 +156,7 @@ class BatchProcessorPipelineTests(unittest.IsolatedAsyncioTestCase):
         mock_block.end_time = BASE
 
         with patch("memory.batch_processor.FeishuAPIClient") as MockClient, \
-             patch("memory.batch_processor.segment", return_value=[mock_block]), \
+             patch("memory.batch_processor.segment_async", AsyncMock(return_value=[mock_block])), \
              patch("memory.batch_processor.EvidenceStore") as MockStore, \
              patch("memory.batch_processor.CardGenerator") as MockGen:
 
@@ -177,14 +177,14 @@ class BatchProcessorPipelineTests(unittest.IsolatedAsyncioTestCase):
         bp_module._active_chats["oc_invalid"] = ChatMemorySpace(chat_id="oc_invalid")
 
         with patch("memory.batch_processor.FeishuAPIClient") as MockClient, \
-             patch("memory.batch_processor.segment") as mock_seg:
+             patch("memory.batch_processor.segment_async", AsyncMock(return_value=[])) as mock_seg:
             MockClient.return_value.fetch_messages = AsyncMock(side_effect=InvalidChatError("oc_invalid"))
 
             await BatchProcessor()._process_chat("oc_invalid")
 
         self.assertNotIn("oc_invalid", bp_module._active_chats)
         store_module.delete_chat_space.assert_called_once_with("oc_invalid")
-        mock_seg.assert_not_called()
+        mock_seg.assert_not_awaited()
 
 
 class ProcessNowTests(unittest.IsolatedAsyncioTestCase):
@@ -211,7 +211,7 @@ class ProcessNowTests(unittest.IsolatedAsyncioTestCase):
         mock_block.end_time = BASE
 
         with patch("memory.batch_processor.FeishuAPIClient") as MockClient, \
-             patch("memory.batch_processor.segment", return_value=[mock_block]), \
+             patch("memory.batch_processor.segment_async", AsyncMock(return_value=[mock_block])), \
              patch("memory.batch_processor.EvidenceStore") as MockStore, \
              patch("memory.batch_processor.CardGenerator") as MockGen:
 
@@ -237,7 +237,7 @@ class ProcessNowTests(unittest.IsolatedAsyncioTestCase):
         mock_block.end_time = BASE
 
         with patch("memory.batch_processor.FeishuAPIClient") as MockClient, \
-             patch("memory.batch_processor.segment", return_value=[mock_block]), \
+             patch("memory.batch_processor.segment_async", AsyncMock(return_value=[mock_block])), \
              patch("memory.batch_processor.EvidenceStore") as MockStore, \
              patch("memory.batch_processor.CardGenerator") as MockGen:
 

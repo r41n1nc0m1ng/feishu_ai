@@ -9,6 +9,7 @@ from realtime.query_handler import (
     render_evidence_reply,
     render_query_reply,
     render_summary_reply,
+    render_topic_list_reply,
 )
 
 
@@ -159,6 +160,20 @@ class RealtimeQueryHandlerTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(retriever.calls[0][0], "c1")
         self.assertIn("P1 当前先做企业级记忆最小演示", sender.calls[0][1])
 
+    async def test_handle_topic_list_query_sends_one_message_per_topic(self):
+        retriever = FakeRetriever([], summaries=[_summary(), _summary()])
+        sender = FakeSender()
+        handler = RealtimeQueryHandler(retriever=retriever, send_text=sender)
+
+        trace = await handler.handle_query_message(_msg("@机器人 当前所有topic summary"))
+
+        self.assertEqual(trace.action, "topic_list")
+        self.assertEqual(trace.retrieved_count, 2)
+        self.assertEqual(len(sender.calls), 3)
+        self.assertIn("当前共 2 个 TopicSummary", sender.calls[0][1])
+        self.assertIn("Topic 1", sender.calls[1][1])
+        self.assertIn("Topic 2", sender.calls[2][1])
+
 
 class RenderReplyTests(unittest.TestCase):
     def test_render_query_reply(self):
@@ -178,4 +193,9 @@ class RenderReplyTests(unittest.TestCase):
     def test_render_summary_reply(self):
         reply = render_summary_reply("当前整体方案是什么", [_summary()])
         self.assertIn("整体记忆", reply)
+        self.assertIn("MVP产品边界", reply)
+
+    def test_render_topic_list_reply(self):
+        reply = render_topic_list_reply(_summary(), 1)
+        self.assertIn("Topic 1", reply)
         self.assertIn("MVP产品边界", reply)
