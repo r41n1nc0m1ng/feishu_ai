@@ -88,7 +88,6 @@ TASK_PATTERNS = [
     for p in [
         r"负责",
         r"截止",
-        r"完成",
         r"提交",
         r"必须",
         r"待办",
@@ -96,6 +95,37 @@ TASK_PATTERNS = [
         r"\d{1,2}号",
     ]
 ]
+
+
+MENTION_PREFIX_PATTERNS = [
+    re.compile(p)
+    for p in [
+        r"^@机器人(?:\s|$)",
+        r"^@_user_[A-Za-z0-9_]+(?:\s|$)",
+        r"^<at\b[^>]*>.*?</at>(?:\s|$)",
+    ]
+]
+
+
+TASK_INTENT_PATTERNS = [
+    re.compile(p)
+    for p in [
+        r"负责",
+        r"提交",
+        r"待办",
+        r"截止",
+        r"必须.{0,8}(提交|完成|处理|交付|同步|反馈|发送)",
+        r"(提交|完成|处理|交付|同步|反馈|发送).{0,8}(前|之前|截止)",
+        r"(今天|明天|后天|本周|下周|周[一二三四五六日天]|\d{1,2}号).{0,12}(提交|完成|处理|交付|同步|反馈|发送)",
+    ]
+]
+
+
+def has_explicit_bot_mention(text: str) -> bool:
+    normalized = text.strip()
+    if not normalized:
+        return False
+    return any(pattern.search(normalized) for pattern in MENTION_PREFIX_PATTERNS)
 
 
 def is_explicit_query(text: str) -> bool:
@@ -140,11 +170,18 @@ def is_schedule_like(text: str) -> bool:
 
 
 def is_task_like(text: str) -> bool:
-    return any(pattern.search(text) for pattern in TASK_PATTERNS)
+    normalized = text.strip()
+    if not normalized:
+        return False
+    has_anchor = any(pattern.search(normalized) for pattern in TASK_PATTERNS)
+    has_intent = any(pattern.search(normalized) for pattern in TASK_INTENT_PATTERNS)
+    return has_anchor and has_intent
 
 
 def should_trigger_realtime(message) -> bool:
-    return bool(getattr(message, "is_at_bot", False))
+    if bool(getattr(message, "is_at_bot", False)):
+        return True
+    return has_explicit_bot_mention(getattr(message, "text", ""))
 
 
 def classify_realtime_action(message) -> str:

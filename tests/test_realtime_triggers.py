@@ -6,6 +6,7 @@ from types import SimpleNamespace
 from realtime.triggers import (
     build_query_text,
     classify_realtime_action,
+    has_explicit_bot_mention,
     is_source_query,
     is_summary_query,
     is_topic_list_query,
@@ -31,6 +32,17 @@ class RealtimeTriggerTests(unittest.TestCase):
         message = _msg("我们之前为什么不做企业级记忆来着？")
         self.assertEqual(classify_realtime_action(message), "noop")
 
+    def test_text_mention_prefix_triggers_query(self):
+        message = _msg("@机器人 当前整体方案是什么")
+        self.assertTrue(has_explicit_bot_mention(message.text))
+        self.assertTrue(should_trigger_realtime(message))
+        self.assertEqual(classify_realtime_action(message), "query")
+
+    def test_internal_user_mention_prefix_triggers_query(self):
+        message = _msg("@_user_1 之前怎么定的")
+        self.assertTrue(should_trigger_realtime(message))
+        self.assertEqual(classify_realtime_action(message), "query")
+
     def test_schedule_classification(self):
         message = _msg("明天下午3点我们开评审会")
         self.assertEqual(classify_realtime_action(message), "schedule")
@@ -38,6 +50,14 @@ class RealtimeTriggerTests(unittest.TestCase):
     def test_task_classification(self):
         message = _msg("张三负责接口联调，周五前完成")
         self.assertEqual(classify_realtime_action(message), "task")
+
+    def test_complete_statement_is_not_task(self):
+        message = _msg("我觉得p1已完成 可存档")
+        self.assertEqual(classify_realtime_action(message), "noop")
+
+    def test_completion_degree_statement_is_not_task(self):
+        message = _msg("p2细节注意完成度")
+        self.assertEqual(classify_realtime_action(message), "noop")
 
     def test_noop_classification(self):
         message = _msg("收到，我晚点看")

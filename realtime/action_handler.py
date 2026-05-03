@@ -67,6 +67,9 @@ def _title_from_schedule_text(text: str) -> str:
     title = re.sub(r"\d{1,2}[:：]\d{2}", " ", title)
     title = re.sub(r"[零一二两三四五六七八九十百\d]{1,3}点(半|[零一二两三四五六七八九十百\d]{1,2}分?)?", " ", title)
     title = re.sub(r"(半小时|\d+\s*(小时|分钟)|[零一二两三四五六七八九十百]+分钟)", " ", title)
+    title = re.sub(r"(要|要开|开个|召开|安排|定个|约个)", " ", title)
+    title = re.sub(r"^\s*的+", " ", title)
+    title = re.sub(r"\b的\b", " ", title)
     title = re.sub(r"\s+", " ", title).strip()
     return title or text.strip()
 

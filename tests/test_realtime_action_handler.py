@@ -202,7 +202,7 @@ class ExtractCandidateTests(unittest.TestCase):
         self.assertEqual(candidate.start_time.hour, 22)
         self.assertEqual(candidate.start_time.minute, 30)
         self.assertEqual(candidate.duration_minutes, 30)
-        self.assertIn("碰头会", candidate.title)
+        self.assertEqual(candidate.title, "碰头会")
 
     def test_extract_task_candidate_with_absolute_day_and_deadline_time(self):
         candidate = extract_task_candidate(_msg("7号中午十二点之前必须提交demo"))
