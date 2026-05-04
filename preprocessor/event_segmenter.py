@@ -1,12 +1,12 @@
 """
 事件切分模块（对应需求文档 4.5 Event Segmentation 层）。
 
-P0 策略（默认）：时间窗口 + 消息数量双阈值切分，不依赖外部服务。
-P1-6 策略（可选）：Embedding 余弦相似度切分，正确识别话题边界。
-
-切换方式：设置环境变量 SEGMENTER_STRATEGY=semantic（默认 time）。
-语义切分任意步骤失败时自动回退到 P0 行为，不影响主链。
+策略（SEGMENTER_STRATEGY 环境变量控制）：
+  time     P0 默认：时间窗口 + 消息数量双阈值，不依赖外部服务。
+  semantic P1-6：Embedding 余弦相似度切分，失败回退 time。
+  llm      P1-6+：LLM 理解话题边界切分，失败回退 semantic，再回退 time。
 """
+import json
 import logging
 import math
 import os
@@ -47,11 +47,21 @@ def segment(batch: FetchBatch) -> List[EvidenceBlock]:
 async def segment_async(batch: FetchBatch) -> List[EvidenceBlock]:
     """
     P1-6 异步入口：按 SEGMENTER_STRATEGY 分发。
-      time（默认）→ 与 segment() 行为完全一致
-      semantic    → Embedding 语义相似度切分，失败自动回退到 time
+      time     → 与 segment() 行为完全一致
+      semantic → Embedding 余弦相似度切分，失败回退 time
+      llm      → LLM 话题理解切分，失败回退 semantic，再回退 time
     """
     strategy = os.getenv("SEGMENTER_STRATEGY", "time").strip().lower()
-    if strategy == "semantic":
+    if strategy == "llm":
+        try:
+            return await _segment_llm(batch)
+        except Exception:
+            logger.exception("LLM 切分异常，回退到语义切分 | chat=%s", batch.chat_id)
+            try:
+                return await _segment_semantic(batch)
+            except Exception:
+                logger.exception("语义切分异常，回退到 P0 时间切分 | chat=%s", batch.chat_id)
+    elif strategy == "semantic":
         try:
             return await _segment_semantic(batch)
         except Exception:
@@ -160,6 +170,135 @@ async def _segment_semantic(batch: FetchBatch) -> List[EvidenceBlock]:
         len(_segment_time(batch)),
     )
     return blocks
+
+
+# ── LLM 切分（异步）─────────────────────────────────────────────────────────
+
+_LLM_SEGMENT_PROMPT = """\
+你是一个群聊话题切分助手。以下是一批按时间排列的群聊消息，请识别话题边界并分组。
+
+【消息列表】
+{messages}
+
+【切分规则】
+- 同一议题的讨论（包括提问、回应、确认）放在同一组
+- 明显切换到新讨论（人员/时间/技术方向变化）时要新建一组
+- 同一议题下的细节讨论也需要新建一组（从实现细节a切换到实现细节b）
+- 每组最少 {min_block} 条，最多 {max_block} 条
+- 时间间隔超过 {gap_seconds} 秒的消息强制分组
+
+【输出规则】只返回 JSON，不要其他内容：
+{{"groups": [[0,1,2,3], [4,5,6], ...]}}
+每个数组是一组消息的下标（从 0 开始）。必须覆盖全部消息，不得遗漏。
+"""
+
+
+async def _segment_llm(batch: FetchBatch) -> List[EvidenceBlock]:
+    """
+    LLM 话题理解切分：把消息列表交给 LLM，由其判断话题边界并分组。
+    优点：理解上下文和语义转折，不受短确认句干扰。
+    失败时由调用方回退到 _segment_semantic。
+    """
+    if not batch.messages:
+        return []
+
+    messages = sorted(batch.messages, key=lambda m: m.timestamp)
+
+    lines = [
+        f"[{i}] {m.sender_name or m.sender_id} {m.timestamp.strftime('%H:%M')}：{m.text}"
+        for i, m in enumerate(messages)
+    ]
+    prompt = _LLM_SEGMENT_PROMPT.format(
+        messages="\n".join(lines),
+        min_block=MIN_BLOCK_MESSAGES,
+        max_block=MAX_BLOCK_MESSAGES,
+        gap_seconds=BLOCK_GAP_SECONDS,
+    )
+
+    raw = await _call_llm_segment(prompt)
+    if not raw:
+        logger.warning("LLM 切分无有效返回，回退语义切分 | chat=%s", batch.chat_id)
+        return await _segment_semantic(batch)
+
+    groups = raw.get("groups")
+    if not isinstance(groups, list) or not groups:
+        logger.warning("LLM 切分 groups 字段无效，回退语义切分 | chat=%s raw=%s", batch.chat_id, raw)
+        return await _segment_semantic(batch)
+
+    # 验证索引完备性：所有消息必须被覆盖且不重复
+    all_indices = [idx for g in groups for idx in (g if isinstance(g, list) else [])]
+    n = len(messages)
+    if sorted(all_indices) != list(range(n)):
+        logger.warning(
+            "LLM 切分索引不完备（期望 0-%d，实际 %s），回退语义切分 | chat=%s",
+            n - 1, sorted(set(all_indices)), batch.chat_id,
+        )
+        return await _segment_semantic(batch)
+
+    blocks: List[EvidenceBlock] = []
+    for group in groups:
+        if not isinstance(group, list) or not group:
+            continue
+        group_msgs = [messages[i] for i in group if 0 <= i < n]
+        if group_msgs:
+            blocks.append(_make_block(batch.chat_id, group_msgs))
+
+    logger.info(
+        "LLM 切分完成 | chat=%s 消息数=%d 块数=%d",
+        batch.chat_id, n, len(blocks),
+    )
+    return blocks if blocks else await _segment_semantic(batch)
+
+
+async def _call_llm_segment(prompt: str) -> Optional[dict]:
+    """调用 LLM 获取切分结果，优先级：DeepSeek → OpenAI → Ollama。"""
+    try:
+        if os.getenv("DEEPSEEK_API_KEY"):
+            return await _call_openai_compat(
+                prompt,
+                api_key=os.getenv("DEEPSEEK_API_KEY", ""),
+                base_url=os.getenv("DEEPSEEK_BASE_URL", "https://api.deepseek.com/v1"),
+                model=os.getenv("DEEPSEEK_MODEL", "deepseek-chat"),
+            )
+        if os.getenv("OPENAI_API_KEY") or os.getenv("MODEL_PROVIDER", "").lower() == "openai":
+            return await _call_openai_compat(
+                prompt,
+                api_key=os.getenv("OPENAI_API_KEY", ""),
+                base_url=os.getenv("OPENAI_BASE_URL", "https://api.openai.com/v1"),
+                model=os.getenv("OPENAI_MODEL", "gpt-4o-mini"),
+            )
+        return await _call_ollama_segment(prompt)
+    except Exception as e:
+        logger.error("LLM 切分调用失败: %s", e)
+        return None
+
+
+async def _call_openai_compat(prompt: str, api_key: str, base_url: str, model: str) -> Optional[dict]:
+    async with httpx.AsyncClient(timeout=60, trust_env=False) as client:
+        resp = await client.post(
+            f"{base_url.rstrip('/')}/chat/completions",
+            headers={"Authorization": f"Bearer {api_key}"},
+            json={
+                "model": model,
+                "messages": [{"role": "user", "content": prompt}],
+                "response_format": {"type": "json_object"},
+            },
+        )
+        resp.raise_for_status()
+        content = resp.json()["choices"][0]["message"]["content"]
+        return json.loads(content)
+
+
+async def _call_ollama_segment(prompt: str) -> Optional[dict]:
+    ollama_url = os.getenv("OLLAMA_URL", "http://localhost:11434")
+    model = os.getenv("LOCAL_MODEL", "qwen2.5:7b")
+    async with httpx.AsyncClient(timeout=60, trust_env=False) as client:
+        resp = await client.post(
+            f"{ollama_url}/api/generate",
+            json={"model": model, "prompt": prompt, "stream": False, "format": "json"},
+        )
+        resp.raise_for_status()
+        return json.loads(resp.json().get("response", "{}"))
 
 
 # ── Embedding 工具 ────────────────────────────────────────────────────────────

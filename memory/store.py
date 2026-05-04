@@ -256,5 +256,16 @@ def delete_topics_by_chat(chat_id: str) -> None:
         conn.execute("DELETE FROM topic_summaries WHERE chat_id=?", (chat_id,))
 
 
+def clear_chat_data(chat_id: str) -> None:
+    """清除某群的全部 SQLite 数据（benchmark 重置用）。"""
+    with _conn() as conn:
+        conn.execute("DELETE FROM evidence_blocks  WHERE chat_id=?", (chat_id,))
+        conn.execute("DELETE FROM memory_cards     WHERE chat_id=?", (chat_id,))
+        conn.execute("DELETE FROM memory_relations WHERE chat_id=?", (chat_id,))
+        conn.execute("DELETE FROM topic_summaries  WHERE chat_id=?", (chat_id,))
+        conn.execute("DELETE FROM chat_spaces      WHERE chat_id=?", (chat_id,))
+    logger.info("SQLite 数据已清除 | chat_id=%s", chat_id)
+
+
 # 模块加载时建表
 init_db()

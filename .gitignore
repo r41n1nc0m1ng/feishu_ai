@@ -6,3 +6,8 @@ __pycache__/
 .vscode/
 memory_store.db
 logs/
+
+# Benchmark 运行产物（不跟踪，保留测试用例和 fixture）
+benchmark/result.json
+benchmark/evaluation.json
+P1_PLAN.md

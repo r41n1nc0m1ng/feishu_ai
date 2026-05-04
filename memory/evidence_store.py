@@ -98,5 +98,13 @@ class EvidenceStore:
         return list(_block_cache.keys())
 
 
+def clear_cache(chat_id: str) -> None:
+    """清除指定群的内存缓存（benchmark 重置用）。"""
+    keys = [k for k, v in _block_cache.items() if v.chat_id == chat_id]
+    for k in keys:
+        del _block_cache[k]
+    logger.info("EvidenceBlock 缓存已清除 | chat_id=%s 共 %d 条", chat_id, len(keys))
+
+
 # 模块加载时从 SQLite 恢复缓存
 _restore_cache()

@@ -91,9 +91,10 @@ _CARD_PROMPT = """\
 
 class CardGenerator:
 
-    async def generate(self, block: EvidenceBlock) -> Optional[MemoryCard]:
+    async def generate(self, block: EvidenceBlock, skip_graphiti: bool = False) -> Optional[MemoryCard]:
         """
         从 EvidenceBlock 生成 MemoryCard，写入缓存和 Graphiti。
+        skip_graphiti=True 时跳过 Graphiti 写入，只写 SQLite + 内存缓存。
         返回生成的 MemoryCard，NOOP 时返回 None。
         """
         messages_text = "\n".join(
@@ -148,7 +149,7 @@ class CardGenerator:
         if operation == CardOperation.SUPERSEDE:
             card = await self._handle_supersede(card)
 
-        await self._save(card, block)
+        await self._save(card, block, skip_graphiti=skip_graphiti)
         return card
 
     async def _handle_supersede(self, new_card: MemoryCard) -> MemoryCard:
@@ -185,8 +186,8 @@ class CardGenerator:
         )
         return new_card
 
-    async def _save(self, card: MemoryCard, block: EvidenceBlock) -> None:
-        """写入内存缓存、SQLite 并持久化到 Graphiti。"""
+    async def _save(self, card: MemoryCard, block: EvidenceBlock, skip_graphiti: bool = False) -> None:
+        """写入内存缓存、SQLite，可选写入 Graphiti。"""
         _card_cache[card.memory_id] = card
         key = card.decision_object_key or _normalize_decision_key(card.decision_object)
         _cards_by_object[key] = card
@@ -195,40 +196,10 @@ class CardGenerator:
         except Exception:
             logger.exception("MemoryCard 写入 SQLite 失败 | memory_id=%s", card.memory_id)
 
-        g = GraphitiClient()
-        if not g.g:
-            logger.warning("Graphiti 未初始化，MemoryCard 仅写入内存缓存")
+        if skip_graphiti:
             return
 
-        episode_body = (
-            f"议题：{card.decision_object}\n"
-            f"标题：{card.title}\n"
-            f"决策：{card.decision}\n"
-            f"理由：{card.reason}\n"
-            f"类型：{card.memory_type.value}\n"
-            f"状态：{card.status.value}\n"
-            f"来源块：{', '.join(card.source_block_ids)}"
-        )
-
-        ref_time = block.end_time
-        if ref_time.tzinfo is None:
-            ref_time = ref_time.astimezone(timezone.utc)
-
-        try:
-            await g.g.add_episode(
-                name=f"card::{card.memory_id}::{card.decision_object}",
-                episode_body=episode_body,
-                source=EpisodeType.text,
-                source_description=f"MemoryCard | 群聊 {card.chat_id}",
-                reference_time=ref_time,
-                group_id=card.chat_id,
-            )
-            logger.info(
-                "MemoryCard 已保存 | memory_id=%s op=%s title=%s",
-                card.memory_id, card.memory_type.value, card.title,
-            )
-        except Exception:
-            logger.exception("MemoryCard 写入 Graphiti 失败 | memory_id=%s", card.memory_id)
+        await _write_card_to_graphiti(card, ref_time=block.end_time)
 
     def _format_existing(self, chat_id: str) -> str:
         cards = [c for c in _card_cache.values() if c.chat_id == chat_id and c.status == CardStatus.ACTIVE]
@@ -236,7 +207,7 @@ class CardGenerator:
             return "（暂无）"
         return "\n".join(
             f"- [{c.decision_object}] {c.title}：{c.decision[:60]}"
-            for c in cards[-5:]  # 最近 5 条，避免 context 过长
+            for c in cards[-5:]
         )
 
     async def _call_llm(self, prompt: str) -> Optional[dict]:
@@ -284,9 +255,56 @@ class CardGenerator:
             return None
 
 
+async def _write_card_to_graphiti(card: MemoryCard, ref_time=None) -> None:
+    """将单张 MemoryCard 写入 Graphiti（供批量并发写入复用）。"""
+    g = GraphitiClient()
+    if not g.g:
+        logger.warning("Graphiti 未初始化，跳过写入 | memory_id=%s", card.memory_id)
+        return
+
+    episode_body = (
+        f"议题：{card.decision_object}\n"
+        f"标题：{card.title}\n"
+        f"决策：{card.decision}\n"
+        f"理由：{card.reason}\n"
+        f"类型：{card.memory_type.value}\n"
+        f"状态：{card.status.value}"
+    )
+
+    if ref_time is None:
+        ref_time = card.created_at
+    if ref_time.tzinfo is None:
+        ref_time = ref_time.astimezone(timezone.utc)
+
+    try:
+        await g.g.add_episode(
+            name=f"card::{card.memory_id}::{card.title}",
+            episode_body=episode_body,
+            source=EpisodeType.text,
+            source_description=f"MemoryCard | 群聊 {card.chat_id}",
+            reference_time=ref_time,
+            group_id=card.chat_id,
+        )
+        logger.info("MemoryCard 已写入 Graphiti | memory_id=%s title=%s",
+                    card.memory_id, card.title)
+    except Exception:
+        logger.exception("MemoryCard 写入 Graphiti 失败 | memory_id=%s", card.memory_id)
+
+
 def get_card(memory_id: str) -> Optional[MemoryCard]:
     """模块级查询接口，供 retriever.get_card_by_id() 调用。"""
     return _card_cache.get(memory_id)
+
+
+def clear_cache(chat_id: str) -> None:
+    """清除指定群的内存缓存（benchmark 重置用）。"""
+    keys = [k for k, v in _card_cache.items() if v.chat_id == chat_id]
+    for k in keys:
+        del _card_cache[k]
+    obj_keys = [k for k, v in _cards_by_object.items() if v.chat_id == chat_id]
+    for k in obj_keys:
+        del _cards_by_object[k]
+    logger.info("MemoryCard 缓存已清除 | chat_id=%s 共 %d 条", chat_id, len(keys))
 
 
 # 模块加载时从 SQLite 恢复缓存

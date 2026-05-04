@@ -1,0 +1,55 @@
+{
+  "chat_id": "oc_demo_ai_resume",
+  "queries": [
+    {
+      "id": "q001",
+      "text": "我们为什么不做完整 ATS？",
+      "note": "期望：memory_card，命中项目范围决策"
+    },
+    {
+      "id": "q002",
+      "text": "AI 简历初筛要不要做匹配参考分？",
+      "note": "期望：memory_card，命中匹配参考分/推荐等级"
+    },
+    {
+      "id": "q003",
+      "text": "当前 AI 简历初筛 MVP 的整体边界是什么？",
+      "note": "期望：topic_summary，宽泛问题应聚合多主题"
+    },
+    {
+      "id": "q004",
+      "text": "复赛 Demo 文件上传怎么处理？",
+      "note": "期望：memory_card，命中复赛mock上传策略"
+    },
+    {
+      "id": "q005",
+      "text": "不要自动淘汰候选人的原话在哪？",
+      "note": "期望：evidence_block，展开原始聊天记录"
+    },
+    {
+      "id": "q006",
+      "text": "简历解析字段怎么定的？",
+      "note": "期望：memory_card，命中五类解析字段决策"
+    },
+    {
+      "id": "q007",
+      "text": "候选人隐私怎么保护？",
+      "note": "期望：memory_card，命中脱敏方案"
+    },
+    {
+      "id": "q008",
+      "text": "评测方案怎么定的？",
+      "note": "期望：memory_card，命中等级一致率+关键理由覆盖率"
+    },
+    {
+      "id": "q009",
+      "text": "项目整体有哪些已经定下来的边界？",
+      "note": "期望：topic_summary，宽泛边界问题"
+    },
+    {
+      "id": "q010",
+      "text": "支持哪些文件格式？",
+      "note": "期望：memory_card，命中P0只保证PDF"
+    }
+  ]
+}
