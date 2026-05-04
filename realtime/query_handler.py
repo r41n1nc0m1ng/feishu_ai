@@ -14,6 +14,8 @@ from realtime.triggers import (
 
 logger = logging.getLogger(__name__)
 
+_LAST_QUERY_CARD_BY_CHAT: dict[str, object] = {}
+
 
 @dataclass
 class QueryTrace:
@@ -120,7 +122,11 @@ class RealtimeQueryHandler:
         action = "query"
 
         if is_source_query(query):
-            results = await self.retriever.retrieve(message.chat_id, query, limit=3)
+            remembered = _LAST_QUERY_CARD_BY_CHAT.get(message.chat_id)
+            if remembered:
+                results = [remembered]
+            else:
+                results = await self.retriever.retrieve(message.chat_id, query, limit=3)
             action = "source"
             reply = render_query_reply(query, results)
             if results:
@@ -141,6 +147,7 @@ class RealtimeQueryHandler:
             action = "version"
             results = await self.retriever.retrieve(message.chat_id, query, limit=1)
             if results:
+                _LAST_QUERY_CARD_BY_CHAT[message.chat_id] = results[0]
                 chain = await self.retriever.get_version_chain(results[0].memory_id)
                 reply = render_version_reply(query, chain)
             else:
@@ -179,9 +186,13 @@ class RealtimeQueryHandler:
             else:
                 action = "summary_fallback"
                 results = await self.retriever.retrieve(message.chat_id, query, limit=3)
+                if results:
+                    _LAST_QUERY_CARD_BY_CHAT[message.chat_id] = results[0]
                 reply = render_query_reply(query, results)
         else:
             results = await self.retriever.retrieve(message.chat_id, query, limit=3)
+            if results:
+                _LAST_QUERY_CARD_BY_CHAT[message.chat_id] = results[0]
             reply = render_query_reply(query, results)
 
         if self.send_text:

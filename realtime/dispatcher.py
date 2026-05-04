@@ -3,10 +3,14 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Awaitable, Callable, Optional
 import logging
+import os
 
 from realtime.action_handler import RealtimeActionHandler
 from realtime.query_handler import QueryTrace, RealtimeQueryHandler
 from realtime.triggers import classify_realtime_action
+from openclaw_bridge.client import OpenClawClient
+from openclaw_bridge.context_builder import ContextBuilder
+from memory.zep_session import ZepSessionManager
 
 logger = logging.getLogger(__name__)
 
@@ -49,6 +53,17 @@ async def dispatch_message(
         handler = action_handler or RealtimeActionHandler()
         await handler.handle_task_message(message)
         return DispatchTrace(action="task", handled=True, delegated_to_legacy=False, note="task hint")
+
+    if action == "noop" and os.getenv("REALTIME_OPENCLAW_FALLBACK", "").strip().lower() in {"1", "true", "yes", "on"}:
+        zep = ZepSessionManager()
+        await zep.ensure_session(message.chat_id)
+        await zep.add_message(message)
+        context = await ContextBuilder().build(message, zep)
+        extracted = await OpenClawClient().extract_memory(context)
+        if extracted:
+            handler = query_handler or RealtimeQueryHandler()
+            await handler.handle_query_message(message)
+            return DispatchTrace(action="query", handled=True, delegated_to_legacy=False, note="openclaw fallback")
 
     if legacy_ingest:
         await legacy_ingest(message)

@@ -15,10 +15,12 @@ import httpx
 from graphiti_core.nodes import EpisodeType
 
 from memory.graphiti_client import GraphitiClient
+from memory.conflict_detector import ConflictDetector
 from memory.schemas import (
     CardOperation,
     CardStatus,
     EvidenceBlock,
+    ExtractedMemory,
     MemoryCard,
     MemoryRelation,
     MemoryRelationType,
@@ -145,16 +147,35 @@ class CardGenerator:
             source_block_ids=[block.block_id],
         )
 
-        if operation == CardOperation.SUPERSEDE:
-            card = await self._handle_supersede(card)
+        detected_conflict = await self._detect_conflict(card)
+        if operation == CardOperation.SUPERSEDE or detected_conflict:
+            card = await self._handle_supersede(card, detected_conflict)
 
         await self._save(card, block)
         return card
 
-    async def _handle_supersede(self, new_card: MemoryCard) -> MemoryCard:
+    async def _detect_conflict(self, card: MemoryCard) -> Optional[dict]:
+        extracted = ExtractedMemory(
+            title=card.decision_object,
+            decision=card.decision,
+            reason=card.reason,
+            memory_type=card.memory_type,
+            participants=[],
+        )
+        try:
+            return await ConflictDetector().find_conflict(card.chat_id, extracted)
+        except Exception:
+            logger.exception("Conflict detection failed | chat=%s title=%s", card.chat_id, card.title)
+            return None
+
+    async def _handle_supersede(self, new_card: MemoryCard, conflict: Optional[dict] = None) -> MemoryCard:
         """将旧卡片标记为 Deprecated，并建立 supersedes 关系。"""
-        lookup_key = new_card.decision_object_key or _normalize_decision_key(new_card.decision_object)
-        old = _cards_by_object.get(lookup_key)
+        old = None
+        if conflict and conflict.get("memory_id"):
+            old = _card_cache.get(conflict["memory_id"]) or store.load_memory_card(conflict["memory_id"])
+        if not old:
+            lookup_key = new_card.decision_object_key or _normalize_decision_key(new_card.decision_object)
+            old = _cards_by_object.get(lookup_key)
         if not old:
             logger.info("SUPERSEDE 未找到旧卡片，按 ADD 处理 | object=%s", new_card.decision_object)
             return new_card

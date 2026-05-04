@@ -2,6 +2,7 @@ import sys, os
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import unittest
 from types import SimpleNamespace
+from unittest.mock import AsyncMock, patch
 
 from realtime.action_handler import RealtimeActionHandler
 from realtime.dispatcher import dispatch_message
@@ -106,3 +107,22 @@ class RealtimeDispatcherTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(trace.action, "noop")
         self.assertTrue(trace.delegated_to_legacy)
         self.assertEqual(len(legacy.calls), 1)
+
+    async def test_noop_can_use_openclaw_fallback(self):
+        sender = FakeSender()
+        query_handler = RealtimeQueryHandler(retriever=FakeRetriever([]), send_text=sender)
+        legacy = FakeLegacyIngest()
+
+        with patch.dict(os.environ, {"REALTIME_OPENCLAW_FALLBACK": "1"}), \
+             patch("realtime.dispatcher.ZepSessionManager.add_message", new=AsyncMock()), \
+             patch("realtime.dispatcher.ZepSessionManager.ensure_session", new=AsyncMock()), \
+             patch("realtime.dispatcher.ContextBuilder.build", new=AsyncMock(return_value={"messages": []})), \
+             patch("realtime.dispatcher.OpenClawClient.extract_memory", new=AsyncMock(return_value=SimpleNamespace(title="测试", decision="测试", reason="", memory_type="decision"))):
+            trace = await dispatch_message(
+                _msg("复杂跟问句子"),
+                query_handler=query_handler,
+                legacy_ingest=legacy,
+            )
+
+        self.assertEqual(trace.action, "query")
+        self.assertFalse(trace.delegated_to_legacy)

@@ -144,7 +144,8 @@ class ConflictDetector:
                 raw = await self._call_openai(prompt)
             else:
                 raw = await self._call_ollama(prompt)
-            return bool(raw and raw.get("conflict"))
+            relation = (raw or {}).get("relation", "")
+            return relation == "same_and_conflict"
         except Exception as e:
             logger.error("ConflictDetector LLM call failed: %s", e)
             raise  # 让上层触发 Fallback
