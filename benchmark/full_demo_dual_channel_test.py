@@ -3,6 +3,7 @@ from __future__ import annotations
 import argparse
 import asyncio
 import json
+import os
 import sys
 from pathlib import Path
 from typing import Any
@@ -93,7 +94,10 @@ class DualChannelReplayRunner:
             else:
                 print(f"  realtime error: {result.message_id} -> {result.error}")
 
-        write_result = await self.adapter.send_write_batch(batch, case=case)
+        if os.getenv("FULL_WRITE", "").strip().lower() in {"1", "true", "yes", "on"}:
+            write_result = await self.adapter.send_full_write_batch(batch, case=case)
+        else:
+            write_result = await self.adapter.send_write_batch(batch, case=case)
         if write_result.ok:
             print(
                 "  write batch sent: "

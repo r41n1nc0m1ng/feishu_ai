@@ -7,6 +7,7 @@ from datetime import datetime, timezone
 from typing import Any, Awaitable, Callable
 
 from memory.schemas import EvidenceMessage, FeishuMessage, FetchBatch
+from memory.batch_processor import BatchProcessor
 from preprocessor.event_segmenter import segment
 from realtime.action_handler import RealtimeActionHandler
 from realtime.dispatcher import dispatch_message
@@ -149,6 +150,36 @@ class DualChannelReplayAdapter:
 
     def _default_write_entry(self, fetch_batch: FetchBatch):
         return segment(fetch_batch)
+
+    async def send_full_write_batch(
+        self,
+        batch: dict[str, Any],
+        *,
+        case: dict[str, Any],
+    ) -> ReplayResult:
+        batch_id = str(batch.get("batch_id", ""))
+        try:
+            fetch_batch = self.to_fetch_batch(batch.get("messages") or [], self.batch_chat_id(case, batch))
+            processor = BatchProcessor()
+            chat_id = fetch_batch.chat_id
+            if chat_id:
+                await processor.register_chat_by_id(chat_id, str(case.get("chat_name") or ""))
+                await processor._BatchProcessor__process_chat_inner(chat_id)
+            return ReplayResult(
+                channel="write",
+                ok=True,
+                batch_id=batch_id,
+                input_count=len(fetch_batch.messages),
+                result_count=1,
+                payload={"chat_id": chat_id},
+            )
+        except Exception as exc:
+            return ReplayResult(
+                channel="write",
+                ok=False,
+                batch_id=batch_id,
+                error=str(exc),
+            )
 
     def batch_chat_id(self, case: dict[str, Any], batch: dict[str, Any]) -> str:
         return str(batch.get("chat_id") or case.get("chat_id") or "")

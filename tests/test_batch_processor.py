@@ -172,6 +172,45 @@ class BatchProcessorPipelineTests(unittest.IsolatedAsyncioTestCase):
             fetched[-1].timestamp,
         )
 
+    async def test_process_chat_includes_lookback_context(self):
+        from memory.schemas import ChatMemorySpace, EvidenceMessage
+        bp_module._active_chats["oc_lookback"] = ChatMemorySpace(
+            chat_id="oc_lookback",
+            last_fetch_at=BASE,
+        )
+
+        old_msg = EvidenceMessage(
+            message_id="old_1",
+            sender_id="u1",
+            sender_name="A",
+            timestamp=BASE,
+            text="前文上下文",
+        )
+        new_msg = EvidenceMessage(
+            message_id="new_1",
+            sender_id="u1",
+            sender_name="A",
+            timestamp=BASE.replace(second=BASE.second + 1),
+            text="最新消息",
+        )
+        mock_block = MagicMock(spec=EvidenceBlock)
+        mock_block.chat_id = "oc_lookback"
+        mock_block.end_time = BASE
+
+        with patch("memory.batch_processor.FeishuAPIClient") as MockClient, \
+             patch("memory.batch_processor.segment_async", AsyncMock(return_value=[mock_block])) as mock_seg, \
+             patch("memory.batch_processor.EvidenceStore") as MockStore, \
+             patch("memory.batch_processor.CardGenerator") as MockGen:
+
+            MockClient.return_value.fetch_messages = AsyncMock(return_value=([old_msg, new_msg], new_msg.timestamp))
+            MockStore.return_value.save = AsyncMock()
+            MockGen.return_value.generate = AsyncMock(return_value=None)
+
+            await BatchProcessor()._process_chat("oc_lookback")
+
+        sent_batch = mock_seg.await_args.args[0]
+        self.assertEqual(len(sent_batch.messages), 2)
+
     async def test_process_chat_unregisters_invalid_chat(self):
         from memory.schemas import ChatMemorySpace
         bp_module._active_chats["oc_invalid"] = ChatMemorySpace(chat_id="oc_invalid")

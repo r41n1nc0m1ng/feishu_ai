@@ -50,6 +50,7 @@ logger = logging.getLogger(__name__)
 
 POLL_INTERVAL = int(os.getenv("BATCH_POLL_INTERVAL", "60"))  # 轮询间隔（秒），默认 60 秒
 MIN_MESSAGES = 1        # 增量消息数低于此值则跳过本轮处理
+LOOKBACK_MESSAGES = int(os.getenv("FETCH_LOOKBACK_MESSAGES", "5"))
 
 # 活跃群聊注册表：chat_id → ChatMemorySpace
 _active_chats: dict[str, ChatMemorySpace] = {}
@@ -166,7 +167,19 @@ class BatchProcessor:
             logger.warning("Invalid chat unregistered | chat=%s", chat_id)
             return
         if space.last_fetch_at:
-            messages = [m for m in messages if m.timestamp > space.last_fetch_at]
+            new_messages = [m for m in messages if m.timestamp > space.last_fetch_at]
+            context_messages = [m for m in messages if m.timestamp <= space.last_fetch_at]
+            if new_messages:
+                messages = context_messages[-LOOKBACK_MESSAGES:] + new_messages
+                logger.info(
+                    "Lookback context applied | chat=%s context=%d new=%d total=%d",
+                    chat_id,
+                    min(len(context_messages), LOOKBACK_MESSAGES),
+                    len(new_messages),
+                    len(messages),
+                )
+            else:
+                messages = []
 
         # 过滤 bot 自身回复和 @bot 消息（不应进入记忆提取管道）
         skipped = [m for m in messages if _should_skip_message(m.text, m.sender_id)]
@@ -193,6 +206,11 @@ class BatchProcessor:
 
         # 3. 事件切分 → EvidenceBlock 列表
         blocks = await segment_async(batch)
+        if space.last_fetch_at:
+            blocks = [
+                block for block in blocks
+                if any(msg.timestamp > space.last_fetch_at for msg in getattr(block, "messages", []))
+            ]
         logger.info("事件切分完成 | chat_id=%s 消息数=%d 块数=%d",
                     chat_id, len(messages), len(blocks))
 
