@@ -295,7 +295,8 @@ class SpecialCaseReplayFlowTests(unittest.IsolatedAsyncioTestCase):
         judge.assert_not_awaited()
 
     async def test_llm_judge_parses_single_digit_scores(self):
-        with patch.object(replay, "_call_openai_judge", new=AsyncMock(return_value="2")):
+        with patch.object(replay, "_call_openai_judge", new=AsyncMock(return_value="2")), \
+             patch.object(replay, "_call_ollama_judge", new=AsyncMock(return_value="2")):
             result = await replay.judge_answer(
                 query="Q",
                 expected_answer="A",
@@ -305,7 +306,8 @@ class SpecialCaseReplayFlowTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(result, {"score": 2})
 
     async def test_llm_judge_records_parse_errors(self):
-        with patch.object(replay, "_call_openai_judge", new=AsyncMock(return_value="not a score")):
+        with patch.object(replay, "_call_openai_judge", new=AsyncMock(return_value="not a score")), \
+             patch.object(replay, "_call_ollama_judge", new=AsyncMock(return_value="not a score")):
             result = await replay.judge_answer(
                 query="Q",
                 expected_answer="A",
