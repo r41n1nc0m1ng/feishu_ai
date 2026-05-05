@@ -2,9 +2,11 @@ from __future__ import annotations
 
 import argparse
 import asyncio
+import math
 import json
 import os
 import sys
+import time
 from dataclasses import dataclass, field
 from types import SimpleNamespace
 from pathlib import Path
@@ -39,6 +41,8 @@ class BatchOutcome:
     expected_brief: str = ""
     realtime_actions: list[str] = field(default_factory=list)
     write_result_count: int = 0
+    realtime_latency_ms: list[float] = field(default_factory=list)
+    write_latency_ms: float = 0.0
     failures: list[str] = field(default_factory=list)
     checks: list[dict[str, Any]] = field(default_factory=list)
     metrics: dict[str, Any] = field(default_factory=dict)
@@ -62,15 +66,19 @@ class OfflineReplayRunner:
         include_tags: set[str] | None = None,
         include_chats: set[str] | None = None,
     ) -> dict[str, Any]:
-        case = load_case(fixture_path)
-        case = self._filter_case(case, include_tags=include_tags, include_chats=include_chats)
+        case_started = time.perf_counter()
+        original_case = load_case(fixture_path)
+        case = self._filter_case(original_case, include_tags=include_tags, include_chats=include_chats)
         outcomes: list[BatchOutcome] = []
 
         self._reset_local_state(case)
         for batch in case["batches"]:
             outcomes.append(await self.run_batch(case, batch))
 
-        case_eval = self.evaluator.evaluate_case(case)
+        run_case_eval = not bool(include_tags or include_chats)
+        case_eval = self.evaluator.evaluate_case(case) if run_case_eval else self.evaluator.skipped_case_eval(
+            "filtered run"
+        )
         case_failures = [check.detail or check.name for check in case_eval.checks if not check.passed]
         overall_success = all(not o.failures for o in outcomes) and case_eval.passed
         summary = {
@@ -80,6 +88,7 @@ class OfflineReplayRunner:
                 "tags": sorted(include_tags or []),
                 "chats": sorted(include_chats or []),
             },
+            "case_eval_mode": "full" if run_case_eval else "skipped_for_filtered_run",
             "total_batches": len(outcomes),
             "passed_batches": sum(1 for outcome in outcomes if not outcome.failures),
             "failed_batches": sum(1 for outcome in outcomes if outcome.failures),
@@ -90,6 +99,14 @@ class OfflineReplayRunner:
             "case_checks": [check.__dict__ for check in case_eval.checks],
             "case_failures": case_failures,
         }
+        summary["performance"] = self._build_performance_metrics(outcomes, case_started)
+        if run_case_eval:
+            summary["interference_metrics"] = self._build_interference_metrics(case, outcomes)
+            summary["conflict_metrics"] = self._build_conflict_metrics(case, outcomes)
+            summary["write_quality_metrics"] = self._build_write_quality_metrics(outcomes)
+            summary["retrieval_quality_metrics"] = self._build_retrieval_quality_metrics(case, case_eval)
+        if case_eval.metrics.get("recall_metrics") is not None:
+            summary["recall_metrics"] = case_eval.metrics.get("recall_metrics")
         summary["dimensions"] = build_dimension_summary(summary)
         report_path = write_json_report("benchmark_v2_latest.json", summary)
         print(render_console_summary(summary))
@@ -105,17 +122,21 @@ class OfflineReplayRunner:
         outcome.expected_brief = str(batch.get("expected_brief", "") or "")
         realtime_results: list[ReplayResult] = []
         for raw_msg in batch.get("messages") or []:
+            started = time.perf_counter()
             result = await self.adapter.send_realtime_message(raw_msg, case=case, batch=batch)
+            outcome.realtime_latency_ms.append(round((time.perf_counter() - started) * 1000, 3))
             realtime_results.append(result)
             if result.ok and not result.skipped:
                 outcome.realtime_actions.append(result.action)
             if not result.ok:
                 outcome.failures.append(f"realtime:{result.message_id}:{result.error}")
 
+        write_started = time.perf_counter()
         if os.getenv("FULL_WRITE", "").strip().lower() in {"1", "true", "yes", "on"}:
             write_result = await self.adapter.send_full_write_batch(batch, case=case)
         else:
             write_result = await self.adapter.send_write_batch(batch, case=case)
+        outcome.write_latency_ms = round((time.perf_counter() - write_started) * 1000, 3)
 
         outcome.write_result_count = write_result.result_count
         if not write_result.ok:
@@ -141,6 +162,11 @@ class OfflineReplayRunner:
         )
         outcome.checks = [check.__dict__ for check in evaluation.checks]
         outcome.metrics = evaluation.metrics
+        outcome.metrics["avg_realtime_latency_ms"] = (
+            round(sum(outcome.realtime_latency_ms) / len(outcome.realtime_latency_ms), 3)
+            if outcome.realtime_latency_ms else None
+        )
+        outcome.metrics["write_latency_ms"] = outcome.write_latency_ms
         for check in evaluation.checks:
             if not check.passed:
                 outcome.failures.append(f"{check.name}:{check.detail}")
@@ -192,6 +218,233 @@ class OfflineReplayRunner:
         filtered = dict(case)
         filtered["batches"] = batches
         return filtered
+
+    def _build_performance_metrics(self, outcomes: list[BatchOutcome], case_started: float) -> dict[str, Any]:
+        realtime_latencies = [ms for outcome in outcomes for ms in outcome.realtime_latency_ms]
+        write_latencies = [outcome.write_latency_ms for outcome in outcomes]
+        total_realtime_messages = sum(len(outcome.realtime_latency_ms) for outcome in outcomes)
+        total_write_input_messages = sum(outcome.write_result_count for outcome in outcomes)
+        total_case_runtime_ms = round((time.perf_counter() - case_started) * 1000, 3)
+
+        def pct(values: list[float], ratio: float) -> float | None:
+            if not values:
+                return None
+            ordered = sorted(values)
+            idx = min(len(ordered) - 1, max(0, math.ceil(len(ordered) * ratio) - 1))
+            return round(ordered[idx], 3)
+
+        realtime_total_seconds = sum(realtime_latencies) / 1000 if realtime_latencies else 0.0
+        write_total_seconds = sum(write_latencies) / 1000 if write_latencies else 0.0
+        return {
+            "case_total_runtime_ms": total_case_runtime_ms,
+            "total_realtime_messages": total_realtime_messages,
+            "total_write_batches": len(outcomes),
+            "total_write_result_units": total_write_input_messages,
+            "avg_realtime_latency_ms": round(sum(realtime_latencies) / len(realtime_latencies), 3) if realtime_latencies else None,
+            "p95_realtime_latency_ms": pct(realtime_latencies, 0.95),
+            "avg_write_latency_ms": round(sum(write_latencies) / len(write_latencies), 3) if write_latencies else None,
+            "p95_write_latency_ms": pct(write_latencies, 0.95),
+            "realtime_throughput_msgs_per_sec": round(total_realtime_messages / realtime_total_seconds, 3) if realtime_total_seconds else None,
+            "write_throughput_units_per_sec": round(total_write_input_messages / write_total_seconds, 3) if write_total_seconds else None,
+        }
+
+    def _build_interference_metrics(self, case: dict[str, Any], outcomes: list[BatchOutcome]) -> dict[str, Any]:
+        interference_tags = {"noise", "anti_noise", "anti_interference", "query", "schedule", "task", "multi_group", "topic_boundary", "parallel", "parallel_discussion", "classification", "cross_group_drift"}
+        total_batches = 0
+        passed_batches = 0
+        action_match_batches = 0
+        write_match_batches = 0
+        ignore_rule_batches = 0
+        ignore_rule_passed = 0
+        tag_counts: dict[str, int] = {}
+
+        for batch, outcome in zip(case.get("batches") or [], outcomes):
+            tags = {str(tag) for tag in (batch.get("tags") or [])}
+            relevant = tags & interference_tags
+            if not relevant:
+                continue
+            total_batches += 1
+            passed_batches += int(not outcome.failures)
+            for tag in relevant:
+                tag_counts[tag] = tag_counts.get(tag, 0) + 1
+
+            expected = batch.get("expected") or {}
+            expected_actions = expected.get("realtime_actions")
+            if expected_actions is not None:
+                action_match_batches += int(outcome.realtime_actions == expected_actions)
+            expected_write = expected.get("write_result_count")
+            if expected_write is not None:
+                write_match_batches += int(outcome.write_result_count == expected_write)
+
+            should_ignore = (batch.get("expected_write_result") or {}).get("should_ignore_message_ids") or []
+            if should_ignore:
+                ignore_rule_batches += 1
+                ignore_rule_passed += int(any(check.get("name") == "should_ignore_message_ids" and check.get("passed") for check in outcome.checks))
+
+        return {
+            "batches": total_batches,
+            "passed_batches": passed_batches,
+            "batch_pass_rate": round(passed_batches / total_batches, 4) if total_batches else None,
+            "realtime_action_match_rate": round(action_match_batches / total_batches, 4) if total_batches else None,
+            "write_count_match_rate": round(write_match_batches / total_batches, 4) if total_batches else None,
+            "ignore_rule_match_rate": round(ignore_rule_passed / ignore_rule_batches, 4) if ignore_rule_batches else None,
+            "tag_counts": dict(sorted(tag_counts.items())),
+        }
+
+    def _build_conflict_metrics(self, case: dict[str, Any], outcomes: list[BatchOutcome]) -> dict[str, Any]:
+        conflict_tags = {"refine", "refine_candidate", "supersede", "supersede_candidate", "conflict"}
+        total_batches = 0
+        passed_batches = 0
+        memory_card_checks = 0
+        memory_card_passed = 0
+        relation_checks = 0
+        relation_passed = 0
+        forbidden_relation_checks = 0
+        forbidden_relation_passed = 0
+        relation_type_counts: dict[str, int] = {}
+        relation_type_passed: dict[str, int] = {}
+
+        for batch, outcome in zip(case.get("batches") or [], outcomes):
+            tags = {str(tag) for tag in (batch.get("tags") or [])}
+            if not (tags & conflict_tags):
+                continue
+            total_batches += 1
+            passed_batches += int(not outcome.failures)
+
+            expected_write = batch.get("expected_write_result") or {}
+            relation_specs = expected_write.get("expected_relations") or []
+            forbidden_specs = expected_write.get("forbidden_relations") or []
+            for idx, spec in enumerate(relation_specs):
+                relation_checks += 1
+                relation_type = str(spec.get("relation_type") or "")
+                relation_type_counts[relation_type] = relation_type_counts.get(relation_type, 0) + 1
+                matched = any(
+                    check.get("name") == f"expected_relations[{idx}]" and check.get("passed")
+                    for check in outcome.checks
+                )
+                relation_passed += int(matched)
+                relation_type_passed[relation_type] = relation_type_passed.get(relation_type, 0) + int(matched)
+
+            for idx, spec in enumerate(forbidden_specs):
+                forbidden_relation_checks += 1
+                relation_type = str(spec.get("forbidden_relation_type") or "")
+                matched = any(
+                    check.get("name") == f"forbidden_relations[{idx}]" and check.get("passed")
+                    for check in outcome.checks
+                )
+                forbidden_relation_passed += int(matched)
+                relation_type_counts[f"forbidden:{relation_type}"] = relation_type_counts.get(f"forbidden:{relation_type}", 0) + 1
+                relation_type_passed[f"forbidden:{relation_type}"] = relation_type_passed.get(f"forbidden:{relation_type}", 0) + int(matched)
+
+            memory_specs = expected_write.get("expected_memory_cards") or []
+            for idx, _spec in enumerate(memory_specs):
+                memory_card_checks += 1
+                matched = any(
+                    check.get("name") == f"expected_memory_cards[{idx}]" and check.get("passed")
+                    for check in outcome.checks
+                )
+                memory_card_passed += int(matched)
+
+        return {
+            "batches": total_batches,
+            "passed_batches": passed_batches,
+            "batch_pass_rate": round(passed_batches / total_batches, 4) if total_batches else None,
+            "memory_card_match_rate": round(memory_card_passed / memory_card_checks, 4) if memory_card_checks else None,
+            "relation_match_rate": round(relation_passed / relation_checks, 4) if relation_checks else None,
+            "forbidden_relation_match_rate": round(forbidden_relation_passed / forbidden_relation_checks, 4) if forbidden_relation_checks else None,
+            "relation_type_counts": dict(sorted(relation_type_counts.items())),
+            "relation_type_passed": dict(sorted(relation_type_passed.items())),
+        }
+
+    def _build_write_quality_metrics(self, outcomes: list[BatchOutcome]) -> dict[str, Any]:
+        memory_card_checks = 0
+        memory_card_passed = 0
+        relation_checks = 0
+        relation_passed = 0
+        topic_checks = 0
+        topic_passed = 0
+        ignore_checks = 0
+        ignore_passed = 0
+        optional_progress_checks = 0
+        optional_progress_matched = 0
+
+        for outcome in outcomes:
+            for check in outcome.checks:
+                name = str(check.get("name") or "")
+                passed = bool(check.get("passed"))
+                detail = str(check.get("detail") or "")
+                if name.startswith("expected_memory_cards["):
+                    memory_card_checks += 1
+                    memory_card_passed += int(passed)
+                elif name.startswith("expected_relations["):
+                    relation_checks += 1
+                    relation_passed += int(passed)
+                elif name.startswith("expected_topic_summaries["):
+                    topic_checks += 1
+                    topic_passed += int(passed)
+                elif name == "should_ignore_message_ids":
+                    ignore_checks += 1
+                    ignore_passed += int(passed)
+                elif name.startswith("optional_progress_cards["):
+                    optional_progress_checks += 1
+                    optional_progress_matched += int(detail == "matched")
+
+        return {
+            "memory_card_checks": memory_card_checks,
+            "memory_card_passed": memory_card_passed,
+            "memory_card_match_rate": round(memory_card_passed / memory_card_checks, 4) if memory_card_checks else None,
+            "relation_checks": relation_checks,
+            "relation_passed": relation_passed,
+            "relation_match_rate": round(relation_passed / relation_checks, 4) if relation_checks else None,
+            "topic_checks": topic_checks,
+            "topic_passed": topic_passed,
+            "topic_match_rate": round(topic_passed / topic_checks, 4) if topic_checks else None,
+            "ignore_checks": ignore_checks,
+            "ignore_passed": ignore_passed,
+            "ignore_match_rate": round(ignore_passed / ignore_checks, 4) if ignore_checks else None,
+            "optional_progress_checks": optional_progress_checks,
+            "optional_progress_matched": optional_progress_matched,
+        }
+
+    def _build_retrieval_quality_metrics(self, case: dict[str, Any], case_eval: Any) -> dict[str, Any]:
+        final_specs = (case.get("expected") or {}).get("final_memory_checks") or []
+        evidence_specs = (case.get("expected") or {}).get("evidence_checks") or []
+        check_map = {check.name: check for check in case_eval.checks}
+        granularity_counts: dict[str, int] = {}
+        granularity_passed: dict[str, int] = {}
+
+        final_hits = 0
+        for idx, spec in enumerate(final_specs):
+            name = f"final_memory_checks[{idx}]"
+            target = str(spec.get("expected_granularity") or "memory_card")
+            passed = bool(getattr(check_map.get(name), "passed", False))
+            final_hits += int(passed)
+            granularity_counts[target] = granularity_counts.get(target, 0) + 1
+            granularity_passed[target] = granularity_passed.get(target, 0) + int(passed)
+
+        evidence_hits = 0
+        for idx, _spec in enumerate(evidence_specs):
+            name = f"case_evidence_checks[{idx}]"
+            evidence_hits += int(bool(getattr(check_map.get(name), "passed", False)))
+
+        granularity_hit_rate = {
+            target: round(granularity_passed.get(target, 0) / count, 4)
+            for target, count in sorted(granularity_counts.items())
+            if count
+        }
+        recall = case_eval.metrics.get("recall_metrics") or {}
+        return {
+            "final_memory_checks": len(final_specs),
+            "final_memory_passed": final_hits,
+            "final_memory_hit_rate": round(final_hits / len(final_specs), 4) if final_specs else None,
+            "evidence_checks": len(evidence_specs),
+            "evidence_passed": evidence_hits,
+            "evidence_hit_rate": round(evidence_hits / len(evidence_specs), 4) if evidence_specs else None,
+            "granularity_counts": dict(sorted(granularity_counts.items())),
+            "granularity_hit_rate": granularity_hit_rate,
+            "recall_top1_hit_rate": recall.get("top1_hit_rate"),
+            "recall_top3_hit_rate": recall.get("top3_hit_rate"),
+        }
 
 
 async def main() -> None:

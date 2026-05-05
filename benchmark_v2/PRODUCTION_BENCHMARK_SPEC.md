@@ -52,7 +52,57 @@
 职责：
 - 输出 batch 级失败点
 - 输出全局通过率与检查数
+- 输出性能 / 吞吐指标
+- 输出召回排序指标
 - 为后续趋势统计保留稳定 JSON 结果
+
+当前已补齐的前两类核心指标：
+
+1. 性能 / 吞吐
+- `case_total_runtime_ms`
+- `avg_realtime_latency_ms` / `p95_realtime_latency_ms`
+- `avg_write_latency_ms` / `p95_write_latency_ms`
+- `realtime_throughput_msgs_per_sec`
+- `write_throughput_units_per_sec`
+
+2. 召回排序
+- `queries`
+- `top1_hits` / `top3_hits`
+- `top1_hit_rate` / `top3_hit_rate`
+- `avg_retrieval_latency_ms`
+- `details[].matched_rank`
+
+3. 干扰对抗
+- `interference_metrics.batch_pass_rate`
+- `interference_metrics.realtime_action_match_rate`
+- `interference_metrics.write_count_match_rate`
+- `interference_metrics.ignore_rule_match_rate`
+
+4. 矛盾更新
+- `conflict_metrics.batch_pass_rate`
+- `conflict_metrics.memory_card_match_rate`
+- `conflict_metrics.relation_match_rate`
+- `conflict_metrics.forbidden_relation_match_rate`
+- `conflict_metrics.relation_type_counts`
+
+5. 写入质量
+- `write_quality_metrics.memory_card_match_rate`
+- `write_quality_metrics.relation_match_rate`
+- `write_quality_metrics.topic_match_rate`
+
+6. 检索 / 证据质量
+- `retrieval_quality_metrics.final_memory_hit_rate`
+- `retrieval_quality_metrics.evidence_hit_rate`
+- `retrieval_quality_metrics.granularity_hit_rate`
+
+说明：
+- 性能 / 吞吐指标用于衡量 benchmark 自身与当前主链路的执行代价，适合看 regressions。
+- 召回排序指标当前绑定 `final_memory_checks`，衡量终态记忆是否能在候选排序前列命中，属于 deep eval 的一部分。
+- 干扰对抗指标用于衡量 query / schedule / task / noise / cross-group / parallel 这些高干扰场景下的动作分类和忽略规则是否稳定。
+- 矛盾更新指标用于衡量 refine / supersede / conflict 相关 batch 的卡片落地和关系落地是否稳定。
+- `forbidden_relation_match_rate` 用于衡量 false positive 防护，即相似但不冲突的信息是否没有被误判成 supersedes。
+- 写入质量指标用于定位 deep eval 失败是在 card、relation 还是 topic 聚合层。
+- 检索 / 证据质量指标用于定位 final query、粒度命中和 evidence 追溯链路的问题。
 
 ### 5. 说明附录层
 

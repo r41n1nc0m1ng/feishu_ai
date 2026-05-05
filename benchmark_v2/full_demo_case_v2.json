@@ -1261,14 +1261,23 @@
           },
           {
             "expected_keywords": [
-              "辅助初筛",
-              "不要写完全替代人工"
+              "辅助初筛"
             ]
           },
           {
             "expected_keywords": [
-              "仅供参考",
-              "人工判断为准"
+              "仅供参考"
+            ]
+          }
+        ],
+        "expected_evidence_checks": [
+          {
+            "expected_source_message_ids": [
+              "v2_0151",
+              "v2_0152"
+            ],
+            "expected_keywords": [
+              "辅助初筛"
             ]
           }
         ]
@@ -1654,6 +1663,34 @@
         "new_expected_keywords": [
           "企业级共享",
           "不只群聊"
+        ]
+      },
+      {
+        "chat_id": "oc_launch_ops",
+        "relation_type": "related_to",
+        "old_expected_keywords": [
+          "公告",
+          "辅助初筛"
+        ],
+        "new_expected_keywords": [
+          "仅供参考",
+          "人工判断为准"
+        ],
+        "forbidden_relation_type": "supersedes"
+      }
+    ],
+    "evidence_checks": [
+      {
+        "chat_id": "oc_launch_ops",
+        "query": "发布运营群里辅助初筛和仅供参考是谁提的？",
+        "expected_granularity": "evidence_block",
+        "expected_source_message_ids": [
+          "v2_0151",
+          "v2_0152"
+        ],
+        "expected_keywords": [
+          "辅助初筛",
+          "仅供参考"
         ]
       }
     ]

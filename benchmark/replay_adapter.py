@@ -182,7 +182,7 @@ class DualChannelReplayAdapter:
                 ok=True,
                 batch_id=batch_id,
                 input_count=len(fetch_batch.messages),
-                result_count=len(generated),
+                result_count=len(blocks),
                 ignored_message_ids=[
                     self.message_id(msg)
                     for msg in (batch.get("messages") or [])

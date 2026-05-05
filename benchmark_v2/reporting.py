@@ -22,6 +22,12 @@ def write_json_report(name: str, payload: dict[str, Any]) -> Path:
 
 
 def render_console_summary(summary: dict[str, Any]) -> str:
+    perf = summary.get("performance") or {}
+    recall = summary.get("recall_metrics") or {}
+    interference = summary.get("interference_metrics") or {}
+    conflict = summary.get("conflict_metrics") or {}
+    write_quality = summary.get("write_quality_metrics") or {}
+    retrieval_quality = summary.get("retrieval_quality_metrics") or {}
     lines = [
         "",
         "=== benchmark v2 summary ===",
@@ -31,6 +37,14 @@ def render_console_summary(summary: dict[str, Any]) -> str:
         f"fail: {summary.get('failed_batches', 0)}",
         f"checks: {summary.get('total_checks', 0)}",
         f"failed checks: {summary.get('failed_checks', 0)}",
+        f"case runtime ms: {perf.get('case_total_runtime_ms')}",
+        f"avg realtime latency ms: {perf.get('avg_realtime_latency_ms')}",
+        f"avg write latency ms: {perf.get('avg_write_latency_ms')}",
+        f"recall top1/top3: {recall.get('top1_hit_rate')}/{recall.get('top3_hit_rate')}",
+        f"interference pass/match: {interference.get('batch_pass_rate')}/{interference.get('realtime_action_match_rate')}",
+        f"conflict pass/match/guard: {conflict.get('batch_pass_rate')}/{conflict.get('relation_match_rate')}/{conflict.get('forbidden_relation_match_rate')}",
+        f"write quality card/relation/topic: {write_quality.get('memory_card_match_rate')}/{write_quality.get('relation_match_rate')}/{write_quality.get('topic_match_rate')}",
+        f"retrieval quality final/evidence: {retrieval_quality.get('final_memory_hit_rate')}/{retrieval_quality.get('evidence_hit_rate')}",
         f"result: {'PASS' if summary.get('overall_success') else 'FAIL'}",
     ]
     return "\n".join(lines)

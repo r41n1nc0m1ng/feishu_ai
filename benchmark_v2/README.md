@@ -93,6 +93,24 @@ conda run -n feishu-ai-p0 python -m benchmark_v2.dual_channel_runner benchmark_v
 
 - 运行后会写入 `benchmark_v2/reports/benchmark_v2_latest.json`
 - 报告包含 `by_chat`、`by_tag`、`realtime_action_distribution`
+- 报告已补齐前两类生产级指标：
+  - 性能 / 吞吐指标：`case_total_runtime_ms`、`avg/p95_realtime_latency_ms`、`avg/p95_write_latency_ms`、`realtime_throughput_msgs_per_sec`、`write_throughput_units_per_sec`
+  - 召回排序指标：`queries`、`top1_hits`、`top3_hits`、`top1_hit_rate`、`top3_hit_rate`、`avg_retrieval_latency_ms`
+- 报告补齐后两类专项指标：
+  - 干扰对抗指标：`interference_metrics.batch_pass_rate`、`realtime_action_match_rate`、`write_count_match_rate`、`ignore_rule_match_rate`
+  - 矛盾更新指标：`conflict_metrics.batch_pass_rate`、`memory_card_match_rate`、`relation_match_rate`、`forbidden_relation_match_rate`
+- 报告继续补了质量诊断指标：
+  - 写入质量：`write_quality_metrics.memory_card_match_rate`、`relation_match_rate`、`topic_match_rate`
+  - 检索/证据质量：`retrieval_quality_metrics.final_memory_hit_rate`、`evidence_hit_rate`、`granularity_hit_rate`
+
+当前口径说明：
+
+- 性能 / 吞吐指标默认始终输出，适合看回放开销、写入开销、规则触发退化。
+- 召回排序指标只在 case 级 deep eval 生效时输出；当前基于 `final_memory_checks` 构建，用来衡量终态记忆的 Top1 / Top3 命中，而不是替代真实线上检索评测。
+- 干扰对抗 / 矛盾更新指标基于 v2 场景池中已标注的专项 batch 汇总，适合看分类、忽略规则、关系落地和误冲突回归。
+- 写入质量指标用于判断 deep eval 失败主要卡在卡片、关系还是 topic。
+- 检索/证据质量指标用于判断 final query、粒度命中和 evidence 追溯是否过关。
+- `forbidden_relation_match_rate` 专门用来衡量误冲突保护，即“看起来相关，但不应被判成 supersedes”。
 
 统一入口：
 

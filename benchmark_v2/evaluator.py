@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import os
+import time
 from dataclasses import dataclass, field
 from typing import Any
 
@@ -64,6 +65,13 @@ class BenchmarkEvaluator:
             "on",
         }
 
+    def skipped_case_eval(self, reason: str) -> EvaluatorSummary:
+        return EvaluatorSummary(
+            passed=True,
+            checks=[CheckResult(name="case_deep_eval", passed=True, detail=f"skipped:{reason}")],
+            metrics={"total_checks": 1, "passed_checks": 1, "failed_checks": 0},
+        )
+
     def evaluate_batch(
         self,
         *,
@@ -80,6 +88,7 @@ class BenchmarkEvaluator:
         checks.extend(self._check_memory_cards(chat_id, batch))
         checks.extend(self._check_relations(chat_id, batch))
         checks.extend(self._check_topics(chat_id, batch))
+        checks.extend(self._check_batch_evidence(chat_id, batch))
 
         passed = all(check.passed for check in checks)
         metrics = {
@@ -92,17 +101,15 @@ class BenchmarkEvaluator:
     def evaluate_case(self, case: dict[str, Any]) -> EvaluatorSummary:
         checks: list[CheckResult] = []
         if not self.deep_eval_enabled:
-            checks.append(CheckResult(name="case_deep_eval", passed=True, detail="skipped"))
-            return EvaluatorSummary(
-                passed=True,
-                checks=checks,
-                metrics={"total_checks": 1, "passed_checks": 1, "failed_checks": 0},
-            )
+            return self.skipped_case_eval("deep_eval_disabled")
 
         final_expected = case.get("expected") or {}
         final_memory_checks = final_expected.get("final_memory_checks") or []
         relation_checks = final_expected.get("relation_checks") or []
         evidence_checks = final_expected.get("evidence_checks") or []
+        recall_metrics = self._build_recall_metrics(case, final_memory_checks)
+        interference_metrics = self._build_interference_metrics(case)
+        conflict_metrics = self._build_conflict_metrics(case)
 
         for i, spec in enumerate(final_memory_checks):
             chat_id = str(spec.get("chat_id") or case.get("chat_id") or "")
@@ -145,6 +152,9 @@ class BenchmarkEvaluator:
                 "total_checks": len(checks),
                 "passed_checks": sum(1 for check in checks if check.passed),
                 "failed_checks": sum(1 for check in checks if not check.passed),
+                "recall_metrics": recall_metrics,
+                "interference_metrics": interference_metrics,
+                "conflict_metrics": conflict_metrics,
             },
         )
 
@@ -239,11 +249,14 @@ class BenchmarkEvaluator:
     def _check_relations(self, chat_id: str, batch: dict[str, Any]) -> list[CheckResult]:
         expected_write = batch.get("expected_write_result") or {}
         specs = expected_write.get("expected_relations") or []
+        forbidden_specs = expected_write.get("forbidden_relations") or []
         if not self.deep_eval_enabled:
-            if not specs:
+            if not specs and not forbidden_specs:
                 return []
             return [CheckResult(name="relation_eval", passed=True, detail="skipped")]
-        return self._check_relation_specs({"chat_id": chat_id}, specs, prefix="expected_relations")
+        checks = self._check_relation_specs({"chat_id": chat_id}, specs, prefix="expected_relations")
+        checks.extend(self._check_relation_specs({"chat_id": chat_id}, forbidden_specs, prefix="forbidden_relations"))
+        return checks
 
     def _check_relation_specs(
         self,
@@ -259,12 +272,12 @@ class BenchmarkEvaluator:
 
         for i, spec in enumerate(specs):
             relation_type = spec.get("relation_type")
+            forbidden_relation_type = spec.get("forbidden_relation_type")
             old_keywords = spec.get("old_expected_keywords") or []
             new_keywords = spec.get("new_expected_keywords") or []
             matched = False
+            forbidden_matched = False
             for relation in relations:
-                if relation.relation_type.value != relation_type:
-                    continue
                 source_card = cards.get(relation.source_id) or store.load_memory_card(relation.source_id)
                 target_card = cards.get(relation.target_id) or store.load_memory_card(relation.target_id)
                 if not source_card or not target_card:
@@ -273,13 +286,35 @@ class BenchmarkEvaluator:
                     continue
                 if old_keywords and not _keywords_match(_card_text(target_card), old_keywords):
                     continue
-                matched = True
-                break
+                if relation_type and relation.relation_type.value == relation_type:
+                    matched = True
+                if forbidden_relation_type and relation.relation_type.value == forbidden_relation_type:
+                    forbidden_matched = True
+                if matched and (not forbidden_relation_type or forbidden_matched):
+                    break
+                if forbidden_relation_type and forbidden_matched and not relation_type:
+                    break
+
+            if forbidden_relation_type and relation_type:
+                passed = matched and not forbidden_matched
+                detail = (
+                    f"required={relation_type} forbidden={forbidden_relation_type} "
+                    f"old={old_keywords} new={new_keywords}"
+                )
+            elif forbidden_relation_type:
+                passed = not forbidden_matched
+                detail = (
+                    f"forbidden={forbidden_relation_type} "
+                    f"old={old_keywords} new={new_keywords}"
+                )
+            else:
+                passed = matched
+                detail = f"{relation_type} old={old_keywords} new={new_keywords}"
             checks.append(
                 CheckResult(
                     name=f"{prefix}[{i}]",
-                    passed=matched,
-                    detail=f"{relation_type} old={old_keywords} new={new_keywords}",
+                    passed=passed,
+                    detail=detail,
                 )
             )
         return checks
@@ -305,6 +340,15 @@ class BenchmarkEvaluator:
             )
         return checks
 
+    def _check_batch_evidence(self, chat_id: str, batch: dict[str, Any]) -> list[CheckResult]:
+        expected_write = batch.get("expected_write_result") or {}
+        specs = expected_write.get("expected_evidence_checks") or []
+        if not self.deep_eval_enabled:
+            if not specs:
+                return []
+            return [CheckResult(name="batch_evidence_eval", passed=True, detail="skipped")]
+        return self._check_evidence_specs({"chat_id": chat_id}, specs, prefix="expected_evidence_checks")
+
     def _check_evidence_specs(
         self,
         case: dict[str, Any],
@@ -316,7 +360,11 @@ class BenchmarkEvaluator:
         cards = store.get_cards_for_chat(chat_id)
         checks: list[CheckResult] = []
         for i, spec in enumerate(specs):
-            source_message_ids = set(spec.get("source_message_ids") or [])
+            source_message_ids = set(
+                spec.get("expected_source_message_ids")
+                or spec.get("source_message_ids")
+                or []
+            )
             expected_keywords = spec.get("expected_keywords") or []
             matched = False
             for card in cards:
@@ -340,3 +388,196 @@ class BenchmarkEvaluator:
                 )
             )
         return checks
+
+    def _build_recall_metrics(
+        self,
+        case: dict[str, Any],
+        specs: list[dict[str, Any]],
+    ) -> dict[str, Any]:
+        if not specs:
+            return {
+                "queries": 0,
+                "top1_hits": 0,
+                "top3_hits": 0,
+                "top1_hit_rate": None,
+                "top3_hit_rate": None,
+                "avg_retrieval_latency_ms": None,
+                "details": [],
+            }
+
+        details: list[dict[str, Any]] = []
+        top1_hits = 0
+        top3_hits = 0
+        latencies: list[float] = []
+
+        for spec in specs:
+            chat_id = str(spec.get("chat_id") or case.get("chat_id") or "")
+            query = str(spec.get("query") or "")
+            target = str(spec.get("expected_granularity") or "memory_card")
+            expected_keywords = spec.get("expected_keywords") or []
+            forbidden_keywords = spec.get("forbidden_keywords") or []
+
+            started = time.perf_counter()
+            ranked = self._rank_candidates(chat_id, query, target=target)
+            latency_ms = round((time.perf_counter() - started) * 1000, 3)
+            latencies.append(latency_ms)
+
+            matched_rank = None
+            for idx, item in enumerate(ranked, 1):
+                text = item["text"]
+                if _keywords_match(text, expected_keywords) and _keywords_absent(text, forbidden_keywords):
+                    matched_rank = idx
+                    break
+
+            top1 = matched_rank == 1
+            top3 = matched_rank is not None and matched_rank <= 3
+            top1_hits += int(top1)
+            top3_hits += int(top3)
+            details.append(
+                {
+                    "query": query,
+                    "target": target,
+                    "candidate_count": len(ranked),
+                    "matched_rank": matched_rank,
+                    "top1_hit": top1,
+                    "top3_hit": top3,
+                    "retrieval_latency_ms": latency_ms,
+                }
+            )
+
+        query_count = len(specs)
+        return {
+            "queries": query_count,
+            "top1_hits": top1_hits,
+            "top3_hits": top3_hits,
+            "top1_hit_rate": round(top1_hits / query_count, 4) if query_count else None,
+            "top3_hit_rate": round(top3_hits / query_count, 4) if query_count else None,
+            "avg_retrieval_latency_ms": round(sum(latencies) / len(latencies), 3) if latencies else None,
+            "details": details,
+        }
+
+    def _build_interference_metrics(self, case: dict[str, Any]) -> dict[str, Any]:
+        batches = case.get("batches") or []
+        total_batches = len(batches)
+        noise_batches = 0
+        query_batches = 0
+        schedule_batches = 0
+        task_batches = 0
+        cross_group_batches = 0
+        parallel_batches = 0
+        accepted_noise_ignored = 0
+        total_noise_guard_checks = 0
+
+        for batch in batches:
+            tags = {str(tag) for tag in (batch.get("tags") or [])}
+            expected = batch.get("expected") or {}
+            expected_actions = list(expected.get("realtime_actions") or [])
+            should_ignore = set((batch.get("expected_write_result") or {}).get("should_ignore_message_ids") or [])
+            messages = batch.get("messages") or []
+            if "noise" in tags or "anti_interference" in tags or "anti_noise" in tags:
+                noise_batches += 1
+            if "query" in tags:
+                query_batches += 1
+            if "schedule" in tags:
+                schedule_batches += 1
+            if "task" in tags:
+                task_batches += 1
+            if "multi_group" in tags or "topic_boundary" in tags:
+                cross_group_batches += 1
+            if "parallel" in tags or "parallel_discussion" in tags or "classification" in tags:
+                parallel_batches += 1
+
+            total_noise_guard_checks += len(messages)
+            for idx, action in enumerate(expected_actions):
+                if action == "noop" and idx < len(messages):
+                    accepted_noise_ignored += 1
+
+            total_expected = len(messages)
+            if should_ignore:
+                accepted_noise_ignored += len(should_ignore)
+
+        return {
+            "batches": total_batches,
+            "noise_batches": noise_batches,
+            "query_batches": query_batches,
+            "schedule_batches": schedule_batches,
+            "task_batches": task_batches,
+            "cross_group_batches": cross_group_batches,
+            "parallel_batches": parallel_batches,
+            "noise_guard_coverage": round(accepted_noise_ignored / total_noise_guard_checks, 4) if total_noise_guard_checks else None,
+        }
+
+    def _build_conflict_metrics(self, case: dict[str, Any]) -> dict[str, Any]:
+        batches = case.get("batches") or []
+        total_batches = len(batches)
+        refine_batches = 0
+        supersede_batches = 0
+        conflict_batches = 0
+        relation_expectations = 0
+        supersede_expectations = 0
+        refine_expectations = 0
+        conflict_expectations = 0
+
+        for batch in batches:
+            tags = {str(tag) for tag in (batch.get("tags") or [])}
+            expected_write = batch.get("expected_write_result") or {}
+            relation_specs = expected_write.get("expected_relations") or []
+            if "refine" in tags:
+                refine_batches += 1
+            if "supersede" in tags:
+                supersede_batches += 1
+            if "conflict" in tags or "supersede_candidate" in tags:
+                conflict_batches += 1
+            relation_expectations += len(relation_specs)
+            for spec in relation_specs:
+                relation_type = str(spec.get("relation_type") or "")
+                if relation_type == "supersedes":
+                    supersede_expectations += 1
+                elif relation_type == "refines":
+                    refine_expectations += 1
+                elif relation_type == "contradicts":
+                    conflict_expectations += 1
+
+        return {
+            "batches": total_batches,
+            "refine_batches": refine_batches,
+            "supersede_batches": supersede_batches,
+            "conflict_batches": conflict_batches,
+            "relation_expectations": relation_expectations,
+            "supersede_expectations": supersede_expectations,
+            "refine_expectations": refine_expectations,
+            "conflict_expectations": conflict_expectations,
+        }
+
+    def _rank_candidates(self, chat_id: str, query: str, *, target: str) -> list[dict[str, Any]]:
+        query_chars = {ch for ch in (query or "").strip() if not ch.isspace()}
+        if target == "topic_summary":
+            topics = store.load_topics_by_chat(chat_id)
+            ranked = []
+            for topic in topics:
+                text = _topic_text(topic)
+                score = self._char_overlap_score(query_chars, text)
+                ranked.append({"score": score, "text": text})
+            ranked.sort(key=lambda item: item["score"], reverse=True)
+            return ranked
+
+        cards = store.get_cards_for_chat(chat_id)
+        ranked = []
+        for card in cards:
+            text = _card_text(card)
+            score = self._char_overlap_score(query_chars, text)
+            # Prefer current active cards for "current state" style queries.
+            if getattr(card.status, "value", "") == "active":
+                score += 0.01
+            ranked.append({"score": score, "text": text})
+        ranked.sort(key=lambda item: item["score"], reverse=True)
+        return ranked
+
+    def _char_overlap_score(self, query_chars: set[str], text: str) -> float:
+        text_chars = {ch for ch in (text or "").strip() if not ch.isspace()}
+        if not query_chars or not text_chars:
+            return 0.0
+        inter = len(query_chars & text_chars)
+        union = len(query_chars | text_chars) or 1
+        coverage = inter / len(query_chars)
+        return inter / union + coverage
