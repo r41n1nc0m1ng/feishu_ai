@@ -12,6 +12,36 @@
 
 注意：本文仅介绍系统的基本原理和架构，不涉及具体实现细节。具体字段格式请参考其他文档。
 
+## Benchmark 体系
+
+当前仓库里实际存在三套并列的 benchmark 能力，它们不是相互替代关系：
+
+- `benchmark/full_demo_dual_channel_test.py`
+  - 角色：最小双通道回放基线。
+  - 作用：验证 batch 内消息先过 realtime，再整体过 write 的编排顺序和适配层是否正常。
+  - 特点：轻量、快、结构简单，适合入口联调和 adapter 改动后的冒烟回归。
+
+- `benchmark/special_case/special_case_replay.py`
+  - 角色：单流专项回放。
+  - 作用：验证 anti-noise、conflict、final query 召回、Graphiti/SQLite fallback 等专项能力。
+  - 特点：更贴近“完整历史对话 + 最终追问”的专项测试，不负责通用分层评测。
+
+- `benchmark_v2/`
+  - 角色：生产级 benchmark 主套件。
+  - 作用：承接 source/runtime 分层、按 chat/tag 筛选、轻量评测 + 深度评测、报表输出。
+  - 特点：覆盖面最完整，适合当前阶段的 benchmark 开发、专项回归和对外展示前验收。
+
+当前如果目标是“把 benchmark 做到满足真实模拟、分层测评、清晰指标、能说服人的测试能力”，主工作区应以 `benchmark_v2` 为主，另外两套保留为：
+
+- `full_demo`：入口和适配层冒烟回归；
+- `special_case`：重型专项补充回放。
+
+统一入口见：
+
+```bash
+conda run -n feishu-ai-p0 python -m benchmark.run_suite --suite v2
+```
+
 
 
 ---

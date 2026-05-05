@@ -1,5 +1,27 @@
 # benchmark_v2
 
+这是当前仓库里推荐作为主 benchmark 使用的一套。
+
+它与另外两套 benchmark 的关系不是替代，而是并列分工：
+
+- `benchmark/full_demo_dual_channel_test.py`
+  - 最小双通道回放基线
+  - 用来测 replay 顺序和 adapter 兼容性
+
+- `benchmark/special_case/special_case_replay.py`
+  - 单流专项回放
+  - 用来测 anti-noise / conflict / final query 等重型专项
+
+- `benchmark_v2/`
+  - 生产级 benchmark 主套件
+  - 用来做 source/runtime 分层、轻量评测、深度评测、维度筛选和报告输出
+
+如果问题是“当前 benchmark 能不能合并进主线并满足我们这边的任务”，答案是：
+
+- 能合并；
+- 但应作为主 benchmark 套件并行接入，而不是强行替换旧 `benchmark/`；
+- 当前任务如果是“满足真实模拟效果、清晰分类测评标准、设计良好指标、形成有说服力的测试能力”，应以这套为主，旧 `full_demo` 和 `special_case` 为补充。
+
 独立于 `benchmark/` 的离线双通道回放器 + 分层评测框架。
 
 目标：
@@ -71,3 +93,9 @@ conda run -n feishu-ai-p0 python -m benchmark_v2.dual_channel_runner benchmark_v
 
 - 运行后会写入 `benchmark_v2/reports/benchmark_v2_latest.json`
 - 报告包含 `by_chat`、`by_tag`、`realtime_action_distribution`
+
+统一入口：
+
+```bash
+conda run -n feishu-ai-p0 python -m benchmark.run_suite --suite v2
+```

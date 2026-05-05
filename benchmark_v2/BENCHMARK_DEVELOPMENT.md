@@ -13,6 +13,26 @@
 
 它的定位不是演示版 fixture，而是可继续扩展的生产级 benchmark 框架。
 
+它与仓库内另外两套 benchmark 的职责边界如下：
+
+- `benchmark/full_demo_dual_channel_test.py`
+  - 基础冒烟回放
+  - 关注 replay 顺序、adapter 兼容性、入口联调
+
+- `benchmark/special_case/special_case_replay.py`
+  - 单流专项回放
+  - 关注 anti-noise、conflict、final query、Graphiti/SQLite fallback
+
+- `benchmark_v2`
+  - 主 benchmark 套件
+  - 关注生产级场景建模、分层评测、维度筛选、报告沉淀
+
+因此，`benchmark_v2` 不应回头退化成单一 demo，也不需要吞并 `special_case` 的所有脚本能力。更合理的关系是：
+
+- `full_demo` 保留为最小回放基线；
+- `special_case` 保留为专项补充；
+- `benchmark_v2` 负责主评测面。
+
 ## 2. 目录与文件
 
 当前核心文件：

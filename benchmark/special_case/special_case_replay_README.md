@@ -1,5 +1,19 @@
 ﻿# Special Case Replay 使用说明
 
+这套脚本在 benchmark 体系里的定位是“专项单流回放”，不是对 `benchmark_v2` 的替代。
+
+关系如下：
+
+- `benchmark/full_demo_dual_channel_test.py`：最小双通道基线，偏入口/适配层冒烟；
+- `benchmark/special_case/special_case_replay.py`：anti-noise、conflict、final query 等专项回放；
+- `benchmark_v2/`：当前推荐的生产级 benchmark 主套件，负责分层评测和报告。
+
+因此，`special_case` 适合保留为：
+
+- Graphiti 不稳定时的专项 fallback 回放；
+- 矛盾更新、抗干扰等重型专项样例；
+- 长耗时 case 的离线复验。
+
 `benchmark/special_case_replay.py` 用来回放 `benchmark/special_case/*.json` 专项测试集。它会先把历史消息按时间切成 batch，送入完整写入侧链路，再把 `final_query_messages` 发给当前查询侧，并显示实际回答和预期回答。
 
 ## 快速开始
