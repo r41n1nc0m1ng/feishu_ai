@@ -21,6 +21,7 @@ from memory.schemas import (
     CardRelationOp,
     CardStatus,
     EvidenceBlock,
+    ExtractedMemory,
     MemoryCard,
     MemoryRelation,
     MemoryRelationType,

@@ -9,7 +9,7 @@ from datetime import datetime, timezone
 from unittest.mock import AsyncMock, patch
 
 import memory.card_generator as gen_module
-from memory.card_generator import CardGenerator
+from memory.card_generator import CardGenerator, _normalize_decision_key
 from memory.schemas import CardStatus, EvidenceBlock, EvidenceMessage, MemoryType
 
 BASE = datetime(2026, 4, 28, 10, 0, tzinfo=timezone.utc)
@@ -91,7 +91,7 @@ class CardGeneratorTests(unittest.IsolatedAsyncioTestCase):
             reason="太复杂",
         )
         gen_module._card_cache[old_card.memory_id] = old_card
-        gen_module._cards_by_object["个人入口策略"] = old_card
+        gen_module._cards_by_object[_normalize_decision_key("个人入口策略")] = old_card
 
         block = _make_block()
         llm_resp = {
@@ -102,7 +102,8 @@ class CardGeneratorTests(unittest.IsolatedAsyncioTestCase):
             "reason": "用户需要",
             "memory_type": "version_update",
         }
-        with _patch_llm(llm_resp), _patch_graphiti():
+        with _patch_llm(llm_resp), _patch_graphiti(), \
+             patch("memory.card_generator.ConflictDetector.find_conflict", new=AsyncMock(return_value=None)):
             new_card = await CardGenerator().generate(block)
 
         self.assertIsNotNone(new_card)
@@ -124,6 +125,35 @@ class CardGeneratorTests(unittest.IsolatedAsyncioTestCase):
 
         self.assertIsNotNone(card)
         self.assertEqual(card.memory_type, MemoryType.DECISION)
+
+    async def test_detected_conflict_marks_old_card_deprecated(self):
+        from memory.schemas import MemoryCard
+
+        old_card = MemoryCard(
+            chat_id="oc_test",
+            decision_object="企业级记忆范围",
+            title="旧决策",
+            decision="MVP 做企业级记忆",
+            reason="之前范围更大",
+        )
+        gen_module._card_cache[old_card.memory_id] = old_card
+
+        block = _make_block()
+        llm_resp = {
+            "operation": "ADD",
+            "decision_object": "企业级记忆范围",
+            "title": "新决策",
+            "decision": "MVP 不做企业级记忆",
+            "reason": "范围收缩",
+            "memory_type": "decision",
+        }
+        with _patch_llm(llm_resp), _patch_graphiti(), \
+             patch("memory.card_generator.ConflictDetector.find_conflict", new=AsyncMock(return_value={"memory_id": old_card.memory_id})):
+            new_card = await CardGenerator().generate(block)
+
+        self.assertIsNotNone(new_card)
+        self.assertEqual(new_card.supersedes_memory_id, old_card.memory_id)
+        self.assertEqual(gen_module._card_cache[old_card.memory_id].status, CardStatus.DEPRECATED)
 
     async def test_llm_failure_returns_none(self):
         block = _make_block()

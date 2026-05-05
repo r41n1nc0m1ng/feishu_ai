@@ -111,6 +111,9 @@ _QUERY_RE = re.compile(
     r"是不是.*讨论过|之前.*说|查一下|帮我查"
 )
 
+LOOKBACK_MESSAGES = int(os.getenv("FETCH_LOOKBACK_MESSAGES", "5"))
+LOOKBACK_SECONDS = int(os.getenv("FETCH_LOOKBACK_SECONDS", "300"))
+
 
 class FeishuAPIClient:
     _token: str = ""
@@ -490,7 +493,16 @@ class FeishuAPIClient:
             "page_size": page_size,
         }
         if start_time:
-            params["start_time"] = str(int(start_time.timestamp()))
+            lookback_start = start_time - timedelta(seconds=LOOKBACK_SECONDS)
+            params["start_time"] = str(int(lookback_start.timestamp()))
+            logger.info(
+                "Fetch lookback enabled | chat=%s start_time=%s lookback_start=%s lookback_messages=%d lookback_seconds=%d",
+                chat_id,
+                start_time,
+                lookback_start,
+                LOOKBACK_MESSAGES,
+                LOOKBACK_SECONDS,
+            )
 
         messages: List[EvidenceMessage] = []
         last_raw_ts: Optional[datetime] = None   # 最后一条原始消息的时间戳（含被过滤的）
@@ -578,6 +590,8 @@ class FeishuAPIClient:
             page_token = data.get("data", {}).get("page_token")
 
         await self._resolve_sender_names(messages)
+        if start_time:
+            messages = self._dedup_lookback_messages(messages, start_time)
         logger.info(
             "Fetched messages | chat=%s valid=%d raw=%d non_text=%d bot=%d at_bot=%d query=%d empty=%d parse_error=%d last_raw_ts=%s",
             chat_id,
@@ -592,6 +606,33 @@ class FeishuAPIClient:
             last_raw_ts,
         )
         return messages, last_raw_ts
+
+    def _dedup_lookback_messages(
+        self,
+        messages: List[EvidenceMessage],
+        start_time: datetime,
+    ) -> List[EvidenceMessage]:
+        if not messages:
+            return messages
+
+        cutoff = start_time.timestamp()
+        deduped: List[EvidenceMessage] = []
+        seen_ids: set[str] = set()
+
+        for msg in messages:
+            if msg.message_id in seen_ids:
+                continue
+            seen_ids.add(msg.message_id)
+            deduped.append(msg)
+
+        if len(deduped) != len(messages):
+            logger.info(
+                "Fetch lookback deduped | kept=%d dropped=%d cutoff=%s",
+                len(deduped),
+                len(messages) - len(deduped),
+                start_time,
+            )
+        return deduped
 
     async def get_bot_open_id(self) -> str:
         """

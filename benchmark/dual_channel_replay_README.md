@@ -1,5 +1,19 @@
 # Dual Channel Replay 说明
 
+这套 runner 是 benchmark 体系里的基础层，不是生产级 benchmark 主套件。
+
+它和另外两套的关系是：
+
+- `benchmark/full_demo_dual_channel_test.py`：最小双通道编排与 adapter 冒烟回归；
+- `benchmark/special_case/special_case_replay.py`：专项单流回放；
+- `benchmark_v2/`：当前推荐使用的生产级 benchmark 主套件。
+
+如果你当前要做的是：
+
+- 改 realtime/write 入口适配，先跑这套；
+- 跑 anti-noise / conflict 等专项，去跑 `special_case`；
+- 做完整 benchmark 设计、分层评测、筛选执行、产出报告，优先跑 `benchmark_v2`。
+
 这套代码只负责把测试集 JSON 按双通道规则送到当前系统入口。它不负责判断后续链路效果，比如是否生成 MemoryCard、检索是否准确、卡片内容是否好。
 
 ## 文件分工

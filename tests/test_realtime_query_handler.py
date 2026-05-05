@@ -4,6 +4,7 @@ import unittest
 from datetime import datetime
 from types import SimpleNamespace
 
+import realtime.query_handler as qh_module
 from realtime.query_handler import (
     RealtimeQueryHandler,
     render_evidence_reply,
@@ -96,6 +97,9 @@ def _summary():
 
 
 class RealtimeQueryHandlerTests(unittest.IsolatedAsyncioTestCase):
+    def setUp(self):
+        qh_module._LAST_QUERY_CARD_BY_CHAT.clear()
+
     async def test_handle_query_message_with_hits(self):
         retriever = FakeRetriever([_card("MVP 阶段不做企业级记忆", "权限太复杂")])
         sender = FakeSender()
@@ -133,6 +137,21 @@ class RealtimeQueryHandlerTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(retriever.evidence_calls, ["block_1"])
         self.assertIn("来源记录", sender.calls[0][1])
         self.assertIn("权限太复杂", sender.calls[0][1])
+
+    async def test_follow_up_source_query_uses_last_query_card(self):
+        card = _card("MVP 阶段不做企业级记忆", "权限太复杂", ["block_1"])
+        retriever = FakeRetriever([card], {"block_1": _block()})
+        sender = FakeSender()
+        handler = RealtimeQueryHandler(retriever=retriever, send_text=sender)
+
+        await handler.handle_query_message(_msg("@机器人 之前怎么定的"))
+        sender.calls.clear()
+
+        trace = await handler.handle_query_message(_msg("@机器人 证据是什么"))
+
+        self.assertEqual(trace.action, "source")
+        self.assertEqual(retriever.evidence_calls, ["block_1"])
+        self.assertIn("来源记录", sender.calls[0][1])
 
     async def test_handle_summary_query_routes_to_topic_summary(self):
         retriever = FakeRetriever([], summaries=[_summary()])

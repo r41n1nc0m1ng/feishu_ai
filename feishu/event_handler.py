@@ -21,6 +21,7 @@ except ModuleNotFoundError:  # pragma: no cover - enables local non-SDK testing
             self.toast = (d or {}).get("toast")
 
 from feishu.api_client import FeishuAPIClient, extract_open_id
+from memory.zep_session import ZepSessionManager
 from memory.schemas import FeishuMessage
 from realtime.action_handler import RealtimeActionHandler
 from realtime.dispatcher import dispatch_message
@@ -71,6 +72,7 @@ async def handle_raw_event(raw: dict):
 
 
 async def _process(message: FeishuMessage):
+    await ZepSessionManager().add_message(message)
     logger.info(
         "Message received | chat=%s sender=%s at_bot=%s mentions=%d text=%s",
         message.chat_id,
