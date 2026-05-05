@@ -1,5 +1,6 @@
 """
 批量查询脚本：读取 query_cases.json，按正常查询流程逐条执行并打印结果。
+embedding 缓存在启动时由 _restore_cache() 从 SQLite 自动恢复，无需预热。
 
 运行：
     conda run -n feishu python benchmark/interactive_query.py
@@ -22,6 +23,7 @@ if str(ROOT) not in sys.path:
 from dotenv import load_dotenv
 load_dotenv(ROOT / ".env")
 
+# 模块导入时 _restore_cache() 自动从 SQLite 恢复卡片和 embedding 缓存
 from memory.graphiti_client import GraphitiClient
 from memory.retriever import MemoryRetriever
 from memory.schemas import FeishuMessage
@@ -43,12 +45,12 @@ async def main(cases_path: Path) -> None:
     print("初始化完成\n", flush=True)
 
     retriever = MemoryRetriever()
-    replies: dict[str, str] = {}
 
-    async def collect_reply(cid: str, text: str) -> None:
-        replies["_current"] = replies.get("_current", "") + text + "\n"
+    # send_text 与生产一致：直接输出，不做拦截
+    async def send_text(cid: str, text: str) -> None:
+        print(text)
 
-    handler = RealtimeQueryHandler(retriever=retriever, send_text=collect_reply)
+    handler = RealtimeQueryHandler(retriever=retriever, send_text=send_text)
 
     for q in queries:
         qid  = q.get("id", "")
@@ -57,7 +59,6 @@ async def main(cases_path: Path) -> None:
         if not text:
             continue
 
-        replies["_current"] = ""
         msg = FeishuMessage(
             message_id=f"iq_{qid}",
             sender_id="ou_evaluator",
@@ -68,21 +69,17 @@ async def main(cases_path: Path) -> None:
             is_at_bot=True,
         )
 
-        try:
-            trace = await handler.handle_query_message(msg)
-            action = getattr(trace, "action", "?")
-        except Exception as e:
-            action = "ERROR"
-            replies["_current"] = str(e)
-
-        reply = replies.get("_current", "").strip()
-
         print(f"{'─'*60}")
         print(f"[{qid}] {text}")
         if note:
             print(f"  提示: {note}")
-        print(f"  触发: {action}")
-        print(f"  回复: {reply}")
+
+        try:
+            trace = await handler.handle_query_message(msg)
+            print(f"  触发: {getattr(trace, 'action', '?')}")
+        except Exception as e:
+            print(f"  [ERROR] {e}")
+
         print()
 
 

@@ -175,21 +175,29 @@ async def _segment_semantic(batch: FetchBatch) -> List[EvidenceBlock]:
 # ── LLM 切分（异步）─────────────────────────────────────────────────────────
 
 _LLM_SEGMENT_PROMPT = """\
-你是一个群聊话题切分助手。以下是一批按时间排列的群聊消息，请识别话题边界并分组。
+你是一个群聊决策切分助手。以下是一批按时间排列的群聊消息，请按【决策点】边界分组。
 
 【消息列表】
 {messages}
 
+【核心原则：每个独立的决策点单独成一组】
+即使前后讨论的都是同一个项目，只要决策主题不同就必须切分。
+示例（错误）：把"要不要做完整ATS"和"MVP不输出淘汰结论"放在同一组
+示例（正确）：两者是两个不同的决策点，必须分成两组
+
 【切分规则】
-- 同一议题的讨论（包括提问、回应、确认）放在同一组
-- 明显切换到新讨论（人员/时间/技术方向变化）时要新建一组
-- 同一议题下的细节讨论也需要新建一组（从实现细节a切换到实现细节b）
-- 每组最少 {min_block} 条，最多 {max_block} 条
-- 时间间隔超过 {gap_seconds} 秒的消息强制分组
+1. 当讨论从一个决策问题（A）转向另一个决策问题（B）时，立即新建一组，哪怕两者属于同一项目
+2. 同一决策问题的提问、讨论、确认、收尾放同一组；若该决策讨论持续超过 {max_block} 条消息，\
+需要尽快在前后文联系不大的情况下切分。
+3. 不要贪多，如果前后文关系不大需要即时切分，不要等到 {max_block} 条才切。例如，限制10条为\
+上限，此时讨论a已有5条，后续讨论有8条，则应该在第6条时就切分，而不是等到第13条才切分。
+4. 纯打招呼、离题闲聊、"好的"/"收到"等无实质内容的消息，归入前一组
+5. 时间间隔超过 {gap_seconds} 秒时强制分组
+6. 每组最少 {min_block} 条
 
 【输出规则】只返回 JSON，不要其他内容：
 {{"groups": [[0,1,2,3], [4,5,6], ...]}}
-每个数组是一组消息的下标（从 0 开始）。必须覆盖全部消息，不得遗漏。
+每个数组是一组消息的下标（从 0 开始）。必须覆盖全部 {total} 条消息，不得遗漏任何一条。
 """
 
 
@@ -211,8 +219,9 @@ async def _segment_llm(batch: FetchBatch) -> List[EvidenceBlock]:
     prompt = _LLM_SEGMENT_PROMPT.format(
         messages="\n".join(lines),
         min_block=MIN_BLOCK_MESSAGES,
-        max_block=MAX_BLOCK_MESSAGES,
+        max_block=min(MAX_BLOCK_MESSAGES, 15),  # 软上限 15：鼓励细分，但允许长讨论在自然段落处切分
         gap_seconds=BLOCK_GAP_SECONDS,
+        total=len(messages),
     )
 
     raw = await _call_llm_segment(prompt)
@@ -282,6 +291,7 @@ async def _call_openai_compat(prompt: str, api_key: str, base_url: str, model: s
                 "model": model,
                 "messages": [{"role": "user", "content": prompt}],
                 "response_format": {"type": "json_object"},
+                "temperature": 0,
             },
         )
         resp.raise_for_status()

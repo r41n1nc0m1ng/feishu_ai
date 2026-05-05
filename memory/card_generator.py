@@ -12,6 +12,7 @@ from datetime import timezone
 from typing import Optional
 
 import httpx
+import numpy as np
 from graphiti_core.nodes import EpisodeType
 
 from memory.graphiti_client import GraphitiClient
@@ -30,11 +31,14 @@ logger = logging.getLogger(__name__)
 
 OLLAMA_URL = os.getenv("OLLAMA_URL", "http://localhost:11434")
 CARD_MODEL = os.getenv("LOCAL_MODEL", "qwen2.5:7b")
+EMBED_MODEL = os.getenv("EMBED_MODEL", "nomic-embed-text")
 
 # 内存缓存：memory_id → MemoryCard
 _card_cache: dict[str, MemoryCard] = {}
 # 按 decision_object_key（归一化主键）索引，用于 SUPERSEDE 查找和 Topic 聚合
 _cards_by_object: dict[str, MemoryCard] = {}
+# embedding 缓存：memory_id → np.ndarray（方案 A：替换 Jaccard 匹配）
+_card_embeddings: dict[str, np.ndarray] = {}
 
 
 def _normalize_decision_key(text: str) -> str:
@@ -45,14 +49,25 @@ def _normalize_decision_key(text: str) -> str:
 
 
 def _restore_cache() -> None:
-    """启动时从 SQLite 恢复内存缓存。"""
+    """启动时从 SQLite 恢复内存缓存（含 embedding）。"""
     cards = store.load_all_memory_cards()
     for card in cards:
         _card_cache[card.memory_id] = card
         key = card.decision_object_key or _normalize_decision_key(card.decision_object)
         _cards_by_object[key] = card
+
+    emb_map = store.load_all_card_embeddings()
+    restored = 0
+    for memory_id, vec_bytes in emb_map.items():
+        try:
+            vec = np.frombuffer(vec_bytes, dtype=np.float32).copy()
+            _card_embeddings[memory_id] = vec
+            restored += 1
+        except Exception as e:
+            logger.warning("embedding 恢复失败 | memory_id=%s err=%s", memory_id, e)
+
     if cards:
-        logger.info("MemoryCard 缓存已从 SQLite 恢复 | 共 %d 条", len(cards))
+        logger.info("MemoryCard 缓存已从 SQLite 恢复 | 卡片=%d embedding=%d", len(cards), restored)
 
 _CARD_PROMPT = """\
 你是一个群聊决策记忆提炼助手。根据以下群聊消息片段，判断是否需要生成或更新记忆卡片。
@@ -196,6 +211,9 @@ class CardGenerator:
         except Exception:
             logger.exception("MemoryCard 写入 SQLite 失败 | memory_id=%s", card.memory_id)
 
+        # 异步计算并缓存 embedding（用于方案 A：替换 Jaccard 匹配）
+        await _cache_card_embedding(card)
+
         if skip_graphiti:
             return
 
@@ -246,13 +264,51 @@ class CardGenerator:
             async with httpx.AsyncClient(timeout=120, trust_env=False) as client:
                 resp = await client.post(
                     f"{OLLAMA_URL}/api/generate",
-                    json={"model": CARD_MODEL, "prompt": prompt, "stream": False, "format": "json"},
+                    json={
+                        "model": CARD_MODEL,
+                        "prompt": prompt,
+                        "stream": False,
+                        "format": "json",
+                        "options": {"temperature": 0},
+                    },
                 )
                 resp.raise_for_status()
                 return json.loads(resp.json().get("response", "{}"))
         except Exception as e:
             logger.error("CardGenerator LLM 调用失败: %s", e)
             return None
+
+
+async def _get_embedding(text: str) -> Optional[np.ndarray]:
+    """调用 Ollama embed 接口，返回归一化向量。失败返回 None。"""
+    try:
+        async with httpx.AsyncClient(timeout=30, trust_env=False) as client:
+            resp = await client.post(
+                f"{OLLAMA_URL}/api/embed",
+                json={"model": EMBED_MODEL, "input": text},
+            )
+            resp.raise_for_status()
+            vec = resp.json().get("embeddings", [[]])[0]
+            if not vec:
+                return None
+            arr = np.array(vec, dtype=np.float32)
+            norm = np.linalg.norm(arr)
+            return arr / norm if norm > 0 else arr
+    except Exception as e:
+        logger.warning("embedding 获取失败: %s", e)
+        return None
+
+
+async def _cache_card_embedding(card: MemoryCard) -> None:
+    """为卡片计算 embedding，写入内存缓存并持久化到 SQLite。"""
+    text = f"{card.title} {card.decision}"
+    vec = await _get_embedding(text)
+    if vec is not None:
+        _card_embeddings[card.memory_id] = vec
+        try:
+            store.save_card_embedding(card.memory_id, vec.tobytes())
+        except Exception as e:
+            logger.warning("embedding 持久化失败 | memory_id=%s err=%s", card.memory_id, e)
 
 
 async def _write_card_to_graphiti(card: MemoryCard, ref_time=None) -> None:
@@ -297,10 +353,11 @@ def get_card(memory_id: str) -> Optional[MemoryCard]:
 
 
 def clear_cache(chat_id: str) -> None:
-    """清除指定群的内存缓存（benchmark 重置用）。"""
+    """清除指定群的内存缓存（benchmark 重置用）。SQLite embedding 由 clear_chat_data 负责。"""
     keys = [k for k, v in _card_cache.items() if v.chat_id == chat_id]
     for k in keys:
         del _card_cache[k]
+        _card_embeddings.pop(k, None)
     obj_keys = [k for k, v in _cards_by_object.items() if v.chat_id == chat_id]
     for k in obj_keys:
         del _cards_by_object[k]

@@ -1,6 +1,8 @@
 import logging
 from typing import List, Optional
 
+import numpy as np
+
 from memory.graphiti_client import GraphitiClient
 from memory.schemas import CardStatus, EvidenceBlock, MemoryCard, TopicSummary
 
@@ -22,44 +24,58 @@ class MemoryRetriever:
     ) -> List[MemoryCard]:
         """
         语义检索当前群聊中与 query 相关的 MemoryCard，仅返回 Active 状态。
-        查询侧直接调用此接口获取检索结果。
+
+        主路径：query embedding 直接对比所有卡片 embedding（余弦排序），
+        绕开 Graphiti 图遍历，避免同语义域卡片被错误路由。
+        降级路径（_card_embeddings 为空时）：Graphiti 图搜索 + fact→card 匹配。
         """
+        from memory.card_generator import _card_cache, _card_embeddings
+
+        # ── 主路径：embedding 余弦排序 ────────────────────────────────────────
+        active_cards = [
+            c for c in _card_cache.values()
+            if c.chat_id == chat_id and c.decision and c.status != CardStatus.DEPRECATED
+        ]
+        cards_with_emb = [
+            (c, _card_embeddings[c.memory_id])
+            for c in active_cards
+            if c.memory_id in _card_embeddings
+        ]
+        if cards_with_emb:
+            query_vec = await self._embed_text(query)
+            if query_vec is not None:
+                scored = sorted(
+                    [(float(np.dot(query_vec, emb)), c) for c, emb in cards_with_emb],
+                    reverse=True,
+                )
+                cards = [c for _, c in scored[:limit]]
+                logger.info(
+                    "Memory retrieve (embedding) | chat=%s query=%s top=%s",
+                    chat_id, query[:40],
+                    [c.title[:20] for c in cards[:3]],
+                )
+                return cards
+
+        # ── 降级路径：Graphiti 图搜索 + fact→card 匹配 ────────────────────────
         raw_results = await self.search_active(chat_id, query, limit=limit)
         logger.info(
-            "Memory retrieve start | chat=%s query=%s limit=%d raw_hits=%d",
-            chat_id,
-            query,
-            limit,
-            len(raw_results),
+            "Memory retrieve (Graphiti) | chat=%s query=%s raw_hits=%d",
+            chat_id, query, len(raw_results),
         )
-        cards: List[MemoryCard] = []
+        cards_out: List[MemoryCard] = []
         seen_ids: set[str] = set()
 
         for raw in raw_results:
             fact = raw.get("fact", "")
-            # 优先从缓存匹配真实 MemoryCard（有 source_block_ids）
-            card = self._find_card_for_fact(chat_id, fact)
+            fact_vec = await self._embed_text(fact) if fact else None
+            card = self._find_card_for_fact(chat_id, fact, fact_vec)
             if card and card.memory_id not in seen_ids:
                 seen_ids.add(card.memory_id)
-                cards.append(card)
-                logger.info(
-                    "Memory retrieve matched card | chat=%s memory_id=%s title=%s sources=%s",
-                    chat_id,
-                    card.memory_id,
-                    card.title,
-                    card.source_block_ids,
-                )
+                cards_out.append(card)
             elif not card:
-                # 回退：用 Graphiti fact 临时构造（source_block_ids 为空）
-                cards.append(self._to_memory_card(chat_id, query, raw))
-                logger.info(
-                    "Memory retrieve fallback fact | chat=%s fact=%s",
-                    chat_id,
-                    fact[:120],
-                )
+                cards_out.append(self._to_memory_card(chat_id, query, raw))
 
-        logger.info("Memory retrieve done | chat=%s query=%s cards=%d", chat_id, query, len(cards[:limit]))
-        return cards[:limit]
+        return cards_out[:limit]
 
     async def retrieve_all(
         self, chat_id: str, query: str, limit: int = 5
@@ -167,33 +183,60 @@ class MemoryRetriever:
 
     # ── 内部辅助 ──────────────────────────────────────────────────────────────
 
-    def _find_card_for_fact(self, chat_id: str, fact: str) -> Optional[MemoryCard]:
+    async def _embed_text(self, text: str) -> Optional[np.ndarray]:
+        """获取文本 embedding，复用 card_generator 的 _get_embedding。"""
+        from memory.card_generator import _get_embedding
+        return await _get_embedding(text)
+
+    def _find_card_for_fact(
+        self,
+        chat_id: str,
+        fact: str,
+        fact_vec: Optional[np.ndarray] = None,
+    ) -> Optional[MemoryCard]:
         """
         从内存缓存中找到与 Graphiti fact 最匹配的 MemoryCard。
-        使用字符级 Jaccard 相似度，适合中文无分词场景。
+        优先使用 embedding 余弦相似度（fact_vec 由调用方预先计算）；
+        fact_vec 为 None 时降级为字符级 Jaccard。
         """
-        from memory.card_generator import _card_cache
+        from memory.card_generator import _card_cache, _card_embeddings
+
         if not fact or len(fact) < 4:
             return None
 
-        fact_chars = set(fact)
-        best_card: Optional[MemoryCard] = None
-        best_score = 0.0
+        active_cards = [
+            c for c in _card_cache.values()
+            if c.chat_id == chat_id and c.decision and c.status != CardStatus.DEPRECATED
+        ]
+        if not active_cards:
+            return None
 
-        for card in _card_cache.values():
-            if card.chat_id != chat_id or not card.decision:
-                continue
-            if card.status == CardStatus.DEPRECATED:
-                continue
+        # ── embedding 路径 ────────────────────────────────────────────────────
+        if fact_vec is not None:
+            cards_with_emb = [(c, _card_embeddings[c.memory_id])
+                              for c in active_cards if c.memory_id in _card_embeddings]
+            if cards_with_emb:
+                best_card, best_score = None, -1.0
+                for card, card_vec in cards_with_emb:
+                    score = float(np.dot(fact_vec, card_vec))
+                    if score > best_score:
+                        best_score, best_card = score, card
+                if best_card and best_score >= 0.5:
+                    logger.debug("fact→card embedding match | score=%.3f card=%s",
+                                 best_score, best_card.memory_id)
+                    return best_card
+
+        # ── Jaccard 降级路径（embedding 缓存未命中或向量不可用）──────────────
+        fact_chars = set(fact)
+        best_card, best_score = None, 0.0
+        for card in active_cards:
             decision_chars = set(card.decision)
             inter = len(decision_chars & fact_chars)
             union = len(decision_chars | fact_chars)
             score = inter / union if union else 0.0
             if score > best_score:
-                best_score = score
-                best_card = card
+                best_score, best_card = score, card
 
-        # 相似度阈值 0.35，避免低质量匹配
         return best_card if best_score >= 0.35 else None
 
     def _to_memory_card(self, chat_id: str, query: str, raw: dict) -> MemoryCard:
