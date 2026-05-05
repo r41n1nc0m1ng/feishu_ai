@@ -82,6 +82,12 @@ def init_db() -> None:
                 updated_at   TEXT
             )
         """)
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS card_embeddings (
+                memory_id TEXT PRIMARY KEY,
+                embedding BLOB NOT NULL
+            )
+        """)
         conn.execute("CREATE INDEX IF NOT EXISTS idx_blocks_chat    ON evidence_blocks(chat_id)")
         conn.execute("CREATE INDEX IF NOT EXISTS idx_cards_chat     ON memory_cards(chat_id)")
         conn.execute("CREATE INDEX IF NOT EXISTS idx_relations_src  ON memory_relations(source_id)")
@@ -254,6 +260,39 @@ def delete_topics_by_chat(chat_id: str) -> None:
     """清除某群的全部 TopicSummary，rebuild_topics 重建前调用。"""
     with _conn() as conn:
         conn.execute("DELETE FROM topic_summaries WHERE chat_id=?", (chat_id,))
+
+
+def clear_chat_data(chat_id: str) -> None:
+    """清除某群的全部 SQLite 数据（benchmark 重置用）。"""
+    with _conn() as conn:
+        conn.execute("DELETE FROM evidence_blocks  WHERE chat_id=?", (chat_id,))
+        # card_embeddings 通过 memory_id 关联，先删 embeddings 再删 cards
+        conn.execute(
+            "DELETE FROM card_embeddings WHERE memory_id IN "
+            "(SELECT memory_id FROM memory_cards WHERE chat_id=?)", (chat_id,)
+        )
+        conn.execute("DELETE FROM memory_cards     WHERE chat_id=?", (chat_id,))
+        conn.execute("DELETE FROM memory_relations WHERE chat_id=?", (chat_id,))
+        conn.execute("DELETE FROM topic_summaries  WHERE chat_id=?", (chat_id,))
+        conn.execute("DELETE FROM chat_spaces      WHERE chat_id=?", (chat_id,))
+    logger.info("SQLite 数据已清除 | chat_id=%s", chat_id)
+
+
+# ── card_embeddings ───────────────────────────────────────────────────────────
+
+def save_card_embedding(memory_id: str, vector_bytes: bytes) -> None:
+    with _conn() as conn:
+        conn.execute(
+            "INSERT OR REPLACE INTO card_embeddings VALUES (?,?)",
+            (memory_id, vector_bytes),
+        )
+
+
+def load_all_card_embeddings() -> dict:
+    """返回 {memory_id: bytes} 映射，启动时批量恢复 embedding 缓存用。"""
+    with _conn() as conn:
+        rows = conn.execute("SELECT memory_id, embedding FROM card_embeddings").fetchall()
+    return {r[0]: bytes(r[1]) for r in rows}
 
 
 # 模块加载时建表

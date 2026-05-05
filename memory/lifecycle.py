@@ -44,8 +44,8 @@ class MemoryLifecycle:
         except Exception:
             pass
 
-        logger.info("Memory deprecated | chat=%s memory_id=%s title=%s",
-                    chat_id, memory_id, card.title)
+        logger.info("Memory deprecated | chat=%s memory_id=%s object=%s",
+                    chat_id, memory_id, card.decision_object)
         return True
 
     async def expire_chat_memories(

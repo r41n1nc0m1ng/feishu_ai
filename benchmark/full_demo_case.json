@@ -2557,7 +2557,7 @@
         "forbidden_keywords": []
       },
       {
-        "query": "现在 AI 简历初筛要不要打分？",
+        "query": "现在 AI 简历初筛要不要做匹配参考分？",
         "expected_granularity": "memory_card",
         "expected_keywords": [
           "匹配参考分",
@@ -2640,7 +2640,7 @@
     ],
     "evidence_checks": [
       {
-        "query": "当时是谁说不要自动淘汰候选人的？",
+        "query": "不要自动淘汰候选人的原话在哪？",
         "expected_granularity": "evidence_block",
         "expected_source_message_ids": [
           "om_resume_0008",

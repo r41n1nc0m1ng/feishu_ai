@@ -98,6 +98,10 @@ class EvidenceBlock(BaseModel):
     start_time: datetime
     end_time: datetime
     messages: List[EvidenceMessage] = Field(default_factory=list)
+    topic: Optional[str] = None             # 分段器标注的 decision_object（大方向-小方向）
+    block_type: Optional[str] = None        # decision / progress / noise
+    boundary_signal: Optional[str] = None   # 切分依据，调试用
+    one_line_summary: Optional[str] = None  # 分段器预提炼摘要，card_generator 用作 hint
     created_at: datetime = Field(default_factory=_now)
 
 
@@ -110,11 +114,15 @@ class MemoryCard(BaseModel):
     """
     memory_id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     chat_id: str
-    decision_object: str            # 该决策所属的议题（展示用），如"企业级记忆是否进入 MVP"
+    decision_object: str            # 议题，格式"大方向-小方向"，如"技术实现-技术选型"
     decision_object_key: Optional[str] = None   # 归一化业务主键：版本判断锚点 / Topic 聚合锚点 / 检索映射锚点
-    title: str                      # 一句话标题
-    decision: str                   # 决策内容
-    reason: str                     # 决策理由
+    decision: str                   # DECISION 卡：一句话决策结论；PROGRESS 卡：本轮讨论的核心议题
+    reason: str                     # 决策理由；无明确理由时填"无"
+    # PROGRESS 卡专属字段（DECISION 卡留空）
+    tentative_consensus: List[str] = Field(default_factory=list)   # 候选共识：被提出且无人反对
+    open_questions: List[str] = Field(default_factory=list)        # 待决议子问题
+    discussion_scope: List[str] = Field(default_factory=list)      # 讨论涉及的具体对象
+    next_step: Optional[str] = None                                # 下一轮要解决什么
     memory_type: MemoryType = MemoryType.DECISION
     status: CardStatus = CardStatus.ACTIVE
     source_block_ids: List[str] = Field(default_factory=list)       # 来源 EvidenceBlock 的 block_id 列表

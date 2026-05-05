@@ -120,49 +120,63 @@ class GraphitiClient:
     async def initialize(cls):
         global _graphiti
 
+        ollama_url  = os.getenv("OLLAMA_URL", "http://localhost:11434")
+        ollama_base = f"{ollama_url.rstrip('/')}/v1"
+
         provider = os.getenv("MODEL_PROVIDER", "ollama").strip().lower()
-        if provider == "openai" or os.getenv("OPENAI_API_KEY"):
-            api_key = os.getenv("OPENAI_API_KEY", "")
-            base_url = os.getenv("OPENAI_BASE_URL", "https://api.openai.com/v1").rstrip("/")
-            llm_model = os.getenv("OPENAI_MODEL", os.getenv("LOCAL_MODEL", ""))
-            embed_model = os.getenv("OPENAI_EMBED_MODEL", os.getenv("EMBED_MODEL", ""))
+
+        if os.getenv("DEEPSEEK_API_KEY"):
+            # ── DeepSeek LLM + Ollama Embedding ──────────────────────────────
+            llm_api_key  = os.getenv("DEEPSEEK_API_KEY", "")
+            llm_base_url = os.getenv("DEEPSEEK_BASE_URL", "https://api.deepseek.com/v1").rstrip("/")
+            llm_model    = os.getenv("DEEPSEEK_MODEL", "deepseek-chat")
+            provider_name = "deepseek"
+        elif provider == "openai" or os.getenv("OPENAI_API_KEY"):
+            # ── OpenAI（或兼容 API）LLM + OpenAI Embedding ───────────────────
+            llm_api_key  = os.getenv("OPENAI_API_KEY", "")
+            llm_base_url = os.getenv("OPENAI_BASE_URL", "https://api.openai.com/v1").rstrip("/")
+            llm_model    = os.getenv("OPENAI_MODEL", os.getenv("LOCAL_MODEL", ""))
             provider_name = "openai-compatible"
         else:
-            ollama_url = os.getenv("OLLAMA_URL", "http://localhost:11434")
-            api_key = "ollama"
-            llm_model = os.getenv("LOCAL_MODEL", "qwen2.5:7b")
-            embed_model = os.getenv("EMBED_MODEL", "nomic-embed-text")
-            # Ollama exposes an OpenAI-compatible API at /v1
-            base_url = f"{ollama_url.rstrip('/')}/v1"
+            # ── 全走 Ollama ───────────────────────────────────────────────────
+            llm_api_key  = "ollama"
+            llm_base_url = ollama_base
+            llm_model    = os.getenv("LOCAL_MODEL", "qwen2.5:7b")
             provider_name = "ollama"
 
-        # Pass a proxy-free httpx client into the openai SDK so that
-        # Windows system proxy does not intercept localhost:11434 requests.
-        no_proxy_http = httpx.AsyncClient(trust_env=False)
+        # Embedding：DeepSeek 无向量化 API，始终回退 Ollama；OpenAI 模式读 OPENAI_EMBED_MODEL
+        if provider_name in ("deepseek", "ollama"):
+            embed_api_key  = "ollama"
+            embed_base_url = ollama_base
+            embed_model    = os.getenv("EMBED_MODEL", "nomic-embed-text")
+        else:
+            embed_api_key  = llm_api_key
+            embed_base_url = llm_base_url
+            embed_model    = os.getenv("OPENAI_EMBED_MODEL", os.getenv("EMBED_MODEL", ""))
 
         llm_client = ChatCompletionsLLMClient(
             config=LLMConfig(
-                api_key=api_key,
+                api_key=llm_api_key,
                 model=llm_model,
                 small_model=llm_model,
-                base_url=base_url,
+                base_url=llm_base_url,
             ),
             client=AsyncOpenAI(
-                api_key=api_key,
-                base_url=base_url,
-                http_client=no_proxy_http,
+                api_key=llm_api_key,
+                base_url=llm_base_url,
+                http_client=httpx.AsyncClient(trust_env=False),
             ),
         )
 
         embedder = OpenAIEmbedder(
             config=OpenAIEmbedderConfig(
-                api_key=api_key,
+                api_key=embed_api_key,
                 embedding_model=embed_model,
-                base_url=base_url,
+                base_url=embed_base_url,
             ),
             client=AsyncOpenAI(
-                api_key=api_key,
-                base_url=base_url,
+                api_key=embed_api_key,
+                base_url=embed_base_url,
                 http_client=httpx.AsyncClient(trust_env=False),
             ),
         )
@@ -237,6 +251,25 @@ class GraphitiClient:
         except Exception:
             logger.exception("Graphiti search failed for chat=%s", chat_id)
             return []
+
+    async def clear_group(self, chat_id: str) -> None:
+        """清除 Neo4j 中该群的全部 episode 与关联边（benchmark 重置用）。"""
+        if not self.g:
+            logger.warning("Graphiti 未初始化，跳过 Neo4j 清理 | group_id=%s", chat_id)
+            return
+        try:
+            async with self.g.driver.session() as session:
+                await session.run(
+                    "MATCH (e:Episodic {group_id: $gid}) DETACH DELETE e",
+                    gid=chat_id,
+                )
+                await session.run(
+                    "MATCH ()-[r {group_id: $gid}]-() DELETE r",
+                    gid=chat_id,
+                )
+            logger.info("Graphiti 数据已清除 | group_id=%s", chat_id)
+        except Exception:
+            logger.exception("Graphiti 数据清除失败 | group_id=%s", chat_id)
 
     async def deprecate_episode(self, episode_uuid: str):
         logger.info("Deprecating Graphiti episode %s", episode_uuid)

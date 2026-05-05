@@ -121,6 +121,76 @@ class BatchProcessor:
         except Exception:
             logger.exception("立即批处理异常 | chat_id=%s", chat_id)
 
+    async def process_fetch_batch(self, batch: "FetchBatch") -> list:
+        """
+        接收预构造的 FetchBatch，跳过 Feishu API 拉取，走完整写入流水线。
+        用于 benchmark / 测试场景；不更新 last_fetch_at 游标。
+        返回本次生成的 EvidenceBlock 列表。
+        """
+        chat_id = batch.chat_id
+        if chat_id not in _active_chats:
+            space = ChatMemorySpace(chat_id=chat_id)
+            _active_chats[chat_id] = space
+            try:
+                store.save_chat_space(space)
+            except Exception:
+                logger.exception("ChatMemorySpace 写入失败 | chat_id=%s", chat_id)
+
+        messages = [m for m in batch.messages
+                    if not _should_skip_message(m.text, m.sender_id)]
+        if len(messages) < MIN_MESSAGES:
+            logger.info("process_fetch_batch: 无有效消息 | chat=%s", chat_id)
+            return []
+
+        from memory.schemas import FetchBatch as _FB
+        filtered = _FB(
+            chat_id=chat_id,
+            fetch_start=batch.fetch_start,
+            fetch_end=batch.fetch_end,
+            messages=messages,
+        )
+        blocks = await segment_async(filtered)
+        logger.info("process_fetch_batch 切分完成 | chat=%s msgs=%d blocks=%d",
+                    chat_id, len(messages), len(blocks))
+
+        # 1. 生成卡片（仅写 SQLite + 内存缓存，跳过 Graphiti）
+        pending: list[tuple] = []   # (card, ref_time)
+        for block in blocks:
+            await self._evidence_store.save(block)
+            card = await self._card_generator.generate(block, skip_graphiti=True)
+            if card:
+                logger.info("MemoryCard 生成 | chat=%s object=%s type=%s",
+                            chat_id, card.decision_object, card.memory_type.value)
+                pending.append((card, block.end_time))
+
+        # 1.5 批处理结束后统一检测并应用冲突（SUPERSEDE），避免每张卡都触发 LLM
+        if pending:
+            await self._card_generator.detect_and_apply_conflicts([c for c, _ in pending])
+
+        # 2. 并发批量写入 Graphiti
+        if pending:
+            from memory.card_generator import _write_card_to_graphiti
+            await asyncio.gather(
+                *[_write_card_to_graphiti(card, ref_time=ref_time)
+                  for card, ref_time in pending],
+                return_exceptions=True,
+            )
+            logger.info("Graphiti 批量写入完成 | chat=%s cards=%d", chat_id, len(pending))
+
+        # 3. 整批处理完再重建一次 TopicSummary
+        has_new_active = any(
+            c.status == CardStatus.ACTIVE and c.memory_type != MemoryType.PROGRESS
+            for c, _ in pending
+        )
+        if has_new_active:
+            try:
+                from memory.topic_manager import TopicManager
+                await TopicManager().rebuild_topics(chat_id)
+            except Exception:
+                logger.exception("TopicSummary 重建失败 | chat_id=%s", chat_id)
+
+        return blocks
+
     # ── 周期任务（asyncio.create_task 启动）──────────────────────────────────
 
     async def run(self) -> None:
@@ -214,30 +284,26 @@ class BatchProcessor:
         logger.info("事件切分完成 | chat_id=%s 消息数=%d 块数=%d",
                     chat_id, len(messages), len(blocks))
 
-        # 4. 逐块存储证据 + 生成记忆卡片
-        new_active_cards = 0
+        # 4. 逐块存储证据 + 生成记忆卡片（跳过 Graphiti，批次末尾并发写入）
+        new_cards: list = []
         for block in blocks:
             logger.info(
-                "Processing EvidenceBlock | chat=%s block_id=%s start=%s end=%s messages=%d",
-                chat_id,
-                getattr(block, "block_id", ""),
-                getattr(block, "start_time", ""),
-                getattr(block, "end_time", ""),
-                len(getattr(block, "messages", [])),
+                "Processing EvidenceBlock | chat=%s block_id=%s messages=%d",
+                chat_id, getattr(block, "block_id", ""), len(getattr(block, "messages", [])),
             )
             await self._evidence_store.save(block)
-            card = await self._card_generator.generate(block)
+            card = await self._card_generator.generate(block, skip_graphiti=True)
             if card:
-                logger.info("MemoryCard 生成 | chat_id=%s title=%s op=%s",
-                            chat_id, card.title, card.memory_type.value)
-                if card.status == CardStatus.ACTIVE and card.memory_type != MemoryType.PROGRESS:
-                    new_active_cards += 1
+                logger.info("MemoryCard 生成 | chat_id=%s object=%s type=%s",
+                            chat_id, card.decision_object, card.memory_type.value)
+                new_cards.append(card)
             else:
-                logger.info(
-                    "MemoryCard skipped | chat=%s block_id=%s",
-                    chat_id,
-                    getattr(block, "block_id", ""),
-                )
+                logger.info("MemoryCard skipped | chat=%s block_id=%s",
+                            chat_id, getattr(block, "block_id", ""))
+
+        # 4.5 批处理结束后统一检测并应用冲突（SUPERSEDE），避免每张卡都触发 LLM
+        if new_cards:
+            await self._card_generator.detect_and_apply_conflicts(new_cards)
 
         # 5. 更新游标并持久化到 SQLite
         space.last_fetch_at = fetch_end
@@ -247,8 +313,21 @@ class BatchProcessor:
             logger.exception("游标写入 SQLite 失败 | chat_id=%s", chat_id)
         logger.info("批处理完成 | chat_id=%s 游标更新至 %s", chat_id, fetch_end)
 
-        # 6. 按需触发 TopicSummary 重建（失败不阻断主流程）
-        if new_active_cards > 0:
+        # 6. 批量并发写入 Graphiti（所有卡片同时提交，避免串行等待）
+        if new_cards:
+            from memory.card_generator import _write_card_to_graphiti
+            try:
+                await asyncio.gather(*[_write_card_to_graphiti(c) for c in new_cards])
+                logger.info("Graphiti 批量写入完成 | chat=%s cards=%d", chat_id, len(new_cards))
+            except Exception:
+                logger.exception("Graphiti 批量写入失败 | chat_id=%s", chat_id)
+
+        # 7. 按需触发 TopicSummary 重建（每批次最多一次，失败不阻断主流程）
+        active_new = sum(
+            1 for c in new_cards
+            if c.status == CardStatus.ACTIVE and c.memory_type != MemoryType.PROGRESS
+        )
+        if active_new > 0:
             try:
                 from memory.topic_manager import TopicManager
                 await TopicManager().rebuild_topics(chat_id)
