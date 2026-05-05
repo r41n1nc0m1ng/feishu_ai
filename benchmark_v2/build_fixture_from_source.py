@@ -11,10 +11,12 @@ FIXTURE_PATH = ROOT / "full_demo_case_v2.json"
 
 TOP_LEVEL_DROP_FIELDS = {
     "iceberg_policy",
+    "construction_method",
 }
 
 BATCH_DROP_FIELDS = {
     "iceberg_context",
+    "construction_context",
 }
 
 

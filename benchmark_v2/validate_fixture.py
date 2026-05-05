@@ -65,6 +65,8 @@ def validate_runtime_fixture(path: Path = FIXTURE_PATH) -> list[str]:
                 errors.append(f"{prefix} missing field: {field}")
         if "iceberg_context" in batch:
             errors.append(f"{prefix} should not contain iceberg_context in runtime fixture")
+        if "construction_context" in batch:
+            errors.append(f"{prefix} should not contain construction_context in runtime fixture")
 
         msgs = batch.get("messages")
         if not isinstance(msgs, list) or not msgs:
@@ -150,6 +152,35 @@ def validate_source_fixture(path: Path = SOURCE_PATH) -> list[str]:
         ]:
             if field not in ctx:
                 errors.append(f"{prefix}.iceberg_context missing field: {field}")
+        construction = batch.get("construction_context")
+        if construction is not None:
+            if not isinstance(construction, dict):
+                errors.append(f"{prefix}.construction_context must be an object")
+            else:
+                timeline = construction.get("timeline_base")
+                if timeline is not None and not isinstance(timeline, dict):
+                    errors.append(f"{prefix}.construction_context.timeline_base must be an object")
+                if isinstance(timeline, dict):
+                    for field in ("anchor_time", "window_minutes", "relative_position"):
+                        if field not in timeline:
+                            errors.append(
+                                f"{prefix}.construction_context.timeline_base missing field: {field}"
+                            )
+                threads = construction.get("thread_slots")
+                if threads is not None and not isinstance(threads, list):
+                    errors.append(f"{prefix}.construction_context.thread_slots must be a list")
+                if isinstance(threads, list):
+                    for j, slot in enumerate(threads):
+                        if not isinstance(slot, dict):
+                            errors.append(
+                                f"{prefix}.construction_context.thread_slots[{j}] must be an object"
+                            )
+                            continue
+                        for field in ("slot", "topic", "message_ids"):
+                            if field not in slot:
+                                errors.append(
+                                    f"{prefix}.construction_context.thread_slots[{j}] missing field: {field}"
+                                )
 
     top_expected = data.get("expected") or {}
     for key in ("final_memory_checks", "relation_checks"):

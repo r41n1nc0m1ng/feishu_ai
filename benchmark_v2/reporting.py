@@ -32,6 +32,8 @@ def render_console_summary(summary: dict[str, Any]) -> str:
         "",
         "=== benchmark v2 summary ===",
         f"case: {summary.get('case_id', '')}",
+        f"case eval mode: {summary.get('case_eval_mode')}",
+        f"deep/full_write: {summary.get('deep_eval_enabled')}/{summary.get('full_write_enabled')}",
         f"batches: {summary.get('total_batches', 0)}",
         f"pass: {summary.get('passed_batches', 0)}",
         f"fail: {summary.get('failed_batches', 0)}",
@@ -40,11 +42,15 @@ def render_console_summary(summary: dict[str, Any]) -> str:
         f"case runtime ms: {perf.get('case_total_runtime_ms')}",
         f"avg realtime latency ms: {perf.get('avg_realtime_latency_ms')}",
         f"avg write latency ms: {perf.get('avg_write_latency_ms')}",
-        f"recall top1/top3: {recall.get('top1_hit_rate')}/{recall.get('top3_hit_rate')}",
+        f"recall top1/top3/top5: {recall.get('top1_hit_rate')}/{recall.get('top3_hit_rate')}/{recall.get('top5_hit_rate')}",
+        f"recall rank/margin: {recall.get('mean_first_hit_rank')}/{recall.get('avg_score_margin')}",
         f"interference pass/match: {interference.get('batch_pass_rate')}/{interference.get('realtime_action_match_rate')}",
+        f"interference hard/multi/near-miss: {interference.get('difficult_batch_pass_rate')}/{interference.get('multi_intent_batch_pass_rate')}/{interference.get('near_miss_batch_pass_rate')}",
         f"conflict pass/match/guard: {conflict.get('batch_pass_rate')}/{conflict.get('relation_match_rate')}/{conflict.get('forbidden_relation_match_rate')}",
+        f"conflict hard/type-rate: {conflict.get('hard_conflict_batch_pass_rate')}/{conflict.get('relation_type_match_rate')}",
         f"write quality card/relation/topic: {write_quality.get('memory_card_match_rate')}/{write_quality.get('relation_match_rate')}/{write_quality.get('topic_match_rate')}",
         f"retrieval quality final/evidence: {retrieval_quality.get('final_memory_hit_rate')}/{retrieval_quality.get('evidence_hit_rate')}",
+        f"difficulty mix: {summary.get('dimensions', {}).get('difficulty_distribution', {})}",
         f"result: {'PASS' if summary.get('overall_success') else 'FAIL'}",
     ]
     return "\n".join(lines)
@@ -54,6 +60,7 @@ def build_dimension_summary(summary: dict[str, Any]) -> dict[str, Any]:
     by_chat: dict[str, dict[str, int]] = defaultdict(lambda: {"batches": 0, "failed_batches": 0})
     by_tag: dict[str, dict[str, int]] = defaultdict(lambda: {"batches": 0, "failed_batches": 0})
     action_counter: Counter[str] = Counter()
+    difficulty_counter: Counter[str] = Counter()
 
     for batch in summary.get("batch_results") or []:
         chat_id = str(batch.get("chat_id") or "")
@@ -71,8 +78,16 @@ def build_dimension_summary(summary: dict[str, Any]) -> dict[str, Any]:
         for action in batch.get("realtime_actions") or []:
             action_counter[str(action)] += 1
 
+        if len(tags) >= 4:
+            difficulty_counter["multi_tag"] += 1
+        if int(batch.get("message_count") or 0) >= 5:
+            difficulty_counter["long_batch"] += 1
+        if "parallel" in tags or "classification" in tags or "topic_boundary" in tags:
+            difficulty_counter["hard_mix"] += 1
+
     return {
         "by_chat": dict(sorted(by_chat.items())),
         "by_tag": dict(sorted(by_tag.items())),
         "realtime_action_distribution": dict(sorted(action_counter.items())),
+        "difficulty_distribution": dict(sorted(difficulty_counter.items())),
     }

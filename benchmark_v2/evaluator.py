@@ -408,6 +408,9 @@ class BenchmarkEvaluator:
         details: list[dict[str, Any]] = []
         top1_hits = 0
         top3_hits = 0
+        top5_hits = 0
+        first_hit_ranks: list[int] = []
+        score_margins: list[float] = []
         latencies: list[float] = []
 
         for spec in specs:
@@ -431,8 +434,16 @@ class BenchmarkEvaluator:
 
             top1 = matched_rank == 1
             top3 = matched_rank is not None and matched_rank <= 3
+            top5 = matched_rank is not None and matched_rank <= 5
             top1_hits += int(top1)
             top3_hits += int(top3)
+            top5_hits += int(top5)
+            if matched_rank is not None:
+                first_hit_ranks.append(matched_rank)
+            if len(ranked) >= 2:
+                score_margins.append(round(float(ranked[0]["score"]) - float(ranked[1]["score"]), 6))
+            elif len(ranked) == 1:
+                score_margins.append(round(float(ranked[0]["score"]), 6))
             details.append(
                 {
                     "query": query,
@@ -441,6 +452,7 @@ class BenchmarkEvaluator:
                     "matched_rank": matched_rank,
                     "top1_hit": top1,
                     "top3_hit": top3,
+                    "top5_hit": top5,
                     "retrieval_latency_ms": latency_ms,
                 }
             )
@@ -450,8 +462,13 @@ class BenchmarkEvaluator:
             "queries": query_count,
             "top1_hits": top1_hits,
             "top3_hits": top3_hits,
+            "top5_hits": top5_hits,
             "top1_hit_rate": round(top1_hits / query_count, 4) if query_count else None,
             "top3_hit_rate": round(top3_hits / query_count, 4) if query_count else None,
+            "top5_hit_rate": round(top5_hits / query_count, 4) if query_count else None,
+            "mean_first_hit_rank": round(sum(first_hit_ranks) / len(first_hit_ranks), 3) if first_hit_ranks else None,
+            "median_first_hit_rank": round(sorted(first_hit_ranks)[len(first_hit_ranks) // 2], 3) if first_hit_ranks else None,
+            "avg_score_margin": round(sum(score_margins) / len(score_margins), 6) if score_margins else None,
             "avg_retrieval_latency_ms": round(sum(latencies) / len(latencies), 3) if latencies else None,
             "details": details,
         }
@@ -465,6 +482,8 @@ class BenchmarkEvaluator:
         task_batches = 0
         cross_group_batches = 0
         parallel_batches = 0
+        difficult_batches = 0
+        multi_intent_batches = 0
         accepted_noise_ignored = 0
         total_noise_guard_checks = 0
 
@@ -486,6 +505,10 @@ class BenchmarkEvaluator:
                 cross_group_batches += 1
             if "parallel" in tags or "parallel_discussion" in tags or "classification" in tags:
                 parallel_batches += 1
+            if len(tags & {"noise", "query", "schedule", "task", "parallel", "classification", "multi_group", "topic_boundary"}) >= 2:
+                multi_intent_batches += 1
+            if len(messages) >= 5 or len(tags & {"parallel", "classification", "multi_group", "topic_boundary"}) > 0:
+                difficult_batches += 1
 
             total_noise_guard_checks += len(messages)
             for idx, action in enumerate(expected_actions):
@@ -504,6 +527,8 @@ class BenchmarkEvaluator:
             "task_batches": task_batches,
             "cross_group_batches": cross_group_batches,
             "parallel_batches": parallel_batches,
+            "difficult_batches": difficult_batches,
+            "multi_intent_batches": multi_intent_batches,
             "noise_guard_coverage": round(accepted_noise_ignored / total_noise_guard_checks, 4) if total_noise_guard_checks else None,
         }
 
@@ -513,6 +538,7 @@ class BenchmarkEvaluator:
         refine_batches = 0
         supersede_batches = 0
         conflict_batches = 0
+        hard_conflict_batches = 0
         relation_expectations = 0
         supersede_expectations = 0
         refine_expectations = 0
@@ -528,6 +554,8 @@ class BenchmarkEvaluator:
                 supersede_batches += 1
             if "conflict" in tags or "supersede_candidate" in tags:
                 conflict_batches += 1
+            if "supersede" in tags and "conflict" in tags:
+                hard_conflict_batches += 1
             relation_expectations += len(relation_specs)
             for spec in relation_specs:
                 relation_type = str(spec.get("relation_type") or "")
@@ -543,6 +571,7 @@ class BenchmarkEvaluator:
             "refine_batches": refine_batches,
             "supersede_batches": supersede_batches,
             "conflict_batches": conflict_batches,
+            "hard_conflict_batches": hard_conflict_batches,
             "relation_expectations": relation_expectations,
             "supersede_expectations": supersede_expectations,
             "refine_expectations": refine_expectations,

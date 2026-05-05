@@ -38,9 +38,11 @@ class BatchOutcome:
     scenario: str = ""
     chat_id: str = ""
     tags: list[str] = field(default_factory=list)
+    message_count: int = 0
     expected_brief: str = ""
     realtime_actions: list[str] = field(default_factory=list)
     write_result_count: int = 0
+    write_input_count: int = 0
     realtime_latency_ms: list[float] = field(default_factory=list)
     write_latency_ms: float = 0.0
     failures: list[str] = field(default_factory=list)
@@ -89,6 +91,8 @@ class OfflineReplayRunner:
                 "chats": sorted(include_chats or []),
             },
             "case_eval_mode": "full" if run_case_eval else "skipped_for_filtered_run",
+            "deep_eval_enabled": self.evaluator.deep_eval_enabled,
+            "full_write_enabled": os.getenv("FULL_WRITE", "").strip().lower() in {"1", "true", "yes", "on"},
             "total_batches": len(outcomes),
             "passed_batches": sum(1 for outcome in outcomes if not outcome.failures),
             "failed_batches": sum(1 for outcome in outcomes if outcome.failures),
@@ -119,6 +123,7 @@ class OfflineReplayRunner:
         outcome.scenario = str(batch.get("scenario", "") or "")
         outcome.chat_id = str(batch.get("chat_id") or case.get("chat_id") or "")
         outcome.tags = [str(tag) for tag in (batch.get("tags") or [])]
+        outcome.message_count = len(batch.get("messages") or [])
         outcome.expected_brief = str(batch.get("expected_brief", "") or "")
         realtime_results: list[ReplayResult] = []
         for raw_msg in batch.get("messages") or []:
@@ -139,6 +144,7 @@ class OfflineReplayRunner:
         outcome.write_latency_ms = round((time.perf_counter() - write_started) * 1000, 3)
 
         outcome.write_result_count = write_result.result_count
+        outcome.write_input_count = getattr(write_result, "input_count", 0)
         if not write_result.ok:
             outcome.failures.append(f"write:{write_result.error}")
 
@@ -223,7 +229,8 @@ class OfflineReplayRunner:
         realtime_latencies = [ms for outcome in outcomes for ms in outcome.realtime_latency_ms]
         write_latencies = [outcome.write_latency_ms for outcome in outcomes]
         total_realtime_messages = sum(len(outcome.realtime_latency_ms) for outcome in outcomes)
-        total_write_input_messages = sum(outcome.write_result_count for outcome in outcomes)
+        total_write_input_messages = sum(outcome.write_input_count for outcome in outcomes)
+        total_write_result_units = sum(outcome.write_result_count for outcome in outcomes)
         total_case_runtime_ms = round((time.perf_counter() - case_started) * 1000, 3)
 
         def pct(values: list[float], ratio: float) -> float | None:
@@ -239,20 +246,30 @@ class OfflineReplayRunner:
             "case_total_runtime_ms": total_case_runtime_ms,
             "total_realtime_messages": total_realtime_messages,
             "total_write_batches": len(outcomes),
-            "total_write_result_units": total_write_input_messages,
+            "total_write_input_messages": total_write_input_messages,
+            "total_write_result_units": total_write_result_units,
             "avg_realtime_latency_ms": round(sum(realtime_latencies) / len(realtime_latencies), 3) if realtime_latencies else None,
             "p95_realtime_latency_ms": pct(realtime_latencies, 0.95),
             "avg_write_latency_ms": round(sum(write_latencies) / len(write_latencies), 3) if write_latencies else None,
             "p95_write_latency_ms": pct(write_latencies, 0.95),
             "realtime_throughput_msgs_per_sec": round(total_realtime_messages / realtime_total_seconds, 3) if realtime_total_seconds else None,
-            "write_throughput_units_per_sec": round(total_write_input_messages / write_total_seconds, 3) if write_total_seconds else None,
+            "write_input_throughput_msgs_per_sec": round(total_write_input_messages / write_total_seconds, 3) if write_total_seconds else None,
+            "write_result_throughput_units_per_sec": round(total_write_result_units / write_total_seconds, 3) if write_total_seconds else None,
         }
 
     def _build_interference_metrics(self, case: dict[str, Any], outcomes: list[BatchOutcome]) -> dict[str, Any]:
         interference_tags = {"noise", "anti_noise", "anti_interference", "query", "schedule", "task", "multi_group", "topic_boundary", "parallel", "parallel_discussion", "classification", "cross_group_drift"}
         total_batches = 0
         passed_batches = 0
+        difficult_batches = 0
+        difficult_passed = 0
+        multi_intent_batches = 0
+        multi_intent_passed = 0
+        near_miss_batches = 0
+        near_miss_passed = 0
+        action_check_batches = 0
         action_match_batches = 0
+        write_check_batches = 0
         write_match_batches = 0
         ignore_rule_batches = 0
         ignore_rule_passed = 0
@@ -264,16 +281,34 @@ class OfflineReplayRunner:
             if not relevant:
                 continue
             total_batches += 1
-            passed_batches += int(not outcome.failures)
+            batch_passed = int(not outcome.failures)
+            passed_batches += batch_passed
             for tag in relevant:
                 tag_counts[tag] = tag_counts.get(tag, 0) + 1
+
+            is_multi_intent = len(relevant) >= 2
+            is_difficult = len(batch.get("messages") or []) >= 5 or bool(
+                tags & {"parallel", "parallel_discussion", "classification", "multi_group", "topic_boundary"}
+            )
+            is_near_miss = "near_miss" in tags or bool(tags & {"policy", "risk"})
+            if is_multi_intent:
+                multi_intent_batches += 1
+                multi_intent_passed += batch_passed
+            if is_difficult:
+                difficult_batches += 1
+                difficult_passed += batch_passed
+            if is_near_miss:
+                near_miss_batches += 1
+                near_miss_passed += batch_passed
 
             expected = batch.get("expected") or {}
             expected_actions = expected.get("realtime_actions")
             if expected_actions is not None:
+                action_check_batches += 1
                 action_match_batches += int(outcome.realtime_actions == expected_actions)
             expected_write = expected.get("write_result_count")
             if expected_write is not None:
+                write_check_batches += 1
                 write_match_batches += int(outcome.write_result_count == expected_write)
 
             should_ignore = (batch.get("expected_write_result") or {}).get("should_ignore_message_ids") or []
@@ -285,8 +320,16 @@ class OfflineReplayRunner:
             "batches": total_batches,
             "passed_batches": passed_batches,
             "batch_pass_rate": round(passed_batches / total_batches, 4) if total_batches else None,
-            "realtime_action_match_rate": round(action_match_batches / total_batches, 4) if total_batches else None,
-            "write_count_match_rate": round(write_match_batches / total_batches, 4) if total_batches else None,
+            "difficult_batches": difficult_batches,
+            "difficult_batch_pass_rate": round(difficult_passed / difficult_batches, 4) if difficult_batches else None,
+            "multi_intent_batches": multi_intent_batches,
+            "multi_intent_batch_pass_rate": round(multi_intent_passed / multi_intent_batches, 4) if multi_intent_batches else None,
+            "near_miss_batches": near_miss_batches,
+            "near_miss_batch_pass_rate": round(near_miss_passed / near_miss_batches, 4) if near_miss_batches else None,
+            "realtime_action_check_batches": action_check_batches,
+            "realtime_action_match_rate": round(action_match_batches / action_check_batches, 4) if action_check_batches else None,
+            "write_count_check_batches": write_check_batches,
+            "write_count_match_rate": round(write_match_batches / write_check_batches, 4) if write_check_batches else None,
             "ignore_rule_match_rate": round(ignore_rule_passed / ignore_rule_batches, 4) if ignore_rule_batches else None,
             "tag_counts": dict(sorted(tag_counts.items())),
         }
@@ -295,6 +338,8 @@ class OfflineReplayRunner:
         conflict_tags = {"refine", "refine_candidate", "supersede", "supersede_candidate", "conflict"}
         total_batches = 0
         passed_batches = 0
+        hard_conflict_batches = 0
+        hard_conflict_passed = 0
         memory_card_checks = 0
         memory_card_passed = 0
         relation_checks = 0
@@ -303,57 +348,76 @@ class OfflineReplayRunner:
         forbidden_relation_passed = 0
         relation_type_counts: dict[str, int] = {}
         relation_type_passed: dict[str, int] = {}
+        relation_type_total: dict[str, int] = {}
 
         for batch, outcome in zip(case.get("batches") or [], outcomes):
             tags = {str(tag) for tag in (batch.get("tags") or [])}
             if not (tags & conflict_tags):
                 continue
             total_batches += 1
-            passed_batches += int(not outcome.failures)
+            batch_passed = int(not outcome.failures)
+            passed_batches += batch_passed
+            is_hard_conflict = "conflict" in tags and ("supersede" in tags or "refine" in tags or "supersede_candidate" in tags)
+            if is_hard_conflict:
+                hard_conflict_batches += 1
+                hard_conflict_passed += batch_passed
 
             expected_write = batch.get("expected_write_result") or {}
             relation_specs = expected_write.get("expected_relations") or []
             forbidden_specs = expected_write.get("forbidden_relations") or []
             for idx, spec in enumerate(relation_specs):
-                relation_checks += 1
                 relation_type = str(spec.get("relation_type") or "")
                 relation_type_counts[relation_type] = relation_type_counts.get(relation_type, 0) + 1
-                matched = any(
-                    check.get("name") == f"expected_relations[{idx}]" and check.get("passed")
-                    for check in outcome.checks
-                )
-                relation_passed += int(matched)
-                relation_type_passed[relation_type] = relation_type_passed.get(relation_type, 0) + int(matched)
+                if self.evaluator.deep_eval_enabled:
+                    relation_checks += 1
+                    relation_type_total[relation_type] = relation_type_total.get(relation_type, 0) + 1
+                    matched = any(
+                        check.get("name") == f"expected_relations[{idx}]" and check.get("passed")
+                        for check in outcome.checks
+                    )
+                    relation_passed += int(matched)
+                    relation_type_passed[relation_type] = relation_type_passed.get(relation_type, 0) + int(matched)
 
             for idx, spec in enumerate(forbidden_specs):
-                forbidden_relation_checks += 1
                 relation_type = str(spec.get("forbidden_relation_type") or "")
-                matched = any(
-                    check.get("name") == f"forbidden_relations[{idx}]" and check.get("passed")
-                    for check in outcome.checks
-                )
-                forbidden_relation_passed += int(matched)
                 relation_type_counts[f"forbidden:{relation_type}"] = relation_type_counts.get(f"forbidden:{relation_type}", 0) + 1
-                relation_type_passed[f"forbidden:{relation_type}"] = relation_type_passed.get(f"forbidden:{relation_type}", 0) + int(matched)
+                if self.evaluator.deep_eval_enabled:
+                    forbidden_relation_checks += 1
+                    matched = any(
+                        check.get("name") == f"forbidden_relations[{idx}]" and check.get("passed")
+                        for check in outcome.checks
+                    )
+                    forbidden_relation_passed += int(matched)
+                    relation_type_passed[f"forbidden:{relation_type}"] = relation_type_passed.get(f"forbidden:{relation_type}", 0) + int(matched)
+                    relation_type_total[f"forbidden:{relation_type}"] = relation_type_total.get(f"forbidden:{relation_type}", 0) + 1
 
             memory_specs = expected_write.get("expected_memory_cards") or []
             for idx, _spec in enumerate(memory_specs):
-                memory_card_checks += 1
-                matched = any(
-                    check.get("name") == f"expected_memory_cards[{idx}]" and check.get("passed")
-                    for check in outcome.checks
-                )
-                memory_card_passed += int(matched)
+                if self.evaluator.deep_eval_enabled:
+                    memory_card_checks += 1
+                    matched = any(
+                        check.get("name") == f"expected_memory_cards[{idx}]" and check.get("passed")
+                        for check in outcome.checks
+                    )
+                    memory_card_passed += int(matched)
 
         return {
+            "mode": "full" if self.evaluator.deep_eval_enabled else "skipped",
             "batches": total_batches,
             "passed_batches": passed_batches,
             "batch_pass_rate": round(passed_batches / total_batches, 4) if total_batches else None,
+            "hard_conflict_batches": hard_conflict_batches,
+            "hard_conflict_batch_pass_rate": round(hard_conflict_passed / hard_conflict_batches, 4) if hard_conflict_batches else None,
             "memory_card_match_rate": round(memory_card_passed / memory_card_checks, 4) if memory_card_checks else None,
             "relation_match_rate": round(relation_passed / relation_checks, 4) if relation_checks else None,
             "forbidden_relation_match_rate": round(forbidden_relation_passed / forbidden_relation_checks, 4) if forbidden_relation_checks else None,
             "relation_type_counts": dict(sorted(relation_type_counts.items())),
-            "relation_type_passed": dict(sorted(relation_type_passed.items())),
+            "relation_type_passed": dict(sorted(relation_type_passed.items())) if self.evaluator.deep_eval_enabled else {},
+            "relation_type_match_rate": {
+                relation_type: round(relation_type_passed.get(relation_type, 0) / total, 4)
+                for relation_type, total in sorted(relation_type_total.items())
+                if total
+            } if self.evaluator.deep_eval_enabled else None,
         }
 
     def _build_write_quality_metrics(self, outcomes: list[BatchOutcome]) -> dict[str, Any]:
@@ -407,6 +471,21 @@ class OfflineReplayRunner:
         }
 
     def _build_retrieval_quality_metrics(self, case: dict[str, Any], case_eval: Any) -> dict[str, Any]:
+        if not self.evaluator.deep_eval_enabled:
+            return {
+                "mode": "skipped",
+                "reason": "deep_eval_disabled",
+                "final_memory_checks": 0,
+                "final_memory_passed": 0,
+                "final_memory_hit_rate": None,
+                "evidence_checks": 0,
+                "evidence_passed": 0,
+                "evidence_hit_rate": None,
+                "granularity_counts": {},
+                "granularity_hit_rate": {},
+                "recall_top1_hit_rate": None,
+                "recall_top3_hit_rate": None,
+            }
         final_specs = (case.get("expected") or {}).get("final_memory_checks") or []
         evidence_specs = (case.get("expected") or {}).get("evidence_checks") or []
         check_map = {check.name: check for check in case_eval.checks}

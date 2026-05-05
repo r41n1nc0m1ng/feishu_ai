@@ -38,7 +38,7 @@
 - 支持按 `--tag` / `--chat` 做专项回归。
 
 当前工作流：
-- `scenario_source_v2.json` 是场景源文件，允许保留冰山式隐藏背景，仅用于构造合理事件、消息摘录、触发时序和标准答案。
+- `scenario_source_v2.json` 是场景源文件，允许保留 ontology / timeline / iceberg 这几层构造信息，仅用于构造合理事件、消息摘录、触发时序和标准答案。
 - `full_demo_case_v2.json` 是最终运行 fixture，只保留 benchmark 运行所需字段。
 - 通过下面的构建脚本从 source 生成最终 fixture：
 
@@ -54,11 +54,13 @@ python benchmark_v2/validate_fixture.py
 
 当前 fixture 特点：
 - 已从单一 demo 样例升级为专项覆盖包；
+- source 层显式采用 `ontology_base -> timeline_base -> thread_slots -> iceberg_context -> visible_projection` 的构造流水线，避免直接造最终消息；
 - 每个 batch 都有 `scenario` / `tags`，方便后续筛选执行；
 - 已显式覆盖噪声过滤、action 消息、progress、refine、supersede、source/version/summary/topic 查询、多主题并行与稀疏窗口。
 - 冰山式隐藏背景只保留在 source 文件，不进入最终 runtime fixture。
 - 已引入非程序员主导场景，例如产品发布协调、客服口径统一、会议组织与会务分工。
 - 已引入多群边界、客服规则、答辩准备、跨群漂移防护等现实协作场景。
+- 已补入更硬的近似误判样例：非 `@机器人` 复述请求、带时间词的发布窗口、直播备用链接预案、碎片化多线程收口、显式排除后续改口的长线追问。
 
 附录：
 - [APPENDIX_SOURCE_SCHEMA.md](/Users/davidai/Desktop/feishuai/feishu_ai/benchmark_v2/APPENDIX_SOURCE_SCHEMA.md)
@@ -94,11 +96,13 @@ conda run -n feishu-ai-p0 python -m benchmark_v2.dual_channel_runner benchmark_v
 - 运行后会写入 `benchmark_v2/reports/benchmark_v2_latest.json`
 - 报告包含 `by_chat`、`by_tag`、`realtime_action_distribution`
 - 报告已补齐前两类生产级指标：
-  - 性能 / 吞吐指标：`case_total_runtime_ms`、`avg/p95_realtime_latency_ms`、`avg/p95_write_latency_ms`、`realtime_throughput_msgs_per_sec`、`write_throughput_units_per_sec`
+  - 性能 / 吞吐指标：`case_total_runtime_ms`、`avg/p95_realtime_latency_ms`、`avg/p95_write_latency_ms`、`realtime_throughput_msgs_per_sec`、`write_input_throughput_msgs_per_sec`、`write_result_throughput_units_per_sec`
   - 召回排序指标：`queries`、`top1_hits`、`top3_hits`、`top1_hit_rate`、`top3_hit_rate`、`avg_retrieval_latency_ms`
 - 报告补齐后两类专项指标：
   - 干扰对抗指标：`interference_metrics.batch_pass_rate`、`realtime_action_match_rate`、`write_count_match_rate`、`ignore_rule_match_rate`
+  - 干扰难例子指标：`interference_metrics.difficult_batch_pass_rate`、`multi_intent_batch_pass_rate`、`near_miss_batch_pass_rate`
   - 矛盾更新指标：`conflict_metrics.batch_pass_rate`、`memory_card_match_rate`、`relation_match_rate`、`forbidden_relation_match_rate`
+  - 关系类型指标：`conflict_metrics.hard_conflict_batch_pass_rate`、`relation_type_match_rate`
 - 报告继续补了质量诊断指标：
   - 写入质量：`write_quality_metrics.memory_card_match_rate`、`relation_match_rate`、`topic_match_rate`
   - 检索/证据质量：`retrieval_quality_metrics.final_memory_hit_rate`、`evidence_hit_rate`、`granularity_hit_rate`
@@ -106,18 +110,34 @@ conda run -n feishu-ai-p0 python -m benchmark_v2.dual_channel_runner benchmark_v
 当前口径说明：
 
 - 性能 / 吞吐指标默认始终输出，适合看回放开销、写入开销、规则触发退化。
+- `total_write_input_messages` / `write_input_throughput_msgs_per_sec` 反映写入侧输入规模；`total_write_result_units` / `write_result_throughput_units_per_sec` 反映分块或写入产出规模，两者不能混读。
 - 召回排序指标只在 case 级 deep eval 生效时输出；当前基于 `final_memory_checks` 构建，用来衡量终态记忆的 Top1 / Top3 命中，而不是替代真实线上检索评测。
+- 使用 `--tag` / `--chat` 的 filtered run 会跳过 case 级 deep eval；此时仍可验证 batch 级深度检查，但不能据此声称 case 终态召回已完整验证。
 - 干扰对抗 / 矛盾更新指标基于 v2 场景池中已标注的专项 batch 汇总，适合看分类、忽略规则、关系落地和误冲突回归。
 - 写入质量指标用于判断 deep eval 失败主要卡在卡片、关系还是 topic。
 - 检索/证据质量指标用于判断 final query、粒度命中和 evidence 追溯是否过关。
 - `forbidden_relation_match_rate` 专门用来衡量误冲突保护，即“看起来相关，但不应被判成 supersedes”。
+- 若日志出现 `Graphiti not initialized` 或 `Stage 2 unavailable, falling back to Jaccard`，应将本次 deep 结果视为降级环境结果，而不是完整 Stage 2 结果。
+
+当前本地初测口径（2026-05-05）：
+
+- 轻量模式全量回放：`24` 个 batch 中 `21` 个通过，`3` 个失败。
+- 失败 batch 集中在：
+  - `batch_016_product_launch_ops`
+  - `batch_017_meeting_org_external`
+  - `batch_022_release_policy_time_boundary`
+- 这三类失败不是 benchmark 故障，而是当前规则分类的已知缺口：
+  - 带时间词的发布窗口被误判成 `schedule`
+  - 直播备用链接预案被误判成 `schedule`
+  - FAQ 截止 + 发布口径混句被误判成 `schedule` 而不是 `task + policy`
+- 当前轻量结果已经能说明：v2 不再只是“能跑就全绿”的 smoke fixture，而是能稳定暴露实时分类的现实误判。
 
 当前验证效果：
 
 - `validate_fixture` 已通过，说明 source/runtime 结构一致性正常。
 - `tests.test_benchmark_v2_runner`、`tests.test_benchmark_replay` 已通过，说明 runner、reporting、FULL_WRITE 语义兼容性正常。
 - 轻量筛选回放已通过，说明按 `--tag` / `--chat` 的专项回归链路正常。
-- deep 子集运行已能真实触发 `expected_memory_cards`、`expected_evidence_checks`、`forbidden_relation_type` 等校验。
+- deep 子集运行已能真实触发 batch 级 `expected_memory_cards`、`expected_evidence_checks`、`forbidden_relation_type` 等校验。
 - 当前 deep 失败主要暴露系统真实能力缺口，而不是 benchmark 本身故障：
   - realtime 分类基本稳定；
   - ignore 规则基本稳定；

@@ -114,6 +114,7 @@ class BenchmarkV2RunnerTests(unittest.TestCase):
             outcome.realtime_latency_ms = rt
             outcome.write_latency_ms = wt
             outcome.write_result_count = units
+            outcome.write_input_count = units
             outcomes.append(outcome)
 
         with patch("benchmark_v2.dual_channel_runner.time.perf_counter", return_value=2.0):
@@ -128,7 +129,39 @@ class BenchmarkV2RunnerTests(unittest.TestCase):
         self.assertEqual(perf["avg_write_latency_ms"], 250.0)
         self.assertEqual(perf["p95_write_latency_ms"], 400.0)
         self.assertEqual(perf["realtime_throughput_msgs_per_sec"], 40.0)
-        self.assertEqual(perf["write_throughput_units_per_sec"], 10.0)
+        self.assertEqual(perf["total_write_input_messages"], 10)
+        self.assertEqual(perf["total_write_result_units"], 10)
+        self.assertEqual(perf["write_input_throughput_msgs_per_sec"], 10.0)
+        self.assertEqual(perf["write_result_throughput_units_per_sec"], 10.0)
+
+    def test_interference_metrics_use_checked_batches_only(self):
+        runner = OfflineReplayRunner()
+        case = {
+            "batches": [
+                {
+                    "tags": ["noise"],
+                    "expected": {"realtime_actions": ["noop"], "write_result_count": 1},
+                },
+                {
+                    "tags": ["noise"],
+                    "expected": {},
+                },
+            ]
+        }
+
+        from benchmark_v2.dual_channel_runner import BatchOutcome
+
+        outcome1 = BatchOutcome(batch_id="b1")
+        outcome1.realtime_actions = ["noop"]
+        outcome1.write_result_count = 1
+        outcome1.write_input_count = 1
+        outcome2 = BatchOutcome(batch_id="b2")
+        metrics = runner._build_interference_metrics(case, [outcome1, outcome2])
+
+        self.assertEqual(metrics["realtime_action_check_batches"], 1)
+        self.assertEqual(metrics["write_count_check_batches"], 1)
+        self.assertEqual(metrics["realtime_action_match_rate"], 1.0)
+        self.assertEqual(metrics["write_count_match_rate"], 1.0)
 
     def test_recall_metrics_are_built_from_final_memory_checks(self):
         evaluator = BenchmarkEvaluator()
@@ -189,11 +222,29 @@ class BenchmarkV2RunnerTests(unittest.TestCase):
         self.assertEqual(metrics["queries"], 2)
         self.assertEqual(metrics["top1_hits"], 2)
         self.assertEqual(metrics["top3_hits"], 2)
+        self.assertEqual(metrics["top5_hits"], 2)
         self.assertEqual(metrics["top1_hit_rate"], 1.0)
         self.assertEqual(metrics["top3_hit_rate"], 1.0)
+        self.assertEqual(metrics["top5_hit_rate"], 1.0)
+        self.assertEqual(metrics["mean_first_hit_rank"], 1.0)
+        self.assertEqual(metrics["median_first_hit_rank"], 1)
         self.assertEqual(len(metrics["details"]), 2)
         self.assertTrue(all(detail["matched_rank"] == 1 for detail in metrics["details"]))
         self.assertTrue(all(detail["retrieval_latency_ms"] is not None for detail in metrics["details"]))
+
+    def test_dimension_summary_reports_difficulty_mix(self):
+        summary = {
+            "batch_results": [
+                {"chat_id": "c1", "tags": ["parallel", "classification", "noise", "query"], "message_count": 5, "failures": []},
+                {"chat_id": "c1", "tags": ["query"], "message_count": 2, "failures": ["x"]},
+            ]
+        }
+        from benchmark_v2.reporting import build_dimension_summary
+
+        dims = build_dimension_summary(summary)
+        self.assertEqual(dims["difficulty_distribution"]["multi_tag"], 1)
+        self.assertEqual(dims["difficulty_distribution"]["long_batch"], 1)
+        self.assertEqual(dims["difficulty_distribution"]["hard_mix"], 1)
 
     def test_special_metrics_are_reported_on_console_summary(self):
         summary = {
@@ -321,7 +372,8 @@ class BenchmarkV2RunnerTests(unittest.TestCase):
         self.assertIn("conflict_metrics", summary)
         self.assertIn("memory_card_checks", summary["write_quality_metrics"])
         self.assertIn("relation_checks", summary["write_quality_metrics"])
-        self.assertEqual(summary["retrieval_quality_metrics"]["final_memory_checks"], 1)
+        self.assertEqual(summary["retrieval_quality_metrics"]["mode"], "skipped")
+        self.assertIsNone(summary["retrieval_quality_metrics"]["final_memory_hit_rate"])
 
     def test_forbidden_relation_type_is_checked(self):
         evaluator = BenchmarkEvaluator()

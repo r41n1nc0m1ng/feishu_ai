@@ -1,22 +1,32 @@
-# Iceberg Construction Method
+# Ontology + Iceberg Construction Method
 
 ## 原则
 
 冰山不是 benchmark 主结构，而是**构造 benchmark 的中间方法**。
 
+更准确地说，当前推荐方法是：
+
+- 先做 `ontology base`
+- 再做 `timeline base`
+- 再做 `iceberg context`
+- 最后做 `visible projection`
+
 正确流程：
 
-1. 先定义真实项目、角色、外部约束、交付物
-2. 列出群外事件和隐含任务
-3. 判断哪些内容会真实投影到群里
-4. 只把群里真的会说的话摘成 `messages`
-5. 根据隐藏背景写 `expected_brief` 和结构化标准答案
-6. 最后剥离冰山层，得到 runtime fixture
+1. 先定义群、本轮任务对象、角色分工、消息行为类型、可沉淀记忆对象
+2. 先铺时间基底：锚点时间、批次窗口、相对间隔、跨批依赖
+3. 给当前 batch 分线程槽位，先决定并行主题如何交错
+4. 列出群外事件、隐含任务、角色顾虑和不可见前提
+5. 判断哪些内容会真实投影到群里
+6. 只把群里真的会说的话摘成 `messages`
+7. 根据隐藏背景写 `expected_brief` 和结构化标准答案
+8. 最后剥离 source-only 层，得到 runtime fixture
 
 ## 为什么这样做
 
 - 避免直接让 LLM 生成“为了测试而说的话”
 - 让消息具备真实任务压力、角色差异和话题切换
+- 让“时间表达”“近似 query”“风险预案”“跨群相似表述”能先在构造层被约束
 - 更适合构造：
   - 干扰消息
   - 多主题并行
@@ -39,6 +49,7 @@
 
 - Source 与 runtime 分离
 - Source 有统一 schema
+- Source 里允许保留构造脚手架，例如时间基底和线程槽位
 - Runtime 尽量贴近原 `full_demo_case` 格式
 - 每个 batch 同时有：
   - 可见消息
@@ -46,4 +57,3 @@
   - 一句话标准答案
 - 覆盖多角色、多任务、多时间跨度
 - 覆盖非工程场景，不局限于程序员协作
-

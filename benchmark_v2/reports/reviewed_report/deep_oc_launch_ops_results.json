@@ -1,0 +1,298 @@
+{
+  "case_id": "full_demo_v2_productionish_pack_001",
+  "fixture": "benchmark_v2/full_demo_case_v2.json",
+  "filters": {
+    "tags": [],
+    "chats": [
+      "oc_launch_ops"
+    ]
+  },
+  "case_eval_mode": "skipped_for_filtered_run",
+  "deep_eval_enabled": true,
+  "full_write_enabled": true,
+  "total_batches": 3,
+  "passed_batches": 0,
+  "failed_batches": 3,
+  "total_checks": 15,
+  "failed_checks": 5,
+  "overall_success": false,
+  "batch_results": [
+    {
+      "batch_id": "batch_016_product_launch_ops",
+      "scenario": "产品发布协调：公告、客服口径与灰度时间",
+      "chat_id": "oc_launch_ops",
+      "tags": [
+        "product_launch",
+        "ops",
+        "near_miss",
+        "anti_interference",
+        "customer_success",
+        "multi_topic"
+      ],
+      "message_count": 3,
+      "expected_brief": "系统应把发布时间表达识别为发布策略，而不是日程，同时沉淀公告和客服口径。",
+      "realtime_actions": [
+        "schedule",
+        "noop",
+        "noop"
+      ],
+      "write_result_count": 1,
+      "write_input_count": 3,
+      "realtime_latency_ms": [
+        0.058,
+        0.027,
+        0.022
+      ],
+      "write_latency_ms": 9349.363,
+      "failures": [
+        "realtime_actions expected ['noop', 'noop', 'noop'], got ['schedule', 'noop', 'noop']",
+        "realtime_actions:expected=['noop', 'noop', 'noop'] actual=['schedule', 'noop', 'noop']",
+        "expected_memory_cards[1]:['辅助初筛', '不要写完全替代人工']"
+      ],
+      "checks": [
+        {
+          "name": "realtime_actions",
+          "passed": false,
+          "detail": "expected=['noop', 'noop', 'noop'] actual=['schedule', 'noop', 'noop']"
+        },
+        {
+          "name": "write_result_count",
+          "passed": true,
+          "detail": "expected=1 actual=1"
+        },
+        {
+          "name": "expected_memory_cards[0]",
+          "passed": true,
+          "detail": "efac38d6-b093-4e74-9e6e-d24cc2dd92ea"
+        },
+        {
+          "name": "expected_memory_cards[1]",
+          "passed": false,
+          "detail": "['辅助初筛', '不要写完全替代人工']"
+        },
+        {
+          "name": "expected_memory_cards[2]",
+          "passed": true,
+          "detail": "efac38d6-b093-4e74-9e6e-d24cc2dd92ea"
+        }
+      ],
+      "metrics": {
+        "total_checks": 5,
+        "passed_checks": 3,
+        "failed_checks": 2,
+        "avg_realtime_latency_ms": 0.036,
+        "write_latency_ms": 9349.363
+      }
+    },
+    {
+      "batch_id": "batch_018_customer_policy_boundary",
+      "scenario": "客服口径与风险边界，不应被误判成 schedule",
+      "chat_id": "oc_launch_ops",
+      "tags": [
+        "customer_success",
+        "policy",
+        "risk",
+        "non_engineering"
+      ],
+      "message_count": 2,
+      "expected_brief": "系统应沉淀客服异常应答和升级规则，而不是把它们误判成日程。",
+      "realtime_actions": [
+        "noop",
+        "noop"
+      ],
+      "write_result_count": 1,
+      "write_input_count": 2,
+      "realtime_latency_ms": [
+        0.056,
+        0.021
+      ],
+      "write_latency_ms": 11785.854,
+      "failures": [
+        "expected_memory_cards[0]:['仅供参考', '人工复核', '不要承诺', '稍后重试']"
+      ],
+      "checks": [
+        {
+          "name": "realtime_actions",
+          "passed": true,
+          "detail": "expected=['noop', 'noop'] actual=['noop', 'noop']"
+        },
+        {
+          "name": "write_result_count",
+          "passed": true,
+          "detail": "expected=1 actual=1"
+        },
+        {
+          "name": "expected_memory_cards[0]",
+          "passed": false,
+          "detail": "['仅供参考', '人工复核', '不要承诺', '稍后重试']"
+        }
+      ],
+      "metrics": {
+        "total_checks": 3,
+        "passed_checks": 2,
+        "failed_checks": 1,
+        "avg_realtime_latency_ms": 0.038,
+        "write_latency_ms": 11785.854
+      }
+    },
+    {
+      "batch_id": "batch_022_release_policy_time_boundary",
+      "scenario": "带时间词的发布策略与风险边界，不应一律走 schedule",
+      "chat_id": "oc_launch_ops",
+      "tags": [
+        "product_launch",
+        "policy",
+        "risk",
+        "task",
+        "query",
+        "near_miss",
+        "anti_interference"
+      ],
+      "message_count": 4,
+      "expected_brief": "系统应把“晚上八点灰度开放”和“不要承诺几点修好”识别成发布/风险口径，只把 FAQ 截止识别成 task。",
+      "realtime_actions": [
+        "schedule",
+        "noop",
+        "schedule",
+        "query"
+      ],
+      "write_result_count": 1,
+      "write_input_count": 3,
+      "realtime_latency_ms": [
+        0.036,
+        0.019,
+        0.021,
+        0.013
+      ],
+      "write_latency_ms": 15970.542,
+      "failures": [
+        "realtime_actions expected ['noop', 'noop', 'task', 'query'], got ['schedule', 'noop', 'schedule', 'query']",
+        "realtime_actions:expected=['noop', 'noop', 'task', 'query'] actual=['schedule', 'noop', 'schedule', 'query']",
+        "expected_memory_cards[2]:['辅助初筛']"
+      ],
+      "checks": [
+        {
+          "name": "realtime_actions",
+          "passed": false,
+          "detail": "expected=['noop', 'noop', 'task', 'query'] actual=['schedule', 'noop', 'schedule', 'query']"
+        },
+        {
+          "name": "write_result_count",
+          "passed": true,
+          "detail": "expected=1 actual=1"
+        },
+        {
+          "name": "should_ignore_message_ids",
+          "passed": true,
+          "detail": "expected_subset=['v2_0203'] actual=['v2_0203']"
+        },
+        {
+          "name": "expected_memory_cards[0]",
+          "passed": true,
+          "detail": "93634117-b998-4665-b19f-8fca0bc9fc2d"
+        },
+        {
+          "name": "expected_memory_cards[1]",
+          "passed": true,
+          "detail": "93634117-b998-4665-b19f-8fca0bc9fc2d"
+        },
+        {
+          "name": "expected_memory_cards[2]",
+          "passed": false,
+          "detail": "['辅助初筛']"
+        }
+      ],
+      "metrics": {
+        "total_checks": 6,
+        "passed_checks": 4,
+        "failed_checks": 2,
+        "avg_realtime_latency_ms": 0.022,
+        "write_latency_ms": 15970.542
+      }
+    }
+  ],
+  "case_checks": [
+    {
+      "name": "case_deep_eval",
+      "passed": true,
+      "detail": "skipped:filtered run"
+    }
+  ],
+  "case_failures": [],
+  "performance": {
+    "case_total_runtime_ms": 37110.662,
+    "total_realtime_messages": 9,
+    "total_write_batches": 3,
+    "total_write_input_messages": 8,
+    "total_write_result_units": 3,
+    "avg_realtime_latency_ms": 0.03,
+    "p95_realtime_latency_ms": 0.058,
+    "avg_write_latency_ms": 12368.586,
+    "p95_write_latency_ms": 15970.542,
+    "realtime_throughput_msgs_per_sec": 32967.033,
+    "write_input_throughput_msgs_per_sec": 0.216,
+    "write_result_throughput_units_per_sec": 0.081
+  },
+  "dimensions": {
+    "by_chat": {
+      "oc_launch_ops": {
+        "batches": 3,
+        "failed_batches": 3
+      }
+    },
+    "by_tag": {
+      "anti_interference": {
+        "batches": 2,
+        "failed_batches": 2
+      },
+      "customer_success": {
+        "batches": 2,
+        "failed_batches": 2
+      },
+      "multi_topic": {
+        "batches": 1,
+        "failed_batches": 1
+      },
+      "near_miss": {
+        "batches": 2,
+        "failed_batches": 2
+      },
+      "non_engineering": {
+        "batches": 1,
+        "failed_batches": 1
+      },
+      "ops": {
+        "batches": 1,
+        "failed_batches": 1
+      },
+      "policy": {
+        "batches": 2,
+        "failed_batches": 2
+      },
+      "product_launch": {
+        "batches": 2,
+        "failed_batches": 2
+      },
+      "query": {
+        "batches": 1,
+        "failed_batches": 1
+      },
+      "risk": {
+        "batches": 2,
+        "failed_batches": 2
+      },
+      "task": {
+        "batches": 1,
+        "failed_batches": 1
+      }
+    },
+    "realtime_action_distribution": {
+      "noop": 5,
+      "query": 1,
+      "schedule": 3
+    },
+    "difficulty_distribution": {
+      "multi_tag": 3
+    }
+  }
+}
