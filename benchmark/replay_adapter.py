@@ -8,10 +8,15 @@ from typing import Any, Awaitable, Callable
 
 from memory.schemas import EvidenceMessage, FeishuMessage, FetchBatch
 from memory.batch_processor import BatchProcessor
+from memory.card_generator import CardGenerator
+from memory.evidence_store import EvidenceStore
+from memory.topic_manager import TopicManager
 from preprocessor.event_segmenter import segment
+from preprocessor.event_segmenter import segment_async
 from realtime.action_handler import RealtimeActionHandler
 from realtime.dispatcher import dispatch_message
 from realtime.query_handler import RealtimeQueryHandler
+from realtime.triggers import has_explicit_bot_mention, is_task_like, is_topic_list_query
 
 
 @dataclass
@@ -160,18 +165,30 @@ class DualChannelReplayAdapter:
         batch_id = str(batch.get("batch_id", ""))
         try:
             fetch_batch = self.to_fetch_batch(batch.get("messages") or [], self.batch_chat_id(case, batch))
-            processor = BatchProcessor()
-            chat_id = fetch_batch.chat_id
-            if chat_id:
-                await processor.register_chat_by_id(chat_id, str(case.get("chat_name") or ""))
-                await processor._BatchProcessor__process_chat_inner(chat_id)
+            evidence_store = EvidenceStore()
+            card_generator = CardGenerator()
+            blocks = await segment_async(fetch_batch)
+            generated = []
+            for block in blocks:
+                await evidence_store.save(block)
+                card = await card_generator.generate(block)
+                if card:
+                    generated.append(card)
+
+            if any(card.status.value == "active" and card.memory_type.value != "progress" for card in generated):
+                await TopicManager().rebuild_topics(fetch_batch.chat_id)
             return ReplayResult(
                 channel="write",
                 ok=True,
                 batch_id=batch_id,
                 input_count=len(fetch_batch.messages),
-                result_count=1,
-                payload={"chat_id": chat_id},
+                result_count=len(generated),
+                ignored_message_ids=[
+                    self.message_id(msg)
+                    for msg in (batch.get("messages") or [])
+                    if not self.should_send_to_write_layer(msg)
+                ],
+                payload={"chat_id": fetch_batch.chat_id, "blocks": len(blocks), "cards": [card.model_dump() for card in generated]},
             )
         except Exception as exc:
             return ReplayResult(
@@ -293,7 +310,14 @@ class DualChannelReplayAdapter:
             return False
         if self.sender_type(raw_msg) == "app":
             return False
-        if self.is_at_bot(raw_msg, self.mentions(raw_msg)):
+        text = self.parse_content_text(raw_msg)
+        if self.is_at_bot(raw_msg, self.mentions(raw_msg)) or has_explicit_bot_mention(text):
+            return False
+        if is_topic_list_query(text):
+            return False
+        if is_task_like(text):
+            return False
+        if self.is_operational_schedule_text(text):
             return False
         return True
 
@@ -377,4 +401,21 @@ class DualChannelReplayAdapter:
         bot_open_id = os.getenv("FEISHU_BOT_OPEN_ID", "").strip()
         if bot_open_id:
             return bot_open_id in mentions
-        return bool(mentions)
+        return bool(mentions) or has_explicit_bot_mention(self.parse_content_text(raw_msg))
+
+    def is_operational_schedule_text(self, text: str) -> bool:
+        text = (text or "").strip()
+        if not text:
+            return False
+        meeting_tokens = (
+            "开会",
+            "会议",
+            "评审",
+            "碰头会",
+            "说明会",
+            "同步会",
+            "路演",
+        )
+        has_meeting = any(token in text for token in meeting_tokens)
+        has_time = any(token in text for token in ("今天", "明天", "后天", "周", "点", "号"))
+        return has_meeting and has_time
