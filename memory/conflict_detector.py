@@ -1,13 +1,15 @@
 """
-冲突检测层（Option B 架构）。
+冲突检测层。
 
-三段式，触发条件互斥：
-  Stage 1 — 规则：decision_object_key 精确匹配（无外部依赖，始终可用）
-  Stage 2 — 语义：embedding 召回候选 → LLM 判断是否同议题
-  Fallback — 降级：Jaccard 直扫 SQLite（仅当 Stage 2 服务不可用时触发）
-
-Jaccard 不在 LLM 判断"否"之后运行，只在 embedding/LLM 服务不可用时接管。
-接收 MemoryCard（由 card_generator 在保存前传入）。
+提供两套接口（共存）：
+  1) classify_pair(new, old) → CardRelationOp
+       新接口：apply_operations 使用，按 6 分类返回操作类型
+       - 旧卡为 DECISION：3 分类（same_direction_same_opinion / same_direction_opposite_opinion / different_direction）
+       - 旧卡为 PROGRESS：3 分类（fully_answered / partially_answered / not_answered）
+       LLM 不可用时一律返回 ADD（保守降级）。
+  2) find_conflict(chat_id, new) → dict | None
+       旧接口：detect_and_apply_conflicts / batch_processor 使用，仅判定 SUPERSEDE。
+       三段式（key match → semantic+LLM → Jaccard fallback）。
 """
 import json
 import logging
@@ -18,12 +20,80 @@ from typing import Optional
 import httpx
 
 from memory.retriever import MemoryRetriever
-from memory.schemas import CardStatus, MemoryCard
+from memory.schemas import CardRelationOp, CardStatus, MemoryCard, MemoryType
 
 logger = logging.getLogger(__name__)
 
 OLLAMA_URL = os.getenv("OLLAMA_URL", "http://localhost:11434")
 CONFLICT_MODEL = os.getenv("LOCAL_MODEL", "qwen2.5:7b")
+
+# ── 6 分类 prompts（apply_operations 走 classify_pair 调用）────────────────────
+
+_DECISION_PAIR_PROMPT = """\
+你是记忆卡片关系判定助手。比较两张同议题的决策卡片，给出关系。
+
+议题：{decision_object}
+
+新卡片：
+  决策：{new_decision}
+  理由：{new_reason}
+
+已有卡片：
+  决策：{old_decision}
+  理由：{old_reason}
+
+【判定步骤】
+1. 这两张卡片讨论的是同一个**子方向**吗？同议题下可能有多个子方向。
+   例如议题 "MVP-范围" 下可有"是否做账号体系""是否做简历解析""哪些字段脱敏"等独立子方向。
+   只有当 decision 中描述的具体对象/动作/维度对齐时，才视为同子方向。
+2. 若是同子方向，新旧观点是相同（互为补充/重复/同方向加强）还是相反（结论冲突）？
+
+【关系类型】
+- same_direction_same_opinion：同子方向 + 观点一致（重复或补充）
+- same_direction_opposite_opinion：同子方向 + 结论冲突（互为否定）
+- different_direction：同议题但子方向不同（如一个谈账号，一个谈解析）
+
+【输出 JSON】只返回 JSON，不要其他内容：
+{{"relation": "same_direction_same_opinion | same_direction_opposite_opinion | different_direction", "reason": "一句话依据"}}
+"""
+
+_PROGRESS_PAIR_PROMPT = """\
+你是记忆卡片关系判定助手。判断一张新决策卡片对一张未收口的 progress 卡片的解答程度。
+
+议题：{decision_object}
+
+旧 progress 卡片：
+  本轮议题：{old_decision}
+  待决议子问题（open_questions）：{old_open_questions}
+  讨论涉及对象（discussion_scope）：{old_discussion_scope}
+
+新决策卡片：
+  决策：{new_decision}
+  理由：{new_reason}
+
+【判定步骤】
+1. 新决策与旧 progress 卡是否指向同一子方向？看 new.decision 的具体对象是否落在 old.open_questions / discussion_scope 内。
+2. 若同子方向，新决策是否覆盖 open_questions 中**所有**子问题？
+
+【关系类型】
+- fully_answered：同子方向 + 完整解答 open_questions 中的全部子问题
+- partially_answered：同子方向 + 解答了部分（>=1 项）但非全部 open_questions
+- not_answered：不同子方向，或 open_questions 中没有任何一项被新决策回答
+
+【输出 JSON】只返回 JSON，不要其他内容：
+{{"relation": "fully_answered | partially_answered | not_answered", "reason": "一句话依据"}}
+"""
+
+_DECISION_RELATION_TO_OP = {
+    "same_direction_same_opinion":     CardRelationOp.REFINE,
+    "same_direction_opposite_opinion": CardRelationOp.SUPERSEDE,
+    "different_direction":             CardRelationOp.ADD,
+}
+_PROGRESS_RELATION_TO_OP = {
+    "fully_answered":     CardRelationOp.PROGRESS_COMPLETE,
+    "partially_answered": CardRelationOp.PROGRESS_REFINE,
+    "not_answered":       CardRelationOp.ADD,
+}
 
 _CONFLICT_PROMPT = """\
 你是一个决策记忆管理助手。
@@ -65,6 +135,75 @@ class ConflictDetector:
     用于辅助 card_generator 判断是否触发 SUPERSEDE。
     接收尚未写入缓存的新 MemoryCard。
     """
+
+    # ── 新接口：6 分类 classify_pair ──────────────────────────────────────────
+
+    async def classify_pair(
+        self, new_card: MemoryCard, old_card: MemoryCard
+    ) -> tuple[CardRelationOp, str]:
+        """对 (new, old) 卡片对做关系判定，返回 (operation, reason)。
+
+        约定：
+          - new_card 的 memory_type 由调用方保证为 DECISION（PROGRESS 新卡走 add 短路）
+          - 旧卡为 PROGRESS → 走 progress prompt（fully/partially/not_answered）
+          - 旧卡为非 PROGRESS → 走 decision prompt（same+same / same+oppos / different）
+          - LLM 不可用或 relation 字段缺失 → 返回 (ADD, 'llm_unavailable') 保守降级
+        """
+        if old_card.memory_type == MemoryType.PROGRESS:
+            prompt = _PROGRESS_PAIR_PROMPT.format(
+                decision_object       = old_card.decision_object,
+                old_decision          = old_card.decision,
+                old_open_questions    = old_card.open_questions or [],
+                old_discussion_scope  = old_card.discussion_scope or [],
+                new_decision          = new_card.decision,
+                new_reason            = new_card.reason or "无",
+            )
+            mapping = _PROGRESS_RELATION_TO_OP
+            kind = "progress"
+        else:
+            prompt = _DECISION_PAIR_PROMPT.format(
+                decision_object = old_card.decision_object,
+                new_decision    = new_card.decision,
+                new_reason      = new_card.reason or "无",
+                old_decision    = old_card.decision,
+                old_reason      = old_card.reason or "无",
+            )
+            mapping = _DECISION_RELATION_TO_OP
+            kind = "decision"
+
+        try:
+            raw = await self._call_llm(prompt)
+        except Exception as e:
+            logger.warning("classify_pair LLM 调用异常 | err=%s", e)
+            return CardRelationOp.ADD, "llm_unavailable"
+
+        if not raw:
+            return CardRelationOp.ADD, "llm_no_response"
+
+        relation = (raw.get("relation") or "").strip()
+        op = mapping.get(relation)
+        reason = (raw.get("reason") or "").strip()
+        if op is None:
+            logger.warning("classify_pair 未识别 relation=%s kind=%s", relation, kind)
+            return CardRelationOp.ADD, f"unknown_relation:{relation}"
+
+        logger.info(
+            "classify_pair | kind=%s relation=%s op=%s new='%s' old='%s' reason=%s",
+            kind, relation, op.value,
+            new_card.decision[:30], old_card.decision[:30], reason,
+        )
+        return op, reason
+
+    async def _call_llm(self, prompt: str) -> Optional[dict]:
+        """统一 LLM 入口，优先级：DeepSeek → OpenAI → Ollama。"""
+        if os.getenv("DEEPSEEK_API_KEY"):
+            return await self._call_deepseek(prompt)
+        provider = os.getenv("MODEL_PROVIDER", "ollama").strip().lower()
+        if provider == "openai" or os.getenv("OPENAI_API_KEY"):
+            return await self._call_openai(prompt)
+        return await self._call_ollama(prompt)
+
+    # ── 旧接口（batch_processor / detect_and_apply_conflicts 仍在使用）─────────
 
     async def find_conflict(
         self, chat_id: str, new_card: MemoryCard

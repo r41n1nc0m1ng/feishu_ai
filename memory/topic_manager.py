@@ -26,10 +26,12 @@ MAX_CARDS_PER_REBUILD = int(os.getenv("TOPIC_MAX_CARDS", "20"))
 _TOPIC_PROMPT = """\
 你是一个群聊决策记忆摘要助手。以下是一个飞书群聊中已沉淀的决策记忆卡片（JSON 数组）。
 
-请将这些卡片归并为若干主题（2 至 6 个），每个主题生成一条摘要。
+请将这些卡片归并为若干主题（1 至 6 个），每个主题生成一条摘要。
 
 要求：
+- 优先按 decision_object 的"大方向"聚类（"大方向-小方向"中的"大方向"部分）
 - 只合并真正相关的卡片，不要强行把无关决策归为同一主题
+- 若所有卡片确属同一大方向，输出 1 个主题即可，不要为了凑数硬拆
 - topic：2-4 个词的主题标签，如"MVP产品边界"
 - summary：当前生效状态的简洁描述（1-3 句话，只说现在怎么定的，不说"讨论了"）
 - covered_memory_ids：该主题包含的 memory_id 列表（从输入中取，不要捏造）
@@ -123,6 +125,7 @@ class TopicManager:
         ][:MAX_CARDS_PER_REBUILD]
 
     async def _call_llm(self, cards: list) -> Optional[list]:
+        """优先级：DeepSeek → OpenAI → Ollama（与 card_generator / conflict_detector 一致）。"""
         cards_json = json.dumps(
             [{"memory_id": c.memory_id, "decision_object": c.decision_object,
               "decision": c.decision, "reason": c.reason}
@@ -130,6 +133,8 @@ class TopicManager:
             ensure_ascii=False, indent=2,
         )
         prompt = _TOPIC_PROMPT.format(cards_json=cards_json)
+        if os.getenv("DEEPSEEK_API_KEY"):
+            return await self._call_deepseek(prompt)
         provider = os.getenv("MODEL_PROVIDER", "ollama").strip().lower()
         if provider == "openai" or os.getenv("OPENAI_API_KEY"):
             return await self._call_openai_compatible(prompt)
@@ -144,10 +149,35 @@ class TopicManager:
                 return parsed[key]
         return None
 
+    async def _call_deepseek(self, prompt: str) -> Optional[list]:
+        api_key  = os.getenv("DEEPSEEK_API_KEY", "")
+        base_url = os.getenv("DEEPSEEK_BASE_URL", "https://api.deepseek.com/v1").rstrip("/")
+        model    = os.getenv("DEEPSEEK_MODEL", "deepseek-chat")
+        seed     = int(os.getenv("LLM_SEED", "42"))
+        try:
+            async with httpx.AsyncClient(timeout=120, trust_env=False) as client:
+                resp = await client.post(
+                    f"{base_url}/chat/completions",
+                    headers={"Authorization": f"Bearer {api_key}"},
+                    json={"model": model,
+                          "messages": [{"role": "user", "content": prompt}],
+                          "response_format": {"type": "json_object"},
+                          "temperature": 0,
+                          "top_p": 1,
+                          "seed": seed},
+                )
+                resp.raise_for_status()
+                content = resp.json()["choices"][0]["message"]["content"]
+                return self._parse_response(json.loads(content))
+        except Exception as e:
+            logger.error("TopicManager DeepSeek 调用失败: %s", e)
+            return None
+
     async def _call_openai_compatible(self, prompt: str) -> Optional[list]:
-        api_key = os.getenv("OPENAI_API_KEY", "")
+        api_key  = os.getenv("OPENAI_API_KEY", "")
         base_url = os.getenv("OPENAI_BASE_URL", "https://api.openai.com/v1").rstrip("/")
-        model = os.getenv("OPENAI_MODEL", TOPIC_MODEL)
+        model    = os.getenv("OPENAI_MODEL", TOPIC_MODEL)
+        seed     = int(os.getenv("LLM_SEED", "42"))
         if not api_key:
             logger.error("TopicManager: OPENAI_API_KEY 未配置")
             return None
@@ -158,7 +188,10 @@ class TopicManager:
                     headers={"Authorization": f"Bearer {api_key}"},
                     json={"model": model,
                           "messages": [{"role": "user", "content": prompt}],
-                          "response_format": {"type": "json_object"}},
+                          "response_format": {"type": "json_object"},
+                          "temperature": 0,
+                          "top_p": 1,
+                          "seed": seed},
                 )
                 resp.raise_for_status()
                 content = resp.json()["choices"][0]["message"]["content"]
@@ -168,12 +201,14 @@ class TopicManager:
             return None
 
     async def _call_ollama(self, prompt: str) -> Optional[list]:
+        seed = int(os.getenv("LLM_SEED", "42"))
         try:
             async with httpx.AsyncClient(timeout=120, trust_env=False) as client:
                 resp = await client.post(
                     f"{OLLAMA_URL}/api/generate",
                     json={"model": TOPIC_MODEL, "prompt": prompt,
-                          "stream": False, "format": "json"},
+                          "stream": False, "format": "json",
+                          "options": {"temperature": 0, "seed": seed}},
                 )
                 resp.raise_for_status()
                 return self._parse_response(json.loads(resp.json().get("response", "{}")))

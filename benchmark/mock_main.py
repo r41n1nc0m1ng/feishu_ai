@@ -357,6 +357,23 @@ async def main(fixture_path: Path = None) -> None:
         )
         result["batches"].append(batch_result)
 
+    # 记录所有 MemoryCard 终态（含 active 与 deprecated，便于审计 supersede/merge 链）
+    all_cards = store.get_cards_for_chat(chat_id)
+    result["final_memory_cards"] = [
+        {
+            "memory_id":             c.memory_id,
+            "decision_object":       c.decision_object,
+            "decision":              c.decision,
+            "memory_type":           c.memory_type.value,
+            "status":                c.status.value,
+            "supersedes_memory_ids": c.supersedes_memory_ids,
+        }
+        for c in all_cards
+    ]
+    active_n     = sum(1 for c in all_cards if c.status.value == "active")
+    deprecated_n = sum(1 for c in all_cards if c.status.value == "deprecated")
+    print(f"\n卡片终态：共 {len(all_cards)} 张  active={active_n}  deprecated={deprecated_n}")
+
     # 记录当前所有 TopicSummary
     all_topics = store.load_topics_by_chat(chat_id)
     result["topic_summaries"] = [

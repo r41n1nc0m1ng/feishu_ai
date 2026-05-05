@@ -18,6 +18,7 @@ from graphiti_core.nodes import EpisodeType
 from memory.graphiti_client import GraphitiClient
 from memory.topics import format_for_prompt as _topics_for_prompt
 from memory.schemas import (
+    CardRelationOp,
     CardStatus,
     EvidenceBlock,
     MemoryCard,
@@ -253,6 +254,179 @@ class CardGenerator:
                         len(new_cards), deprecated_count)
         return deprecated_count
 
+    # ── 五分类 operation 框架（取代 detect_and_apply_conflicts，待 conflict_detector 重写后接入）
+
+    async def apply_operations(self, new_cards: list[MemoryCard]) -> list[MemoryCard]:
+        """对一批新卡片按 5 分类（add/refine/supersede/progress_complete/progress_refine）应用更新。
+
+        返回经处理后的最终 ACTIVE 卡片列表（add 直接保留；supersede 保留新卡；
+        refine/progress_* 返回合并生成的第三张卡）。调用方应用此列表替代原 new_cards
+        作为后续 graphiti 写入与 topic 重建的真相源。
+
+        约定：
+          - 新卡为 PROGRESS：直接 add，不与旧卡比对
+          - 新卡为 DECISION：以同 chat + 同 decision_object 为候选，按 created_at 倒序逐张分类，
+            首个非 add 命中即应用并停止
+        """
+        final: list[MemoryCard] = []
+        for new_card in new_cards:
+            if new_card.status == CardStatus.DEPRECATED:
+                continue   # 已被本批次前面迭代废弃
+
+            if new_card.memory_type == MemoryType.PROGRESS:
+                final.append(new_card)
+                continue
+
+            candidates = self._candidates_for(new_card)
+            if not candidates:
+                final.append(new_card)
+                continue
+
+            op, source = await self._classify_against(new_card, candidates)
+            if op == CardRelationOp.ADD or source is None:
+                final.append(new_card)
+                continue
+
+            if op == CardRelationOp.SUPERSEDE:
+                await self._apply_supersede_post(new_card, source, reason="apply_operations:supersede")
+                final.append(new_card)
+                continue
+
+            # refine / progress_complete / progress_refine 走合并路径
+            merged = await self._apply_merge(new_card, source, op)
+            if merged:
+                final.append(merged)
+            else:
+                # 合并失败（拿不到原始消息块等）→ 退化为 add，避免丢卡
+                logger.warning("apply_merge failed, falling back to add | new=%s old=%s op=%s",
+                               new_card.memory_id[:8], source.memory_id[:8], op.value)
+                final.append(new_card)
+
+        return final
+
+    def _candidates_for(self, new_card: MemoryCard) -> list[MemoryCard]:
+        """返回 chat 内同 decision_object 的活跃旧卡，按 created_at 倒序（最近优先）。"""
+        cands = [
+            c for c in _card_cache.values()
+            if c.chat_id == new_card.chat_id
+               and c.status == CardStatus.ACTIVE
+               and c.memory_id != new_card.memory_id
+               and c.decision_object == new_card.decision_object
+        ]
+        cands.sort(key=lambda c: c.created_at, reverse=True)
+        return cands
+
+    async def _classify_against(
+        self, new_card: MemoryCard, candidates: list[MemoryCard]
+    ) -> tuple[CardRelationOp, Optional[MemoryCard]]:
+        """逐张候选调用 ConflictDetector.classify_pair，首个非 ADD 命中即返回。
+
+        candidates 已按 created_at 倒序，最近的卡先比对。
+        """
+        from memory.conflict_detector import ConflictDetector
+        detector = ConflictDetector()
+        for cand in candidates:
+            try:
+                op, reason = await detector.classify_pair(new_card, cand)
+            except Exception:
+                logger.exception("classify_pair 抛异常 | new=%s old=%s",
+                                 new_card.memory_id[:8], cand.memory_id[:8])
+                continue
+            if op != CardRelationOp.ADD:
+                logger.info(
+                    "classify hit | op=%s new=%s old=%s reason=%s",
+                    op.value, new_card.memory_id[:8], cand.memory_id[:8], reason,
+                )
+                return op, cand
+        return CardRelationOp.ADD, None
+
+    async def _apply_merge(
+        self, new_card: MemoryCard, old_card: MemoryCard, op: CardRelationOp
+    ) -> Optional[MemoryCard]:
+        """REFINE / PROGRESS_COMPLETE / PROGRESS_REFINE 共用合并路径。
+
+        构造合成 EvidenceBlock（消息合并 + block_type 由 op 决定），复用 generate()
+        从 LLM 重新提炼一张新卡。完成后：新旧两张源卡均置 DEPRECATED，合并卡
+        supersedes_memory_ids = [old, new]，写入两条 SUPERSEDES 关系。
+        """
+        from memory.evidence_store import EvidenceStore
+        es = EvidenceStore()
+
+        block_ids = list(dict.fromkeys(old_card.source_block_ids + new_card.source_block_ids))
+        blocks: list[EvidenceBlock] = []
+        for bid in block_ids:
+            b = await es.get(bid)
+            if b:
+                blocks.append(b)
+        if not blocks:
+            logger.warning("apply_merge: 无法加载源 block | old=%s new=%s",
+                           old_card.memory_id[:8], new_card.memory_id[:8])
+            return None
+
+        all_msgs = sorted(
+            [m for b in blocks for m in b.messages],
+            key=lambda m: m.timestamp,
+        )
+        synthetic_type = "progress" if op == CardRelationOp.PROGRESS_REFINE else "decision"
+        summaries = [b.one_line_summary for b in blocks if b.one_line_summary]
+        synthetic_summary = "；".join(summaries) if summaries else None
+
+        synthetic = EvidenceBlock(
+            chat_id=new_card.chat_id,
+            start_time=min(b.start_time for b in blocks),
+            end_time=max(b.end_time for b in blocks),
+            messages=all_msgs,
+            topic=old_card.decision_object,
+            block_type=synthetic_type,
+            boundary_signal=None,
+            one_line_summary=synthetic_summary,
+        )
+
+        # dry_run=True：只走 LLM 抽取，跳过 _save，待我们手工修正字段后再保存
+        merged = await self.generate(synthetic, skip_graphiti=True, dry_run=True)
+        if not merged:
+            logger.warning("apply_merge: 合成块 LLM 抽取失败 | op=%s", op.value)
+            return None
+
+        # 覆盖：source_block_ids 指向原始 block（不是合成块），supersedes 记录两张源卡
+        merged.source_block_ids = block_ids
+        merged.supersedes_memory_ids = [old_card.memory_id, new_card.memory_id]
+
+        # 1) 持久化合并卡（_save 会写 SQLite + embedding，跳过 graphiti）
+        await self._save(merged, synthetic, skip_graphiti=True)
+
+        # 2) 两张源卡置 DEPRECATED
+        for src in (old_card, new_card):
+            src.status = CardStatus.DEPRECATED
+            _card_cache[src.memory_id] = src
+            try:
+                store.save_memory_card(src)
+            except Exception:
+                logger.exception("源卡 DEPRECATED 写入失败 | memory_id=%s", src.memory_id)
+
+        # 3) _cards_by_object 索引指向合并卡
+        merged_key = merged.decision_object_key or _normalize_decision_key(merged.decision_object)
+        _cards_by_object[merged_key] = merged
+
+        # 4) 写两条 SUPERSEDES 关系
+        for src in (old_card, new_card):
+            try:
+                store.save_relation(MemoryRelation(
+                    chat_id=merged.chat_id,
+                    source_id=merged.memory_id,
+                    target_id=src.memory_id,
+                    relation_type=MemoryRelationType.SUPERSEDES,
+                ))
+            except Exception:
+                logger.exception("MemoryRelation 写入失败 | source=%s target=%s",
+                                 merged.memory_id, src.memory_id)
+
+        logger.info(
+            "MERGE applied | op=%s merged=%s ← old=%s + new=%s",
+            op.value, merged.memory_id[:8], old_card.memory_id[:8], new_card.memory_id[:8],
+        )
+        return merged
+
     async def _apply_supersede_post(
         self, new_card: MemoryCard, old_card: MemoryCard, reason: str = ""
     ) -> None:
@@ -268,7 +442,8 @@ class CardGenerator:
         except Exception:
             logger.exception("旧卡片 DEPRECATED 写入失败 | memory_id=%s", old_card.memory_id)
 
-        new_card.supersedes_memory_id = old_card.memory_id
+        if old_card.memory_id not in new_card.supersedes_memory_ids:
+            new_card.supersedes_memory_ids.append(old_card.memory_id)
         _card_cache[new_card.memory_id] = new_card
         # _cards_by_object 索引指向新卡（如果两张卡 key 一致）
         new_key = new_card.decision_object_key or _normalize_decision_key(new_card.decision_object)
@@ -276,7 +451,7 @@ class CardGenerator:
         try:
             store.save_memory_card(new_card)
         except Exception:
-            logger.exception("新卡片 supersedes_memory_id 写入失败 | memory_id=%s", new_card.memory_id)
+            logger.exception("新卡片 supersedes_memory_ids 写入失败 | memory_id=%s", new_card.memory_id)
 
         relation = MemoryRelation(
             chat_id=new_card.chat_id,
@@ -316,7 +491,8 @@ class CardGenerator:
         except Exception:
             logger.exception("SQLite 更新旧卡片状态失败 | memory_id=%s", old.memory_id)
 
-        new_card.supersedes_memory_id = old.memory_id
+        if old.memory_id not in new_card.supersedes_memory_ids:
+            new_card.supersedes_memory_ids.append(old.memory_id)
 
         relation = MemoryRelation(
             chat_id=new_card.chat_id,

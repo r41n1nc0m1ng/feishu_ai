@@ -162,9 +162,12 @@ class BatchProcessor:
                             chat_id, card.decision_object, card.memory_type.value)
                 pending.append((card, block.end_time))
 
-        # 1.5 批处理结束后统一检测并应用冲突（SUPERSEDE），避免每张卡都触发 LLM
+        # 1.5 批处理结束后按 5 分类 (add/refine/supersede/progress_complete/progress_refine) 应用
         if pending:
-            await self._card_generator.detect_and_apply_conflicts([c for c, _ in pending])
+            pending_map = {c.memory_id: rt for c, rt in pending}
+            final_cards = await self._card_generator.apply_operations([c for c, _ in pending])
+            # MERGE 产出的合并卡 memory_id 不在 pending_map 中，回退用 card.created_at 作为 ref_time
+            pending = [(c, pending_map.get(c.memory_id, c.created_at)) for c in final_cards]
 
         # 2. 并发批量写入 Graphiti
         if pending:
@@ -283,9 +286,9 @@ class BatchProcessor:
                 logger.info("MemoryCard skipped | chat=%s block_id=%s",
                             chat_id, getattr(block, "block_id", ""))
 
-        # 4.5 批处理结束后统一检测并应用冲突（SUPERSEDE），避免每张卡都触发 LLM
+        # 4.5 批处理结束后按 5 分类 (add/refine/supersede/progress_complete/progress_refine) 应用
         if new_cards:
-            await self._card_generator.detect_and_apply_conflicts(new_cards)
+            new_cards = await self._card_generator.apply_operations(new_cards)
 
         # 5. 更新游标并持久化到 SQLite
         space.last_fetch_at = fetch_end
