@@ -1,8 +1,8 @@
 """
 MemoryCard 生成层（对应需求文档 4.6 多粒度记忆生成层）。
 
-流程：EvidenceBlock → LLM → CardOperation 判断 → 写入/更新 MemoryCard
-支持四种操作：ADD / NOOP / PROGRESS / SUPERSEDE
+流程：EvidenceBlock → LLM 提炼 decision → ConflictDetector 判断 SUPERSEDE → 写入
+block_type=noise 的块由 event_segmenter 标注，generate() 直接跳过。
 """
 import json
 import logging
@@ -16,8 +16,8 @@ import numpy as np
 from graphiti_core.nodes import EpisodeType
 
 from memory.graphiti_client import GraphitiClient
+from memory.topics import format_for_prompt as _topics_for_prompt
 from memory.schemas import (
-    CardOperation,
     CardStatus,
     EvidenceBlock,
     MemoryCard,
@@ -39,6 +39,18 @@ _card_cache: dict[str, MemoryCard] = {}
 _cards_by_object: dict[str, MemoryCard] = {}
 # embedding 缓存：memory_id → np.ndarray（方案 A：替换 Jaccard 匹配）
 _card_embeddings: dict[str, np.ndarray] = {}
+
+
+def _normalize_decision_object(text: str) -> str:
+    """归一化 decision_object 显式字符串：把 LLM 偶尔写错的 全角冒号/半角冒号 强制改成 ASCII 连字符。
+    这是写入卡片前的硬归一化，防止格式变体造成"假重复"卡片。
+    """
+    text = (text or "").strip()
+    # 替换全角冒号、半角冒号为 ASCII 连字符
+    text = text.replace("：", "-").replace(":", "-")
+    # 折叠连续的连字符为单个
+    text = re.sub(r'-{2,}', '-', text)
+    return text
 
 
 def _normalize_decision_key(text: str) -> str:
@@ -69,108 +81,230 @@ def _restore_cache() -> None:
     if cards:
         logger.info("MemoryCard 缓存已从 SQLite 恢复 | 卡片=%d embedding=%d", len(cards), restored)
 
-_CARD_PROMPT = """\
-你是一个群聊决策记忆提炼助手。根据以下群聊消息片段，判断是否需要生成或更新记忆卡片。
 
-消息片段：
+_CARD_PROMPT = """\
+你是一个群聊决策记忆提炼助手。根据以下消息片段，提炼记忆卡片。
+
+【块类型】{block_type}
+
+【消息片段】
 {messages}
 
-已有相关记忆（如有）：
+【已有相关记忆（供参考）】
 {existing}
 
-【输出规则】只返回 JSON，不要其他内容。
+{topic_hint}
+【decision_object 必须从以下议题列表中选择，原文照抄，不得改写】：
+- 格式严格为"大方向-小方向"，使用 ASCII 连字符 `-`（U+002D）
+- 严禁使用全角冒号 `：`、半角冒号 `:`、空格或其他字符替代连字符
+- 正例：`产品规划-项目范围与MVP边界`
+- 反例（禁止）：`产品规划：项目范围与MVP边界`、`产品规划:项目范围与MVP边界`、`产品规划 项目范围与MVP边界`
 
-【必须输出 NOOP 的情况】以下内容不具备记忆价值，直接忽略：
-- 纯粹的提问或疑问句（如"为什么不做X""之前怎么定的""X是什么"）
-- 向机器人发起的查询（含 @机器人 的询问）
-- 闲聊、表情包、单纯的"好的""收到""可以"
-- 日程安排、待办事项
+{topics}
 
-操作类型说明：
-- ADD：新决策，之前没有相关记忆
-- PROGRESS：讨论有价值但尚未形成一致决策
-- SUPERSEDE：新内容覆盖了旧决策（decision_object 与已有记忆一致）
-- NOOP：无记忆价值，忽略
+═══════════════════════════════════════
+输出规则（按 block_type 选择对应 schema，只返回 JSON）
+═══════════════════════════════════════
 
-输出格式（operation 为 NOOP 时只需返回 {{"operation": "NOOP"}}）：
+【若 block_type = decision】（已收口的决策）
 {{
-  "operation": "ADD" | "PROGRESS" | "SUPERSEDE" | "NOOP",
-  "decision_object": "该决策所属的议题，一句话",
-  "title": "一句话标题",
-  "decision": "决策内容",
-  "reason": "决策理由",
-  "memory_type": "decision / tradeoff / rule / constraint / version_update / risk / progress"
+  "decision_object": "从议题列表选择最贴近的一项；若分段器已标注议题，优先选用",
+  "decision": "一句话决策结论，需包含消息中的关键词。如：使用 Python 而不用 Go",
+  "reason": "给出理由；若讨论中未明确说明则填'无'"
 }}
+
+【若 block_type = progress】（讨论中，未最终收口）
+此块未最终收口，但你必须从中抽取所有可记录的信息，**严禁只输出"未达成结论"这类空泛描述**。
+按以下三类抽取（每类没有内容时填空数组）：
+
+1. tentative_consensus（候选共识）：被提出且**无人明确反对**的小结论。
+   判定：有人提出X → 无人反对 → 后续话题转向，则X 是候选共识。
+2. open_questions（待决议子问题）：被提出但**未给出答案**的子问题。
+   判定：以问句提出 / 有分歧未解决 / 明确说"待定"。
+3. discussion_scope（讨论涉及的具体对象/维度）：便于下一轮接续。
+
+{{
+  "decision_object": "从议题列表选择最贴近的一项",
+  "decision": "本轮讨论的核心议题，一句话（如：简历隐私字段的脱敏策略）",
+  "tentative_consensus": ["候选共识1（用消息中的具体名词）", "候选共识2"],
+  "open_questions": ["待决议问题1", "待决议问题2"],
+  "discussion_scope": ["对象1", "对象2"],
+  "next_step": "下一轮要解决什么",
+  "reason": "本轮未收口的原因"
+}}
+
+【progress 强制要求】
+- tentative_consensus 数组若为空，先内部检查：真的没有任何小共识吗？即使是"X应该也要做"这种被附议的小点，也算共识。
+- open_questions 数组若为空，检查：讨论中真的没有问句或分歧吗？
+- 严禁输出"未达成结论""讨论了X但未确定"这类零信息描述。
+- 必须用消息中的具体名词（如手机号、邮箱、身份证、照片），不能用"等敏感字段"这种模糊归纳。
 """
+
+_BLOCK_TYPE_TO_MEMORY_TYPE: dict[str, MemoryType] = {
+    "decision": MemoryType.DECISION,
+    "progress": MemoryType.PROGRESS,
+}
 
 
 class CardGenerator:
 
-    async def generate(self, block: EvidenceBlock, skip_graphiti: bool = False) -> Optional[MemoryCard]:
+    async def generate(self, block: EvidenceBlock, skip_graphiti: bool = False, dry_run: bool = False) -> Optional[
+        MemoryCard]:
         """
         从 EvidenceBlock 生成 MemoryCard，写入缓存和 Graphiti。
         skip_graphiti=True 时跳过 Graphiti 写入，只写 SQLite + 内存缓存。
         返回生成的 MemoryCard，NOOP 时返回 None。
         """
+        if block.block_type == "noise":
+            logger.info("CardGenerator: 跳过 noise 块 | block=%s", block.block_id)
+            return None
+
         messages_text = "\n".join(
             f"{m.sender_name or m.sender_id}  {m.timestamp.strftime('%H:%M')}：{m.text}"
             for m in block.messages
         )
-        # 注入同 chat 下已有记忆供 LLM 参考
         existing_text = self._format_existing(block.chat_id)
-        prompt = _CARD_PROMPT.format(messages=messages_text, existing=existing_text)
+        hints: list[str] = []
+        if block.topic:
+            hints.append(f"分段器已标注本段议题：{block.topic}（优先选用）")
+        if block.one_line_summary:
+            hints.append(f"分段器摘要：{block.one_line_summary}")
+        topic_hint = "\n".join(hints) + "\n" if hints else ""
+        block_type = block.block_type or "decision"
+        prompt = _CARD_PROMPT.format(
+            block_type=block_type,
+            messages=messages_text,
+            existing=existing_text,
+            topic_hint=topic_hint,
+            topics=_topics_for_prompt(),
+        )
 
         raw = await self._call_llm(prompt)
         if not raw:
             return None
 
-        operation_str = raw.get("operation", "NOOP").upper()
-        try:
-            operation = CardOperation(operation_str.lower())
-        except ValueError:
-            operation = CardOperation.NOOP
-
-        logger.info(
-            "CardGenerator result | chat=%s block_id=%s operation=%s object=%s title=%s",
-            block.chat_id,
-            block.block_id,
-            operation.value,
-            raw.get("decision_object", ""),
-            raw.get("title", ""),
-        )
-
-        if operation == CardOperation.NOOP:
-            logger.info("CardGenerator: NOOP | block=%s", block.block_id)
+        decision_object = _normalize_decision_object(raw.get("decision_object", "")) or "其他-无关消息"
+        decision        = raw.get("decision", "").strip()
+        if not decision:
+            logger.info("CardGenerator: LLM 未返回 decision，跳过 | block=%s", block.block_id)
             return None
 
-        # 构建新 MemoryCard
-        raw_type = raw.get("memory_type", "decision")
-        if raw_type not in MemoryType._value2member_map_:
-            raw_type = "decision"
+        logger.info(
+            "CardGenerator result | chat=%s block_id=%s type=%s object=%s",
+            block.chat_id, block.block_id, block_type, decision_object,
+        )
 
-        decision_object = raw.get("decision_object", "未知议题")
+        is_progress = block_type == "progress"
+        memory_type = _BLOCK_TYPE_TO_MEMORY_TYPE.get(block_type, MemoryType.DECISION)
+
         card = MemoryCard(
             chat_id=block.chat_id,
             decision_object=decision_object,
             decision_object_key=_normalize_decision_key(decision_object),
-            title=raw.get("title", ""),
-            decision=raw.get("decision", ""),
-            reason=raw.get("reason", ""),
-            memory_type=MemoryType(raw_type),
+            decision=decision,
+            reason=raw.get("reason", "无"),
+            memory_type=memory_type,
             status=CardStatus.ACTIVE,
             source_block_ids=[block.block_id],
+            tentative_consensus=raw.get("tentative_consensus", []) if is_progress else [],
+            open_questions     =raw.get("open_questions", [])      if is_progress else [],
+            discussion_scope   =raw.get("discussion_scope", [])    if is_progress else [],
+            next_step          =raw.get("next_step")               if is_progress else None,
         )
 
-        if operation == CardOperation.SUPERSEDE:
-            card = await self._handle_supersede(card)
-
-        await self._save(card, block, skip_graphiti=skip_graphiti)
+        # 注意：冲突检测（SUPERSEDE）已移至 batch_processor 在批处理结束后统一调用
+        # detect_and_apply_conflicts()，避免每张卡片都触发 LLM。
+        if not dry_run:
+            await self._save(card, block, skip_graphiti=skip_graphiti)
         return card
 
-    async def _handle_supersede(self, new_card: MemoryCard) -> MemoryCard:
-        """将旧卡片标记为 Deprecated，并建立 supersedes 关系。"""
-        lookup_key = new_card.decision_object_key or _normalize_decision_key(new_card.decision_object)
-        old = _cards_by_object.get(lookup_key)
+    async def detect_and_apply_conflicts(self, new_cards: list) -> int:
+        """批处理结束后批量检测冲突并应用 SUPERSEDE。
+        new_cards 按生成顺序传入；每张依次检测，确认冲突则将旧卡置 DEPRECATED 并建立关系。
+        返回被废弃的旧卡数量。
+        """
+        from memory.conflict_detector import ConflictDetector
+        cd = ConflictDetector()
+        deprecated_count = 0
+
+        for card in new_cards:
+            if card.status == CardStatus.DEPRECATED:
+                continue   # 已被本批次前面的迭代废弃
+            try:
+                conflict = await cd.find_conflict(card.chat_id, card)
+            except Exception:
+                logger.exception("ConflictDetector 异常 | new=%s", card.memory_id[:8])
+                continue
+            if not conflict:
+                continue
+
+            old_id = conflict["memory_id"]
+            if old_id == card.memory_id:
+                continue
+            old = _card_cache.get(old_id) or store.load_memory_card(old_id)
+            if not old or old.status == CardStatus.DEPRECATED:
+                continue
+
+            await self._apply_supersede_post(card, old, reason=conflict.get("reason", ""))
+            deprecated_count += 1
+
+        if deprecated_count:
+            logger.info("ConflictDetector batch | new_cards=%d deprecated=%d",
+                        len(new_cards), deprecated_count)
+        return deprecated_count
+
+    async def _apply_supersede_post(
+        self, new_card: MemoryCard, old_card: MemoryCard, reason: str = ""
+    ) -> None:
+        """对已写入的两张卡片应用 SUPERSEDE 关系（后处理路径，与 _handle_supersede 区分）。
+        - 旧卡：status → DEPRECATED，更新缓存与 SQLite
+        - 新卡：写入 supersedes_memory_id，更新缓存与 SQLite，重建 _cards_by_object 索引
+        - 写入 MemoryRelation
+        """
+        old_card.status = CardStatus.DEPRECATED
+        _card_cache[old_card.memory_id] = old_card
+        try:
+            store.save_memory_card(old_card)
+        except Exception:
+            logger.exception("旧卡片 DEPRECATED 写入失败 | memory_id=%s", old_card.memory_id)
+
+        new_card.supersedes_memory_id = old_card.memory_id
+        _card_cache[new_card.memory_id] = new_card
+        # _cards_by_object 索引指向新卡（如果两张卡 key 一致）
+        new_key = new_card.decision_object_key or _normalize_decision_key(new_card.decision_object)
+        _cards_by_object[new_key] = new_card
+        try:
+            store.save_memory_card(new_card)
+        except Exception:
+            logger.exception("新卡片 supersedes_memory_id 写入失败 | memory_id=%s", new_card.memory_id)
+
+        relation = MemoryRelation(
+            chat_id=new_card.chat_id,
+            source_id=new_card.memory_id,
+            target_id=old_card.memory_id,
+            relation_type=MemoryRelationType.SUPERSEDES,
+        )
+        try:
+            store.save_relation(relation)
+        except Exception:
+            logger.exception("MemoryRelation 写入失败 | source=%s target=%s",
+                             new_card.memory_id, old_card.memory_id)
+        logger.info(
+            "SUPERSEDE applied (post-batch) | new=%s deprecated=%s reason=%s",
+            new_card.memory_id[:8], old_card.memory_id[:8], reason,
+        )
+
+    async def _handle_supersede(
+            self, new_card: MemoryCard, old_memory_id: Optional[str] = None
+    ) -> MemoryCard:
+        """将旧卡片标记为 Deprecated，并建立 supersedes 关系。
+        old_memory_id 由 ConflictDetector 语义检测时提供；为 None 时按 key 查找。
+        """
+        if old_memory_id:
+            old = _card_cache.get(old_memory_id) or store.load_memory_card(old_memory_id)
+        else:
+            lookup_key = new_card.decision_object_key or _normalize_decision_key(new_card.decision_object)
+            old = _cards_by_object.get(lookup_key)
         if not old:
             logger.info("SUPERSEDE 未找到旧卡片，按 ADD 处理 | object=%s", new_card.decision_object)
             return new_card
@@ -223,23 +357,60 @@ class CardGenerator:
         cards = [c for c in _card_cache.values() if c.chat_id == chat_id and c.status == CardStatus.ACTIVE]
         if not cards:
             return "（暂无）"
-        return "\n".join(
-            f"- [{c.decision_object}] {c.title}：{c.decision[:60]}"
-            for c in cards[-5:]
-        )
+        lines: list[str] = []
+        for c in cards[-5:]:
+            if c.memory_type == MemoryType.PROGRESS:
+                lines.append(f"- [{c.decision_object}] (PROGRESS) {c.decision}")
+                if c.tentative_consensus:
+                    lines.append(f"    候选共识: {'; '.join(c.tentative_consensus[:3])}")
+                if c.open_questions:
+                    lines.append(f"    待决议: {'; '.join(c.open_questions[:3])}")
+            else:
+                lines.append(f"- [{c.decision_object}] {c.decision[:60]}")
+        return "\n".join(lines)
 
     async def _call_llm(self, prompt: str) -> Optional[dict]:
+        """优先级：DeepSeek → OpenAI → Ollama。"""
+        if os.getenv("DEEPSEEK_API_KEY"):
+            return await self._call_deepseek(prompt)
         provider = os.getenv("MODEL_PROVIDER", "ollama").strip().lower()
         if provider == "openai" or os.getenv("OPENAI_API_KEY"):
             return await self._call_openai_compatible(prompt)
         return await self._call_ollama(prompt)
 
+    async def _call_deepseek(self, prompt: str) -> Optional[dict]:
+        api_key  = os.getenv("DEEPSEEK_API_KEY", "")
+        base_url = os.getenv("DEEPSEEK_BASE_URL", "https://api.deepseek.com/v1").rstrip("/")
+        model    = os.getenv("DEEPSEEK_MODEL", "deepseek-chat")
+        seed     = int(os.getenv("LLM_SEED", "42"))
+        try:
+            async with httpx.AsyncClient(timeout=120, trust_env=False) as client:
+                resp = await client.post(
+                    f"{base_url}/chat/completions",
+                    headers={"Authorization": f"Bearer {api_key}"},
+                    json={
+                        "model": model,
+                        "messages": [{"role": "user", "content": prompt}],
+                        "response_format": {"type": "json_object"},
+                        "temperature": 0,
+                        "top_p": 1,
+                        "seed": seed,
+                    },
+                )
+                resp.raise_for_status()
+                content = resp.json()["choices"][0]["message"]["content"]
+                return json.loads(content)
+        except Exception as e:
+            logger.error("CardGenerator DeepSeek 调用失败: %s", e)
+            return None
+
     async def _call_openai_compatible(self, prompt: str) -> Optional[dict]:
-        api_key = os.getenv("OPENAI_API_KEY", "")
+        api_key  = os.getenv("OPENAI_API_KEY", "")
         base_url = os.getenv("OPENAI_BASE_URL", "https://api.openai.com/v1").rstrip("/")
-        model = os.getenv("OPENAI_MODEL", CARD_MODEL)
+        model    = os.getenv("OPENAI_MODEL", CARD_MODEL)
+        seed     = int(os.getenv("LLM_SEED", "42"))
         if not api_key:
-            logger.error("CardGenerator 云端 LLM 调用失败: OPENAI_API_KEY 未配置")
+            logger.error("CardGenerator OpenAI 调用失败: OPENAI_API_KEY 未配置")
             return None
         try:
             async with httpx.AsyncClient(timeout=120, trust_env=False) as client:
@@ -250,13 +421,16 @@ class CardGenerator:
                         "model": model,
                         "messages": [{"role": "user", "content": prompt}],
                         "response_format": {"type": "json_object"},
+                        "temperature": 0,
+                        "top_p": 1,
+                        "seed": seed,
                     },
                 )
                 resp.raise_for_status()
                 content = resp.json()["choices"][0]["message"]["content"]
                 return json.loads(content)
         except Exception as e:
-            logger.error("CardGenerator 云端 LLM 调用失败: %s", e)
+            logger.error("CardGenerator OpenAI 调用失败: %s", e)
             return None
 
     async def _call_ollama(self, prompt: str) -> Optional[dict]:
@@ -275,7 +449,7 @@ class CardGenerator:
                 resp.raise_for_status()
                 return json.loads(resp.json().get("response", "{}"))
         except Exception as e:
-            logger.error("CardGenerator LLM 调用失败: %s", e)
+            logger.error("CardGenerator Ollama 调用失败: %s", e)
             return None
 
 
@@ -300,8 +474,19 @@ async def _get_embedding(text: str) -> Optional[np.ndarray]:
 
 
 async def _cache_card_embedding(card: MemoryCard) -> None:
-    """为卡片计算 embedding，写入内存缓存并持久化到 SQLite。"""
-    text = f"{card.title} {card.decision}"
+    """为卡片计算 embedding，写入内存缓存并持久化到 SQLite。
+    embedding 文本含 decision_object + decision + reason，PROGRESS 卡还含 tentative_consensus
+    和 open_questions——这些字段才是 PROGRESS 卡的真正内容。
+    """
+    parts: list[str] = [card.decision_object, card.decision]
+    if card.reason and card.reason != "无":
+        parts.append(card.reason)
+    if card.memory_type == MemoryType.PROGRESS:
+        if card.tentative_consensus:
+            parts.append(" ".join(card.tentative_consensus))
+        if card.open_questions:
+            parts.append(" ".join(card.open_questions))
+    text = " ".join(parts)
     vec = await _get_embedding(text)
     if vec is not None:
         _card_embeddings[card.memory_id] = vec
@@ -320,7 +505,6 @@ async def _write_card_to_graphiti(card: MemoryCard, ref_time=None) -> None:
 
     episode_body = (
         f"议题：{card.decision_object}\n"
-        f"标题：{card.title}\n"
         f"决策：{card.decision}\n"
         f"理由：{card.reason}\n"
         f"类型：{card.memory_type.value}\n"
@@ -334,15 +518,15 @@ async def _write_card_to_graphiti(card: MemoryCard, ref_time=None) -> None:
 
     try:
         await g.g.add_episode(
-            name=f"card::{card.memory_id}::{card.title}",
+            name=f"card::{card.memory_id}::{card.decision_object}",
             episode_body=episode_body,
             source=EpisodeType.text,
             source_description=f"MemoryCard | 群聊 {card.chat_id}",
             reference_time=ref_time,
             group_id=card.chat_id,
         )
-        logger.info("MemoryCard 已写入 Graphiti | memory_id=%s title=%s",
-                    card.memory_id, card.title)
+        logger.info("MemoryCard 已写入 Graphiti | memory_id=%s object=%s",
+                    card.memory_id, card.decision_object)
     except Exception:
         logger.exception("MemoryCard 写入 Graphiti 失败 | memory_id=%s", card.memory_id)
 

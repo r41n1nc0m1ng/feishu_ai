@@ -44,15 +44,19 @@ class MemoryRetriever:
         if cards_with_emb:
             query_vec = await self._embed_text(query)
             if query_vec is not None:
+                # 混合检索：embedding cosine + 字面字符重合度
+                # 字面命中能挽回 embedding 把"自动淘汰"和"需人工确认项"语义混淆的情况
                 scored = sorted(
-                    [(float(np.dot(query_vec, emb)), c) for c, emb in cards_with_emb],
+                    [(self._hybrid_score(query, query_vec, emb, c), c)
+                     for c, emb in cards_with_emb],
                     reverse=True,
+                    key=lambda x: x[0],
                 )
                 cards = [c for _, c in scored[:limit]]
                 logger.info(
-                    "Memory retrieve (embedding) | chat=%s query=%s top=%s",
+                    "Memory retrieve (hybrid) | chat=%s query=%s top=%s",
                     chat_id, query[:40],
-                    [c.title[:20] for c in cards[:3]],
+                    [(round(s, 3), c.decision_object) for s, c in scored[:3]],
                 )
                 return cards
 
@@ -182,6 +186,60 @@ class MemoryRetriever:
         return active[:limit]
 
     # ── 内部辅助 ──────────────────────────────────────────────────────────────
+
+    # 混合检索权重：cosine 主导 + 关键词重合补正
+    _HYBRID_COSINE_WEIGHT  = 0.5
+    _HYBRID_KEYWORD_WEIGHT = 0.5
+    _HYBRID_NGRAM_N        = 2   # 中文 bigram，对短词更敏感
+    # decision 是卡片主体；reason 是辅助；PROGRESS 字段是补充内容
+    _FIELD_WEIGHT_DECISION = 0.7
+    _FIELD_WEIGHT_REASON   = 0.2
+    _FIELD_WEIGHT_EXTRA    = 0.1
+
+    @staticmethod
+    def _ngrams(text: str, n: int) -> set[str]:
+        text = (text or "").strip()
+        return {text[i:i+n] for i in range(len(text) - n + 1)} if len(text) >= n else set()
+
+    def _keyword_score(self, q_bigrams: set[str], card: MemoryCard) -> float:
+        """分层 bigram 命中率：decision 命中权重最高，reason 次之，PROGRESS 补充字段最低。
+
+        避免"reason 中提及关键词"被错当成"卡片主体讨论这件事"——
+        如 wrong card 的 reason 含'不自动淘汰原则一致'，但 decision 是 UI 设计。
+        """
+        if not q_bigrams:
+            return 0.0
+
+        decision_text = f"{card.decision_object} {card.decision}"
+        reason_text   = card.reason if (card.reason and card.reason != "无") else ""
+        extra_parts: list[str] = []
+        if card.tentative_consensus: extra_parts.extend(card.tentative_consensus)
+        if card.open_questions:      extra_parts.extend(card.open_questions)
+        extra_text = " ".join(extra_parts)
+
+        n = self._HYBRID_NGRAM_N
+        d_hits = len(q_bigrams & self._ngrams(decision_text, n)) / len(q_bigrams)
+        r_hits = len(q_bigrams & self._ngrams(reason_text,   n)) / len(q_bigrams) if reason_text else 0.0
+        e_hits = len(q_bigrams & self._ngrams(extra_text,    n)) / len(q_bigrams) if extra_text   else 0.0
+
+        return (self._FIELD_WEIGHT_DECISION * d_hits +
+                self._FIELD_WEIGHT_REASON   * r_hits +
+                self._FIELD_WEIGHT_EXTRA    * e_hits)
+
+    def _hybrid_score(
+        self,
+        query: str,
+        query_vec: np.ndarray,
+        card_vec: np.ndarray,
+        card: MemoryCard,
+    ) -> float:
+        """embedding 余弦 + 分层 bigram 字面重合度的加权混合分。"""
+        cosine = float(np.dot(query_vec, card_vec))
+        q_bigrams = self._ngrams(query, self._HYBRID_NGRAM_N)
+        if not q_bigrams:
+            return cosine
+        keyword = self._keyword_score(q_bigrams, card)
+        return self._HYBRID_COSINE_WEIGHT * cosine + self._HYBRID_KEYWORD_WEIGHT * keyword
 
     async def _embed_text(self, text: str) -> Optional[np.ndarray]:
         """获取文本 embedding，复用 card_generator 的 _get_embedding。"""

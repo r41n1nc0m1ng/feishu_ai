@@ -42,11 +42,11 @@ def render_query_reply(query: str, results: list) -> str:
 
 def render_evidence_reply(query: str, card, block) -> str:
     if not block or not getattr(block, "messages", None):
-        title = getattr(card, "title", query)
-        return f'查到了相关记忆“{title}”，但没有找到可展开的原始聊天记录。'
+        label = getattr(card, "decision_object", query)
+        return f'查到了相关记忆”{label}”，但没有找到可展开的原始聊天记录。'
 
-    title = getattr(card, "title", query)
-    lines = [f'“{title}”的来源记录：']
+    label = getattr(card, "decision_object", query)
+    lines = [f'”{label}”的来源记录：']
     for message in block.messages[:6]:
         sender = getattr(message, "sender_name", "") or getattr(message, "sender_id", "unknown")
         timestamp = getattr(message, "timestamp", None)

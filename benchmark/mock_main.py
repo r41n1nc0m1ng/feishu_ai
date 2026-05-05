@@ -142,15 +142,14 @@ async def process_batch(
         msg_ids = await card_source_message_ids(card, es)
         memory_card_entries.append({
             "memory_id":          card.memory_id,
-            "title":              card.title,
-            "decision":           card.decision,
             "decision_object":    card.decision_object,
+            "decision":           card.decision,
             "status":             card.status.value,
             "memory_type":        card.memory_type.value,
             "source_block_ids":   card.source_block_ids,
             "source_message_ids": msg_ids,
         })
-        print(f"  新卡片: [{card.memory_type.value}/{card.status.value}] {card.title[:50]}")
+        print(f"  新卡片: [{card.memory_type.value}/{card.status.value}] {card.decision_object}")
 
     print(f"[{batch_id}] 完成  新增 MemoryCard {len(new_cards)} 张")
 
@@ -250,8 +249,8 @@ async def run_expected_checks(
             old_card = cards_map.get(rel.target_id)
             if not (new_card and old_card):
                 continue
-            new_text = f"{new_card.decision} {new_card.title}"
-            old_text = f"{old_card.decision} {old_card.title}"
+            new_text = f"{new_card.decision} {new_card.decision_object}"
+            old_text = f"{old_card.decision} {old_card.decision_object}"
             if any(kw in old_text for kw in old_kws) and any(kw in new_text for kw in new_kws):
                 found_entry = {
                     "relation_type": rel_type,

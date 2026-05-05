@@ -67,7 +67,7 @@ async def test_version_chain():
     assert len(chain) == 2, f"expected 2, got {len(chain)}"
     assert chain[0].memory_id == new_id
     assert chain[1].memory_id == old_id
-    print(f"TEST 3 OK: get_version_chain → {[c.title for c in chain]}")
+    print(f"TEST 3 OK: get_version_chain → {[c.decision_object for c in chain]}")
 
 
 if __name__ == "__main__":

@@ -8,6 +8,7 @@ memory_store.db
 logs/
 
 # Benchmark 运行产物（不跟踪，保留测试用例和 fixture）
-benchmark/result.json
-benchmark/evaluation.json
+benchmark/*.json
+!benchmark/full_demo_case.json
+!benchmark/query_cases.json
 P1_PLAN.md

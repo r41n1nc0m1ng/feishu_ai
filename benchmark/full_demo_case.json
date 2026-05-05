@@ -21,7 +21,7 @@
       "fetch_time": "2026-04-29 10:10",
       "messages": [
         {
-          "content": "{\"text\": \"我先说下范围，AI 自动筛简历这个项目别做成完整招聘系统，ATS 那套太大了。\"}",
+          "content": "{\"text\": \"我先说下范围，AI 自动晒简历这个项目别做成完整招聘系统，ATS 那套太大了。\"}",
           "create_time": "2026-04-29 10:00",
           "deleted": false,
           "message_id": "om_resume_0001",
@@ -2557,7 +2557,7 @@
         "forbidden_keywords": []
       },
       {
-        "query": "现在 AI 简历初筛要不要打分？",
+        "query": "现在 AI 简历初筛要不要做匹配参考分？",
         "expected_granularity": "memory_card",
         "expected_keywords": [
           "匹配参考分",

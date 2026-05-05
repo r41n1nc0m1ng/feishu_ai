@@ -158,9 +158,13 @@ class BatchProcessor:
             await self._evidence_store.save(block)
             card = await self._card_generator.generate(block, skip_graphiti=True)
             if card:
-                logger.info("MemoryCard 生成 | chat=%s title=%s type=%s",
-                            chat_id, card.title, card.memory_type.value)
+                logger.info("MemoryCard 生成 | chat=%s object=%s type=%s",
+                            chat_id, card.decision_object, card.memory_type.value)
                 pending.append((card, block.end_time))
+
+        # 1.5 批处理结束后统一检测并应用冲突（SUPERSEDE），避免每张卡都触发 LLM
+        if pending:
+            await self._card_generator.detect_and_apply_conflicts([c for c, _ in pending])
 
         # 2. 并发批量写入 Graphiti
         if pending:
@@ -272,12 +276,16 @@ class BatchProcessor:
             await self._evidence_store.save(block)
             card = await self._card_generator.generate(block, skip_graphiti=True)
             if card:
-                logger.info("MemoryCard 生成 | chat_id=%s title=%s type=%s",
-                            chat_id, card.title, card.memory_type.value)
+                logger.info("MemoryCard 生成 | chat_id=%s object=%s type=%s",
+                            chat_id, card.decision_object, card.memory_type.value)
                 new_cards.append(card)
             else:
                 logger.info("MemoryCard skipped | chat=%s block_id=%s",
                             chat_id, getattr(block, "block_id", ""))
+
+        # 4.5 批处理结束后统一检测并应用冲突（SUPERSEDE），避免每张卡都触发 LLM
+        if new_cards:
+            await self._card_generator.detect_and_apply_conflicts(new_cards)
 
         # 5. 更新游标并持久化到 SQLite
         space.last_fetch_at = fetch_end

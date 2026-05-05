@@ -125,7 +125,7 @@ class TopicManager:
     async def _call_llm(self, cards: list) -> Optional[list]:
         cards_json = json.dumps(
             [{"memory_id": c.memory_id, "decision_object": c.decision_object,
-              "title": c.title, "decision": c.decision, "reason": c.reason}
+              "decision": c.decision, "reason": c.reason}
              for c in cards],
             ensure_ascii=False, indent=2,
         )

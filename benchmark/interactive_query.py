@@ -1,10 +1,13 @@
 """
 批量查询脚本：读取 query_cases.json，按正常查询流程逐条执行并打印结果。
-embedding 缓存在启动时由 _restore_cache() 从 SQLite 自动恢复，无需预热。
+
+启动时默认重算 embedding（因为 embedding 文本格式已变更：现在含 reason / PROGRESS 字段），
+旧 SQLite 中的 embedding 与新混合检索算法不匹配。
 
 运行：
     conda run -n feishu python benchmark/interactive_query.py
     conda run -n feishu python benchmark/interactive_query.py --cases benchmark/query_cases.json
+    conda run -n feishu python benchmark/interactive_query.py --no-rebuild   # 跳过 embedding 重算
 """
 from __future__ import annotations
 
@@ -24,25 +27,38 @@ from dotenv import load_dotenv
 load_dotenv(ROOT / ".env")
 
 # 模块导入时 _restore_cache() 自动从 SQLite 恢复卡片和 embedding 缓存
-from memory.graphiti_client import GraphitiClient
+from memory.card_generator import _card_cache, _cache_card_embedding
 from memory.retriever import MemoryRetriever
 from memory.schemas import FeishuMessage
 from realtime.query_handler import RealtimeQueryHandler
 
 logging.basicConfig(level=logging.WARNING, format="%(asctime)s [%(levelname)s] %(name)s: %(message)s")
+logging.getLogger("memory.retriever").setLevel(logging.INFO)   # 显示混合检索的 top3 打分
 
 DEFAULT_CASES = Path(__file__).with_name("query_cases.json")
 
 
-async def main(cases_path: Path) -> None:
+async def _rebuild_embeddings(chat_id: str) -> int:
+    """对指定 chat 的所有 active 卡片重新计算 embedding，覆盖 SQLite 中的旧值。"""
+    cards = [c for c in _card_cache.values() if c.chat_id == chat_id]
+    print(f"重算 embedding ({len(cards)} 张卡片)...", flush=True)
+    for card in cards:
+        await _cache_card_embedding(card)
+    return len(cards)
+
+
+async def main(cases_path: Path, rebuild: bool) -> None:
     data = json.loads(cases_path.read_text(encoding="utf-8"))
     chat_id = data.get("chat_id", "oc_demo_ai_resume")
     queries = data.get("queries", [])
 
     print(f"加载 {len(queries)} 条查询  chat_id={chat_id}", flush=True)
-    print("初始化 Graphiti...", flush=True)
-    await GraphitiClient.initialize()
-    print("初始化完成\n", flush=True)
+
+    if rebuild:
+        n = await _rebuild_embeddings(chat_id)
+        print(f"  embedding 重算完成（{n} 张）\n", flush=True)
+    else:
+        print("  跳过 embedding 重算（--no-rebuild）\n", flush=True)
 
     retriever = MemoryRetriever()
 
@@ -86,5 +102,7 @@ async def main(cases_path: Path) -> None:
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--cases", default=str(DEFAULT_CASES))
+    parser.add_argument("--no-rebuild", action="store_true",
+                        help="跳过 embedding 重算（仅在确认 SQLite embedding 已是新格式时使用）")
     args = parser.parse_args()
-    asyncio.run(main(Path(args.cases)))
+    asyncio.run(main(Path(args.cases), rebuild=not args.no_rebuild))

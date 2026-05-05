@@ -137,7 +137,7 @@ async def _check_memory_pipeline() -> None:
     card = await CardGenerator().generate(block)
     if not card:
         _fail("memory card generate", "LLM returned NOOP or failed")
-    print(f"OK   memory card title={card.title}")
+    print(f"OK   memory card object={card.decision_object}")
 
     expanded = await MemoryRetriever().expand_evidence(card.source_block_ids[0])
     if not expanded:
