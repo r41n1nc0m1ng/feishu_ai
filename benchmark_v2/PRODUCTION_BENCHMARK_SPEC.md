@@ -173,3 +173,20 @@
 - 更大规模 case family
 - 多租户/多语言/极端脏数据
 - 稳定性趋势报表
+
+## 当前验证效果
+
+最近一轮 smoke test / 子集 deep eval 已确认：
+
+- `validate_fixture` 通过；
+- benchmark 相关单测通过；
+- 筛选回放与报告输出正常；
+- `expected_evidence_checks` 与 `forbidden_relation_type` 已接入 v2 主链路；
+- benchmark 当前能够稳定区分两类问题：
+  - benchmark 自身是否可运行；
+  - 系统在 card / relation / evidence / recall 上是否真实失败。
+
+当前更接近事实的判断是：
+
+- benchmark 已可用，可提交，可作为主 benchmark 套件继续扩展；
+- deep eval 仍可能失败，但失败信号现在主要来自系统能力不足，而不是 benchmark 结构缺陷。

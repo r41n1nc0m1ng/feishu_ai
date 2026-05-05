@@ -112,6 +112,17 @@ conda run -n feishu-ai-p0 python -m benchmark_v2.dual_channel_runner benchmark_v
 - 检索/证据质量指标用于判断 final query、粒度命中和 evidence 追溯是否过关。
 - `forbidden_relation_match_rate` 专门用来衡量误冲突保护，即“看起来相关，但不应被判成 supersedes”。
 
+当前验证效果：
+
+- `validate_fixture` 已通过，说明 source/runtime 结构一致性正常。
+- `tests.test_benchmark_v2_runner`、`tests.test_benchmark_replay` 已通过，说明 runner、reporting、FULL_WRITE 语义兼容性正常。
+- 轻量筛选回放已通过，说明按 `--tag` / `--chat` 的专项回归链路正常。
+- deep 子集运行已能真实触发 `expected_memory_cards`、`expected_evidence_checks`、`forbidden_relation_type` 等校验。
+- 当前 deep 失败主要暴露系统真实能力缺口，而不是 benchmark 本身故障：
+  - realtime 分类基本稳定；
+  - ignore 规则基本稳定；
+  - evidence / card / relation 在部分场景仍未稳定命中。
+
 统一入口：
 
 ```bash
