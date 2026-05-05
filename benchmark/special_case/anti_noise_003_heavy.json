@@ -1,0 +1,2575 @@
+{
+  "schema_version": "anti_noise_single_stream_v1",
+  "case_id": "anti_noise_003_heavy",
+  "description": "重度抗干扰：AI 旅行规划助手。历史消息跨度约 8 天，早期形成多个核心产品边界，后续插入大量 UI、接口、普通讨论、闲聊、通知卡片和重复话题；测试集不预切 batch，查询统一放在 final_query_messages。",
+  "chat_id": "oc_anti_noise_heavy_travel",
+  "test_type": "anti_noise",
+  "replay_policy": {
+    "mode": "single_stream_with_final_queries",
+    "description": "专项抗干扰测试：messages 是一段连续、完整的历史对话，不预先切分 batch；系统后续自行完成时间窗口切分或 Event Segmentation。final_query_messages 是历史对话结束后的统一查询入口。",
+    "segmentation_policy": "测试集不预切 batch。被测系统需要基于 messages 的 create_time 和语义内容自行完成切分、沉淀与检索。",
+    "scope_control": [
+      "messages 中不包含 @机器人查询",
+      "messages 中不包含日程/待办触发类信息",
+      "messages 中不包含矛盾更新专项内容"
+    ],
+    "noise_types": [
+      "接口命名",
+      "UI 细节",
+      "普通闲聊",
+      "通知卡片",
+      "非核心产品讨论",
+      "重复或轻微相关但不应覆盖主决策的信息"
+    ]
+  },
+  "messages": [
+    {
+      "content": "{\"text\": \"AI 旅行规划助手这个项目，P1 先只做城市内 1-3 天游玩路线，不做跨国长线旅行。\"}",
+      "create_time": "2026-04-01 09:30",
+      "deleted": false,
+      "message_id": "om_anti_heavy_stream_0001",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_1",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"同意。跨国旅行要处理签证、国际航班、汇率和多城市交通，范围太大。\"}",
+      "create_time": "2026-04-01 09:50",
+      "deleted": false,
+      "message_id": "om_anti_heavy_stream_0002",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_2",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"城市内短途更适合 demo，用户输入城市、天数和偏好就能生成路线。\"}",
+      "create_time": "2026-04-01 10:10",
+      "deleted": false,
+      "message_id": "om_anti_heavy_stream_0003",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_3",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"那首页就问目的地、出行天数、兴趣偏好，不做复杂订单系统。\"}",
+      "create_time": "2026-04-01 10:35",
+      "deleted": false,
+      "message_id": "om_anti_heavy_stream_0004",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_4",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"定：P1 只做城市内 1-3 日路线规划，不做跨国长线旅行和真实订单预订。\"}",
+      "create_time": "2026-04-01 11:00",
+      "deleted": false,
+      "message_id": "om_anti_heavy_stream_0005",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_1",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"这条是核心边界，我会重点测。\"}",
+      "create_time": "2026-04-01 11:20",
+      "deleted": false,
+      "message_id": "om_anti_heavy_stream_0006",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_6",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"要不要接真实酒店和机票 API？\"}",
+      "create_time": "2026-04-01 11:50",
+      "deleted": false,
+      "message_id": "om_anti_heavy_stream_0007",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_3",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"P1 不接真实酒店和机票预订，只展示推荐地点和路线。\"}",
+      "create_time": "2026-04-01 12:05",
+      "deleted": false,
+      "message_id": "om_anti_heavy_stream_0008",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_1",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"真实预订涉及库存、价格变动和支付，比赛阶段不适合。\"}",
+      "create_time": "2026-04-01 12:25",
+      "deleted": false,
+      "message_id": "om_anti_heavy_stream_0009",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_2",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"那数据源先用静态 POI 和 mock 餐厅。\"}",
+      "create_time": "2026-04-01 12:50",
+      "deleted": false,
+      "message_id": "om_anti_heavy_stream_0010",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_3",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"可以，P1 使用静态 POI 数据，不承诺实时价格和库存。\"}",
+      "create_time": "2026-04-01 13:15",
+      "deleted": false,
+      "message_id": "om_anti_heavy_stream_0011",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_1",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"路线结果要不要有地图？\"}",
+      "create_time": "2026-04-01 13:50",
+      "deleted": false,
+      "message_id": "om_anti_heavy_stream_0012",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_4",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"地图集成会占时间，可以先用列表和时间轴。\"}",
+      "create_time": "2026-04-01 14:10",
+      "deleted": false,
+      "message_id": "om_anti_heavy_stream_0013",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_3",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"P1 先不接地图 SDK，使用时间轴展示上午、下午、晚上安排。\"}",
+      "create_time": "2026-04-01 14:30",
+      "deleted": false,
+      "message_id": "om_anti_heavy_stream_0014",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_1",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"时间轴好做，也更稳定。\"}",
+      "create_time": "2026-04-01 14:50",
+      "deleted": false,
+      "message_id": "om_anti_heavy_stream_0015",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_4",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"要不要考虑老人/亲子这种偏好？\"}",
+      "create_time": "2026-04-01 15:20",
+      "deleted": false,
+      "message_id": "om_anti_heavy_stream_0016",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_6",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"偏好可以先有美食、文化、自然、购物、亲子五类。\"}",
+      "create_time": "2026-04-01 15:40",
+      "deleted": false,
+      "message_id": "om_anti_heavy_stream_0017",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_2",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"定：偏好标签先支持美食、文化、自然、购物、亲子。\"}",
+      "create_time": "2026-04-01 16:00",
+      "deleted": false,
+      "message_id": "om_anti_heavy_stream_0018",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_1",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"我刚看到一个旅行博主推荐杭州路线。\"}",
+      "create_time": "2026-04-02 09:30",
+      "deleted": false,
+      "message_id": "om_anti_heavy_stream_0019",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_7",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"卡片圆角我想用 16px。\"}",
+      "create_time": "2026-04-02 10:43",
+      "deleted": false,
+      "message_id": "om_anti_heavy_stream_0020",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_4",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"接口我先写 /api/itinerary/generate。\"}",
+      "create_time": "2026-04-02 11:56",
+      "deleted": false,
+      "message_id": "om_anti_heavy_stream_0021",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_3",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"测试城市先用北京、杭州、成都。\"}",
+      "create_time": "2026-04-02 13:09",
+      "deleted": false,
+      "message_id": "om_anti_heavy_stream_0022",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_6",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"测试城市可以先用北京、杭州、成都。\"}",
+      "create_time": "2026-04-02 14:22",
+      "deleted": false,
+      "message_id": "om_anti_heavy_stream_0023",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_1",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"餐厅推荐要不要保证营业时间？\"}",
+      "create_time": "2026-04-02 15:35",
+      "deleted": false,
+      "message_id": "om_anti_heavy_stream_0024",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_2",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"P1 先不保证实时营业时间，只给出提示让用户自行确认。\"}",
+      "create_time": "2026-04-02 16:48",
+      "deleted": false,
+      "message_id": "om_anti_heavy_stream_0025",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_3",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"同意，营业时间和门票价格都提示用户二次确认。\"}",
+      "create_time": "2026-04-02 18:01",
+      "deleted": false,
+      "message_id": "om_anti_heavy_stream_0026",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_1",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"结果页加一句‘出行前请确认营业时间和预约政策’。\"}",
+      "create_time": "2026-04-02 19:14",
+      "deleted": false,
+      "message_id": "om_anti_heavy_stream_0027",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_4",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"午饭有人一起点吗？\"}",
+      "create_time": "2026-04-02 20:27",
+      "deleted": false,
+      "message_id": "om_anti_heavy_stream_0028",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_7",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"数据库表 poi_items 够用吗？\"}",
+      "create_time": "2026-04-02 21:40",
+      "deleted": false,
+      "message_id": "om_anti_heavy_stream_0029",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_3",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"路线不要太赶，不然体验很差。\"}",
+      "create_time": "2026-04-02 22:53",
+      "deleted": false,
+      "message_id": "om_anti_heavy_stream_0030",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_6",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"建议每天最多 4 个主要景点。\"}",
+      "create_time": "2026-04-03 00:06",
+      "deleted": false,
+      "message_id": "om_anti_heavy_stream_0031",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_2",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"定：每天最多推荐 4 个主要景点，中间保留交通和休息时间。\"}",
+      "create_time": "2026-04-03 01:19",
+      "deleted": false,
+      "message_id": "om_anti_heavy_stream_0032",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_1",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"这个可以在路线卡片上展示节奏标签。\"}",
+      "create_time": "2026-04-03 02:32",
+      "deleted": false,
+      "message_id": "om_anti_heavy_stream_0033",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_4",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"如果用户只输入一天，晚上也要安排吗？\"}",
+      "create_time": "2026-04-03 03:45",
+      "deleted": false,
+      "message_id": "om_anti_heavy_stream_0034",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_5",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"一日游也给上午、下午、晚上三个时段，但晚上可以是可选安排。\"}",
+      "create_time": "2026-04-03 04:58",
+      "deleted": false,
+      "message_id": "om_anti_heavy_stream_0035",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_1",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "<card title=\"飞书直播通知\">\\n今晚有 AI 产品分享\\n</card>",
+      "create_time": "2026-04-03 06:11",
+      "deleted": false,
+      "message_id": "om_anti_heavy_stream_0036",
+      "msg_type": "interactive",
+      "sender": {
+        "id": "ou_7",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"详情页要不要放交通方式？\"}",
+      "create_time": "2026-04-03 07:24",
+      "deleted": false,
+      "message_id": "om_anti_heavy_stream_0037",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_4",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"交通方式如果接地图会复杂。\"}",
+      "create_time": "2026-04-03 08:37",
+      "deleted": false,
+      "message_id": "om_anti_heavy_stream_0038",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_3",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"P1 交通方式先用步行/打车/公共交通的文字建议，不做实时导航。\"}",
+      "create_time": "2026-04-03 09:50",
+      "deleted": false,
+      "message_id": "om_anti_heavy_stream_0039",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_1",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"这个也要提示仅供参考。\"}",
+      "create_time": "2026-04-03 11:03",
+      "deleted": false,
+      "message_id": "om_anti_heavy_stream_0040",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_6",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"预算功能要不要做？\"}",
+      "create_time": "2026-04-03 12:16",
+      "deleted": false,
+      "message_id": "om_anti_heavy_stream_0041",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_2",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"P1 先不做预算计算，只允许用户选择低/中/高预算偏好。\"}",
+      "create_time": "2026-04-03 13:29",
+      "deleted": false,
+      "message_id": "om_anti_heavy_stream_0042",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_1",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"那预算只是影响推荐风格，不输出总价。\"}",
+      "create_time": "2026-04-03 14:42",
+      "deleted": false,
+      "message_id": "om_anti_heavy_stream_0043",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_3",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"我把预算放到偏好选择里。\"}",
+      "create_time": "2026-04-03 15:55",
+      "deleted": false,
+      "message_id": "om_anti_heavy_stream_0044",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_4",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"我电脑更新了，等会儿重启。\"}",
+      "create_time": "2026-04-03 17:08",
+      "deleted": false,
+      "message_id": "om_anti_heavy_stream_0045",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_7",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"我刚看到一个旅行博主推荐杭州路线。\"}",
+      "create_time": "2026-04-03 18:21",
+      "deleted": false,
+      "message_id": "om_anti_heavy_stream_0046",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_7",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"卡片圆角我想用 16px。\"}",
+      "create_time": "2026-04-03 19:34",
+      "deleted": false,
+      "message_id": "om_anti_heavy_stream_0047",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_4",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"接口我先写 /api/itinerary/generate。\"}",
+      "create_time": "2026-04-03 20:47",
+      "deleted": false,
+      "message_id": "om_anti_heavy_stream_0048",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_3",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"测试城市先用北京、杭州、成都。\"}",
+      "create_time": "2026-04-03 22:00",
+      "deleted": false,
+      "message_id": "om_anti_heavy_stream_0049",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_6",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"测试城市可以先用北京、杭州、成都。\"}",
+      "create_time": "2026-04-03 23:13",
+      "deleted": false,
+      "message_id": "om_anti_heavy_stream_0050",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_1",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"餐厅推荐要不要保证营业时间？\"}",
+      "create_time": "2026-04-04 00:26",
+      "deleted": false,
+      "message_id": "om_anti_heavy_stream_0051",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_2",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"P1 先不保证实时营业时间，只给出提示让用户自行确认。\"}",
+      "create_time": "2026-04-04 01:39",
+      "deleted": false,
+      "message_id": "om_anti_heavy_stream_0052",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_3",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"同意，营业时间和门票价格都提示用户二次确认。\"}",
+      "create_time": "2026-04-04 02:52",
+      "deleted": false,
+      "message_id": "om_anti_heavy_stream_0053",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_1",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"结果页加一句‘出行前请确认营业时间和预约政策’。\"}",
+      "create_time": "2026-04-04 04:05",
+      "deleted": false,
+      "message_id": "om_anti_heavy_stream_0054",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_4",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"午饭有人一起点吗？\"}",
+      "create_time": "2026-04-04 05:18",
+      "deleted": false,
+      "message_id": "om_anti_heavy_stream_0055",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_7",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"数据库表 poi_items 够用吗？\"}",
+      "create_time": "2026-04-04 06:31",
+      "deleted": false,
+      "message_id": "om_anti_heavy_stream_0056",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_3",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"路线不要太赶，不然体验很差。\"}",
+      "create_time": "2026-04-04 07:44",
+      "deleted": false,
+      "message_id": "om_anti_heavy_stream_0057",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_6",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"建议每天最多 4 个主要景点。\"}",
+      "create_time": "2026-04-04 08:57",
+      "deleted": false,
+      "message_id": "om_anti_heavy_stream_0058",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_2",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"定：每天最多推荐 4 个主要景点，中间保留交通和休息时间。\"}",
+      "create_time": "2026-04-04 10:10",
+      "deleted": false,
+      "message_id": "om_anti_heavy_stream_0059",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_1",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"这个可以在路线卡片上展示节奏标签。\"}",
+      "create_time": "2026-04-04 11:23",
+      "deleted": false,
+      "message_id": "om_anti_heavy_stream_0060",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_4",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"如果用户只输入一天，晚上也要安排吗？\"}",
+      "create_time": "2026-04-04 12:36",
+      "deleted": false,
+      "message_id": "om_anti_heavy_stream_0061",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_5",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"一日游也给上午、下午、晚上三个时段，但晚上可以是可选安排。\"}",
+      "create_time": "2026-04-04 13:49",
+      "deleted": false,
+      "message_id": "om_anti_heavy_stream_0062",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_1",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "<card title=\"飞书直播通知\">\\n今晚有 AI 产品分享\\n</card>",
+      "create_time": "2026-04-04 15:02",
+      "deleted": false,
+      "message_id": "om_anti_heavy_stream_0063",
+      "msg_type": "interactive",
+      "sender": {
+        "id": "ou_7",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"详情页要不要放交通方式？\"}",
+      "create_time": "2026-04-04 16:15",
+      "deleted": false,
+      "message_id": "om_anti_heavy_stream_0064",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_4",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"交通方式如果接地图会复杂。\"}",
+      "create_time": "2026-04-04 17:28",
+      "deleted": false,
+      "message_id": "om_anti_heavy_stream_0065",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_3",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"P1 交通方式先用步行/打车/公共交通的文字建议，不做实时导航。\"}",
+      "create_time": "2026-04-04 18:41",
+      "deleted": false,
+      "message_id": "om_anti_heavy_stream_0066",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_1",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"这个也要提示仅供参考。\"}",
+      "create_time": "2026-04-04 19:54",
+      "deleted": false,
+      "message_id": "om_anti_heavy_stream_0067",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_6",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"预算功能要不要做？\"}",
+      "create_time": "2026-04-04 21:07",
+      "deleted": false,
+      "message_id": "om_anti_heavy_stream_0068",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_2",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"P1 先不做预算计算，只允许用户选择低/中/高预算偏好。\"}",
+      "create_time": "2026-04-04 22:20",
+      "deleted": false,
+      "message_id": "om_anti_heavy_stream_0069",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_1",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"那预算只是影响推荐风格，不输出总价。\"}",
+      "create_time": "2026-04-04 23:33",
+      "deleted": false,
+      "message_id": "om_anti_heavy_stream_0070",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_3",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"我把预算放到偏好选择里。\"}",
+      "create_time": "2026-04-05 00:46",
+      "deleted": false,
+      "message_id": "om_anti_heavy_stream_0071",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_4",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"我电脑更新了，等会儿重启。\"}",
+      "create_time": "2026-04-05 01:59",
+      "deleted": false,
+      "message_id": "om_anti_heavy_stream_0072",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_7",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"我刚看到一个旅行博主推荐杭州路线。\"}",
+      "create_time": "2026-04-05 03:12",
+      "deleted": false,
+      "message_id": "om_anti_heavy_stream_0073",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_7",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"卡片圆角我想用 16px。\"}",
+      "create_time": "2026-04-05 04:25",
+      "deleted": false,
+      "message_id": "om_anti_heavy_stream_0074",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_4",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"接口我先写 /api/itinerary/generate。\"}",
+      "create_time": "2026-04-05 05:38",
+      "deleted": false,
+      "message_id": "om_anti_heavy_stream_0075",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_3",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"测试城市先用北京、杭州、成都。\"}",
+      "create_time": "2026-04-05 06:51",
+      "deleted": false,
+      "message_id": "om_anti_heavy_stream_0076",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_6",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"测试城市可以先用北京、杭州、成都。\"}",
+      "create_time": "2026-04-05 08:04",
+      "deleted": false,
+      "message_id": "om_anti_heavy_stream_0077",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_1",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"餐厅推荐要不要保证营业时间？\"}",
+      "create_time": "2026-04-05 09:17",
+      "deleted": false,
+      "message_id": "om_anti_heavy_stream_0078",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_2",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"P1 先不保证实时营业时间，只给出提示让用户自行确认。\"}",
+      "create_time": "2026-04-05 10:30",
+      "deleted": false,
+      "message_id": "om_anti_heavy_stream_0079",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_3",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"同意，营业时间和门票价格都提示用户二次确认。\"}",
+      "create_time": "2026-04-05 11:43",
+      "deleted": false,
+      "message_id": "om_anti_heavy_stream_0080",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_1",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"结果页加一句‘出行前请确认营业时间和预约政策’。\"}",
+      "create_time": "2026-04-05 12:56",
+      "deleted": false,
+      "message_id": "om_anti_heavy_stream_0081",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_4",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"午饭有人一起点吗？\"}",
+      "create_time": "2026-04-05 14:09",
+      "deleted": false,
+      "message_id": "om_anti_heavy_stream_0082",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_7",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"数据库表 poi_items 够用吗？\"}",
+      "create_time": "2026-04-05 15:22",
+      "deleted": false,
+      "message_id": "om_anti_heavy_stream_0083",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_3",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"路线不要太赶，不然体验很差。\"}",
+      "create_time": "2026-04-05 16:35",
+      "deleted": false,
+      "message_id": "om_anti_heavy_stream_0084",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_6",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"建议每天最多 4 个主要景点。\"}",
+      "create_time": "2026-04-05 17:48",
+      "deleted": false,
+      "message_id": "om_anti_heavy_stream_0085",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_2",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"定：每天最多推荐 4 个主要景点，中间保留交通和休息时间。\"}",
+      "create_time": "2026-04-05 19:01",
+      "deleted": false,
+      "message_id": "om_anti_heavy_stream_0086",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_1",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"这个可以在路线卡片上展示节奏标签。\"}",
+      "create_time": "2026-04-05 20:14",
+      "deleted": false,
+      "message_id": "om_anti_heavy_stream_0087",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_4",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"如果用户只输入一天，晚上也要安排吗？\"}",
+      "create_time": "2026-04-05 21:27",
+      "deleted": false,
+      "message_id": "om_anti_heavy_stream_0088",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_5",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"一日游也给上午、下午、晚上三个时段，但晚上可以是可选安排。\"}",
+      "create_time": "2026-04-05 22:40",
+      "deleted": false,
+      "message_id": "om_anti_heavy_stream_0089",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_1",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "<card title=\"飞书直播通知\">\\n今晚有 AI 产品分享\\n</card>",
+      "create_time": "2026-04-05 23:53",
+      "deleted": false,
+      "message_id": "om_anti_heavy_stream_0090",
+      "msg_type": "interactive",
+      "sender": {
+        "id": "ou_7",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"详情页要不要放交通方式？\"}",
+      "create_time": "2026-04-06 01:06",
+      "deleted": false,
+      "message_id": "om_anti_heavy_stream_0091",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_4",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"交通方式如果接地图会复杂。\"}",
+      "create_time": "2026-04-06 02:19",
+      "deleted": false,
+      "message_id": "om_anti_heavy_stream_0092",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_3",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"P1 交通方式先用步行/打车/公共交通的文字建议，不做实时导航。\"}",
+      "create_time": "2026-04-06 03:32",
+      "deleted": false,
+      "message_id": "om_anti_heavy_stream_0093",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_1",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"这个也要提示仅供参考。\"}",
+      "create_time": "2026-04-06 04:45",
+      "deleted": false,
+      "message_id": "om_anti_heavy_stream_0094",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_6",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"预算功能要不要做？\"}",
+      "create_time": "2026-04-06 05:58",
+      "deleted": false,
+      "message_id": "om_anti_heavy_stream_0095",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_2",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"P1 先不做预算计算，只允许用户选择低/中/高预算偏好。\"}",
+      "create_time": "2026-04-06 07:11",
+      "deleted": false,
+      "message_id": "om_anti_heavy_stream_0096",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_1",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"那预算只是影响推荐风格，不输出总价。\"}",
+      "create_time": "2026-04-06 08:24",
+      "deleted": false,
+      "message_id": "om_anti_heavy_stream_0097",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_3",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"我把预算放到偏好选择里。\"}",
+      "create_time": "2026-04-06 09:37",
+      "deleted": false,
+      "message_id": "om_anti_heavy_stream_0098",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_4",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"我电脑更新了，等会儿重启。\"}",
+      "create_time": "2026-04-06 10:50",
+      "deleted": false,
+      "message_id": "om_anti_heavy_stream_0099",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_7",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"我刚看到一个旅行博主推荐杭州路线。\"}",
+      "create_time": "2026-04-06 12:03",
+      "deleted": false,
+      "message_id": "om_anti_heavy_stream_0100",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_7",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"卡片圆角我想用 16px。\"}",
+      "create_time": "2026-04-06 13:16",
+      "deleted": false,
+      "message_id": "om_anti_heavy_stream_0101",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_4",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"接口我先写 /api/itinerary/generate。\"}",
+      "create_time": "2026-04-06 14:29",
+      "deleted": false,
+      "message_id": "om_anti_heavy_stream_0102",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_3",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"测试城市先用北京、杭州、成都。\"}",
+      "create_time": "2026-04-06 15:42",
+      "deleted": false,
+      "message_id": "om_anti_heavy_stream_0103",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_6",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"测试城市可以先用北京、杭州、成都。\"}",
+      "create_time": "2026-04-06 16:55",
+      "deleted": false,
+      "message_id": "om_anti_heavy_stream_0104",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_1",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"餐厅推荐要不要保证营业时间？\"}",
+      "create_time": "2026-04-06 18:08",
+      "deleted": false,
+      "message_id": "om_anti_heavy_stream_0105",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_2",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"P1 先不保证实时营业时间，只给出提示让用户自行确认。\"}",
+      "create_time": "2026-04-06 19:21",
+      "deleted": false,
+      "message_id": "om_anti_heavy_stream_0106",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_3",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"同意，营业时间和门票价格都提示用户二次确认。\"}",
+      "create_time": "2026-04-06 20:34",
+      "deleted": false,
+      "message_id": "om_anti_heavy_stream_0107",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_1",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"结果页加一句‘出行前请确认营业时间和预约政策’。\"}",
+      "create_time": "2026-04-06 21:47",
+      "deleted": false,
+      "message_id": "om_anti_heavy_stream_0108",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_4",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"午饭有人一起点吗？\"}",
+      "create_time": "2026-04-06 23:00",
+      "deleted": false,
+      "message_id": "om_anti_heavy_stream_0109",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_7",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"数据库表 poi_items 够用吗？\"}",
+      "create_time": "2026-04-07 00:13",
+      "deleted": false,
+      "message_id": "om_anti_heavy_stream_0110",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_3",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"路线不要太赶，不然体验很差。\"}",
+      "create_time": "2026-04-07 01:26",
+      "deleted": false,
+      "message_id": "om_anti_heavy_stream_0111",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_6",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"建议每天最多 4 个主要景点。\"}",
+      "create_time": "2026-04-07 02:39",
+      "deleted": false,
+      "message_id": "om_anti_heavy_stream_0112",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_2",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"定：每天最多推荐 4 个主要景点，中间保留交通和休息时间。\"}",
+      "create_time": "2026-04-07 03:52",
+      "deleted": false,
+      "message_id": "om_anti_heavy_stream_0113",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_1",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"这个可以在路线卡片上展示节奏标签。\"}",
+      "create_time": "2026-04-07 05:05",
+      "deleted": false,
+      "message_id": "om_anti_heavy_stream_0114",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_4",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"如果用户只输入一天，晚上也要安排吗？\"}",
+      "create_time": "2026-04-07 06:18",
+      "deleted": false,
+      "message_id": "om_anti_heavy_stream_0115",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_5",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"一日游也给上午、下午、晚上三个时段，但晚上可以是可选安排。\"}",
+      "create_time": "2026-04-07 07:31",
+      "deleted": false,
+      "message_id": "om_anti_heavy_stream_0116",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_1",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "<card title=\"飞书直播通知\">\\n今晚有 AI 产品分享\\n</card>",
+      "create_time": "2026-04-07 08:44",
+      "deleted": false,
+      "message_id": "om_anti_heavy_stream_0117",
+      "msg_type": "interactive",
+      "sender": {
+        "id": "ou_7",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"详情页要不要放交通方式？\"}",
+      "create_time": "2026-04-07 09:57",
+      "deleted": false,
+      "message_id": "om_anti_heavy_stream_0118",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_4",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"交通方式如果接地图会复杂。\"}",
+      "create_time": "2026-04-07 11:10",
+      "deleted": false,
+      "message_id": "om_anti_heavy_stream_0119",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_3",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"P1 交通方式先用步行/打车/公共交通的文字建议，不做实时导航。\"}",
+      "create_time": "2026-04-07 12:23",
+      "deleted": false,
+      "message_id": "om_anti_heavy_stream_0120",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_1",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"这个也要提示仅供参考。\"}",
+      "create_time": "2026-04-07 13:36",
+      "deleted": false,
+      "message_id": "om_anti_heavy_stream_0121",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_6",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"预算功能要不要做？\"}",
+      "create_time": "2026-04-07 14:49",
+      "deleted": false,
+      "message_id": "om_anti_heavy_stream_0122",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_2",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"P1 先不做预算计算，只允许用户选择低/中/高预算偏好。\"}",
+      "create_time": "2026-04-07 16:02",
+      "deleted": false,
+      "message_id": "om_anti_heavy_stream_0123",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_1",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"那预算只是影响推荐风格，不输出总价。\"}",
+      "create_time": "2026-04-07 17:15",
+      "deleted": false,
+      "message_id": "om_anti_heavy_stream_0124",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_3",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"我把预算放到偏好选择里。\"}",
+      "create_time": "2026-04-07 18:28",
+      "deleted": false,
+      "message_id": "om_anti_heavy_stream_0125",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_4",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"我电脑更新了，等会儿重启。\"}",
+      "create_time": "2026-04-07 19:41",
+      "deleted": false,
+      "message_id": "om_anti_heavy_stream_0126",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_7",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"我刚看到一个旅行博主推荐杭州路线。\"}",
+      "create_time": "2026-04-07 20:54",
+      "deleted": false,
+      "message_id": "om_anti_heavy_stream_0127",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_7",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"卡片圆角我想用 16px。\"}",
+      "create_time": "2026-04-07 22:07",
+      "deleted": false,
+      "message_id": "om_anti_heavy_stream_0128",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_4",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"接口我先写 /api/itinerary/generate。\"}",
+      "create_time": "2026-04-07 23:20",
+      "deleted": false,
+      "message_id": "om_anti_heavy_stream_0129",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_3",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"测试城市先用北京、杭州、成都。\"}",
+      "create_time": "2026-04-08 00:33",
+      "deleted": false,
+      "message_id": "om_anti_heavy_stream_0130",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_6",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"测试城市可以先用北京、杭州、成都。\"}",
+      "create_time": "2026-04-08 01:46",
+      "deleted": false,
+      "message_id": "om_anti_heavy_stream_0131",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_1",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"餐厅推荐要不要保证营业时间？\"}",
+      "create_time": "2026-04-08 02:59",
+      "deleted": false,
+      "message_id": "om_anti_heavy_stream_0132",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_2",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"P1 先不保证实时营业时间，只给出提示让用户自行确认。\"}",
+      "create_time": "2026-04-08 04:12",
+      "deleted": false,
+      "message_id": "om_anti_heavy_stream_0133",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_3",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"同意，营业时间和门票价格都提示用户二次确认。\"}",
+      "create_time": "2026-04-08 05:25",
+      "deleted": false,
+      "message_id": "om_anti_heavy_stream_0134",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_1",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"结果页加一句‘出行前请确认营业时间和预约政策’。\"}",
+      "create_time": "2026-04-08 06:38",
+      "deleted": false,
+      "message_id": "om_anti_heavy_stream_0135",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_4",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"午饭有人一起点吗？\"}",
+      "create_time": "2026-04-08 07:51",
+      "deleted": false,
+      "message_id": "om_anti_heavy_stream_0136",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_7",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"数据库表 poi_items 够用吗？\"}",
+      "create_time": "2026-04-08 09:04",
+      "deleted": false,
+      "message_id": "om_anti_heavy_stream_0137",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_3",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"路线不要太赶，不然体验很差。\"}",
+      "create_time": "2026-04-08 10:17",
+      "deleted": false,
+      "message_id": "om_anti_heavy_stream_0138",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_6",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"建议每天最多 4 个主要景点。\"}",
+      "create_time": "2026-04-08 11:30",
+      "deleted": false,
+      "message_id": "om_anti_heavy_stream_0139",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_2",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"定：每天最多推荐 4 个主要景点，中间保留交通和休息时间。\"}",
+      "create_time": "2026-04-08 12:43",
+      "deleted": false,
+      "message_id": "om_anti_heavy_stream_0140",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_1",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"这个可以在路线卡片上展示节奏标签。\"}",
+      "create_time": "2026-04-08 13:56",
+      "deleted": false,
+      "message_id": "om_anti_heavy_stream_0141",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_4",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"如果用户只输入一天，晚上也要安排吗？\"}",
+      "create_time": "2026-04-08 15:09",
+      "deleted": false,
+      "message_id": "om_anti_heavy_stream_0142",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_5",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"一日游也给上午、下午、晚上三个时段，但晚上可以是可选安排。\"}",
+      "create_time": "2026-04-08 16:22",
+      "deleted": false,
+      "message_id": "om_anti_heavy_stream_0143",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_1",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "<card title=\"飞书直播通知\">\\n今晚有 AI 产品分享\\n</card>",
+      "create_time": "2026-04-08 17:35",
+      "deleted": false,
+      "message_id": "om_anti_heavy_stream_0144",
+      "msg_type": "interactive",
+      "sender": {
+        "id": "ou_7",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"详情页要不要放交通方式？\"}",
+      "create_time": "2026-04-08 18:48",
+      "deleted": false,
+      "message_id": "om_anti_heavy_stream_0145",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_4",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"交通方式如果接地图会复杂。\"}",
+      "create_time": "2026-04-08 20:01",
+      "deleted": false,
+      "message_id": "om_anti_heavy_stream_0146",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_3",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"P1 交通方式先用步行/打车/公共交通的文字建议，不做实时导航。\"}",
+      "create_time": "2026-04-08 21:14",
+      "deleted": false,
+      "message_id": "om_anti_heavy_stream_0147",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_1",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"这个也要提示仅供参考。\"}",
+      "create_time": "2026-04-08 22:27",
+      "deleted": false,
+      "message_id": "om_anti_heavy_stream_0148",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_6",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"预算功能要不要做？\"}",
+      "create_time": "2026-04-08 23:40",
+      "deleted": false,
+      "message_id": "om_anti_heavy_stream_0149",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_2",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"P1 先不做预算计算，只允许用户选择低/中/高预算偏好。\"}",
+      "create_time": "2026-04-09 00:53",
+      "deleted": false,
+      "message_id": "om_anti_heavy_stream_0150",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_1",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"那预算只是影响推荐风格，不输出总价。\"}",
+      "create_time": "2026-04-09 02:06",
+      "deleted": false,
+      "message_id": "om_anti_heavy_stream_0151",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_3",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"我把预算放到偏好选择里。\"}",
+      "create_time": "2026-04-09 03:19",
+      "deleted": false,
+      "message_id": "om_anti_heavy_stream_0152",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_4",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"我电脑更新了，等会儿重启。\"}",
+      "create_time": "2026-04-09 04:32",
+      "deleted": false,
+      "message_id": "om_anti_heavy_stream_0153",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_7",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"我刚看到一个旅行博主推荐杭州路线。\"}",
+      "create_time": "2026-04-09 05:45",
+      "deleted": false,
+      "message_id": "om_anti_heavy_stream_0154",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_7",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"卡片圆角我想用 16px。\"}",
+      "create_time": "2026-04-09 06:58",
+      "deleted": false,
+      "message_id": "om_anti_heavy_stream_0155",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_4",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"接口我先写 /api/itinerary/generate。\"}",
+      "create_time": "2026-04-09 08:11",
+      "deleted": false,
+      "message_id": "om_anti_heavy_stream_0156",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_3",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"测试城市先用北京、杭州、成都。\"}",
+      "create_time": "2026-04-09 09:24",
+      "deleted": false,
+      "message_id": "om_anti_heavy_stream_0157",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_6",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"测试城市可以先用北京、杭州、成都。\"}",
+      "create_time": "2026-04-09 10:37",
+      "deleted": false,
+      "message_id": "om_anti_heavy_stream_0158",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_1",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"餐厅推荐要不要保证营业时间？\"}",
+      "create_time": "2026-04-09 11:50",
+      "deleted": false,
+      "message_id": "om_anti_heavy_stream_0159",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_2",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"P1 先不保证实时营业时间，只给出提示让用户自行确认。\"}",
+      "create_time": "2026-04-09 13:03",
+      "deleted": false,
+      "message_id": "om_anti_heavy_stream_0160",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_3",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"同意，营业时间和门票价格都提示用户二次确认。\"}",
+      "create_time": "2026-04-09 14:16",
+      "deleted": false,
+      "message_id": "om_anti_heavy_stream_0161",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_1",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"结果页加一句‘出行前请确认营业时间和预约政策’。\"}",
+      "create_time": "2026-04-09 15:29",
+      "deleted": false,
+      "message_id": "om_anti_heavy_stream_0162",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_4",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"午饭有人一起点吗？\"}",
+      "create_time": "2026-04-09 16:42",
+      "deleted": false,
+      "message_id": "om_anti_heavy_stream_0163",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_7",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"数据库表 poi_items 够用吗？\"}",
+      "create_time": "2026-04-09 17:55",
+      "deleted": false,
+      "message_id": "om_anti_heavy_stream_0164",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_3",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"路线不要太赶，不然体验很差。\"}",
+      "create_time": "2026-04-09 19:08",
+      "deleted": false,
+      "message_id": "om_anti_heavy_stream_0165",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_6",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"建议每天最多 4 个主要景点。\"}",
+      "create_time": "2026-04-09 20:21",
+      "deleted": false,
+      "message_id": "om_anti_heavy_stream_0166",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_2",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"定：每天最多推荐 4 个主要景点，中间保留交通和休息时间。\"}",
+      "create_time": "2026-04-09 21:34",
+      "deleted": false,
+      "message_id": "om_anti_heavy_stream_0167",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_1",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"这个可以在路线卡片上展示节奏标签。\"}",
+      "create_time": "2026-04-09 22:47",
+      "deleted": false,
+      "message_id": "om_anti_heavy_stream_0168",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_4",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    }
+  ],
+  "final_query_messages": [
+    {
+      "content": "{\"text\": \"@机器人 P1 为什么不做跨国长线旅行？\"}",
+      "create_time": "2026-04-09 23:47",
+      "deleted": false,
+      "message_id": "om_anti_heavy_stream_1001",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_3",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"@机器人 P1 接不接真实酒店和机票预订？\"}",
+      "create_time": "2026-04-09 23:48",
+      "deleted": false,
+      "message_id": "om_anti_heavy_stream_1002",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_6",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"@机器人 当前旅行规划 P1 的整体边界是什么？\"}",
+      "create_time": "2026-04-09 23:49",
+      "deleted": false,
+      "message_id": "om_anti_heavy_stream_1003",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_2",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"@机器人 原话在哪？谁说真实预订不适合比赛阶段？\"}",
+      "create_time": "2026-04-09 23:50",
+      "deleted": false,
+      "message_id": "om_anti_heavy_stream_1004",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_4",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    }
+  ],
+  "expected": {
+    "target_memories": [
+      {
+        "memory_id": "target_001",
+        "description": "P1 范围：城市内 1-3 日路线规划，不做跨国长线旅行和真实订单预订。",
+        "expected_granularity": "memory_card",
+        "expected_keywords": [
+          "城市内",
+          "1-3 日",
+          "不做跨国长线旅行",
+          "不做真实订单预订"
+        ],
+        "source_message_ids": [
+          "om_anti_heavy_stream_0001",
+          "om_anti_heavy_stream_0002",
+          "om_anti_heavy_stream_0003",
+          "om_anti_heavy_stream_0004",
+          "om_anti_heavy_stream_0005"
+        ]
+      },
+      {
+        "memory_id": "target_002",
+        "description": "酒店机票边界：不接真实酒店和机票预订，使用静态 POI 和 mock 餐厅。",
+        "expected_granularity": "memory_card",
+        "expected_keywords": [
+          "不接真实酒店",
+          "不接机票",
+          "静态 POI",
+          "mock 餐厅"
+        ],
+        "source_message_ids": [
+          "om_anti_heavy_stream_0007",
+          "om_anti_heavy_stream_0008",
+          "om_anti_heavy_stream_0009",
+          "om_anti_heavy_stream_0010"
+        ]
+      },
+      {
+        "memory_id": "target_003",
+        "description": "路线展示：不接地图 SDK，使用时间轴展示上午、下午、晚上。",
+        "expected_granularity": "memory_card",
+        "expected_keywords": [
+          "不接地图 SDK",
+          "时间轴",
+          "上午",
+          "下午",
+          "晚上"
+        ],
+        "source_message_ids": [
+          "om_anti_heavy_stream_0012",
+          "om_anti_heavy_stream_0013",
+          "om_anti_heavy_stream_0014"
+        ]
+      }
+    ],
+    "noise_profile": {
+      "history_message_count": 168,
+      "time_span": "约 8 天",
+      "noise_level": "heavy"
+    },
+    "final_memory_checks": [
+      {
+        "query_message_id": "om_anti_heavy_stream_1001",
+        "query": "P1 为什么不做跨国长线旅行？",
+        "expected_answer": "P1 不做跨国长线旅行，是因为跨国旅行会涉及签证、国际航班、汇率、多城市交通等复杂问题，超出比赛阶段范围。团队选择先做城市内 1-3 日游玩路线，让用户输入城市、天数和偏好即可生成路线，demo 更聚焦也更容易落地。",
+        "expected_granularity": "memory_card",
+        "expected_keywords": [
+          "不做跨国长线旅行",
+          "签证",
+          "国际航班",
+          "汇率",
+          "城市内",
+          "1-3 日"
+        ],
+        "forbidden_keywords": [
+          "P1 支持跨国旅行",
+          "支持国际航班预订"
+        ]
+      },
+      {
+        "query_message_id": "om_anti_heavy_stream_1002",
+        "query": "P1 接不接真实酒店和机票预订？",
+        "expected_answer": "P1 不接真实酒店和机票预订，也不处理真实订单。系统只展示推荐地点和路线，使用静态 POI 和 mock 餐厅数据；真实预订涉及库存、价格变动、支付和履约风险，不适合比赛阶段。",
+        "expected_granularity": "memory_card",
+        "expected_keywords": [
+          "不接真实酒店",
+          "不接机票",
+          "静态 POI",
+          "mock 餐厅",
+          "库存",
+          "价格变动",
+          "支付"
+        ],
+        "forbidden_keywords": [
+          "已经接入酒店预订",
+          "已经接入机票预订"
+        ]
+      },
+      {
+        "query_message_id": "om_anti_heavy_stream_1003",
+        "query": "当前旅行规划 P1 的整体边界是什么？",
+        "expected_answer": "当前 P1 是一个城市内短途旅行规划助手：支持 1-3 日路线规划，用户输入城市、天数和兴趣偏好后生成上午、下午、晚上时间轴安排；不做跨国长线旅行、不接真实酒店/机票预订、不接地图 SDK 和实时导航，也不承诺实时营业时间、门票价格、库存和总价。",
+        "expected_granularity": "topic_summary",
+        "expected_keywords": [
+          "城市内",
+          "1-3 日",
+          "时间轴",
+          "不做跨国",
+          "不接真实预订",
+          "不接地图 SDK",
+          "不做实时导航"
+        ],
+        "forbidden_keywords": [
+          "完整旅行预订平台"
+        ]
+      },
+      {
+        "query_message_id": "om_anti_heavy_stream_1004",
+        "query": "原话在哪？谁说真实预订不适合比赛阶段？",
+        "expected_answer": "来源应追溯到关于酒店和机票 API 的早期讨论：团队先明确 P1 不接真实酒店/机票预订，只展示推荐地点和路线；随后说明真实预订涉及库存、价格变动和支付，因此比赛阶段不适合。",
+        "expected_granularity": "evidence_block",
+        "expected_keywords": [
+          "不接真实酒店",
+          "机票",
+          "库存",
+          "价格变动",
+          "支付",
+          "比赛阶段"
+        ],
+        "forbidden_keywords": []
+      }
+    ],
+    "llm_judge_rubric": {
+      "score_2": "回答语义完全匹配 expected_answer，包含核心决策、理由和当前状态，且没有被噪声干扰。",
+      "score_1": "回答大体正确，但缺少部分理由、来源或边界。",
+      "score_0": "回答错误、混入噪声决策、使用相反结论或编造。"
+    }
+  }
+}

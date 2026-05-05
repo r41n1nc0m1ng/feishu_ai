@@ -1,0 +1,1556 @@
+{
+  "schema_version": "anti_noise_single_stream_v1",
+  "case_id": "anti_noise_002_medium",
+  "description": "中等抗干扰：校园外卖拼单产品。历史消息跨度约 5 天，多个核心决策后混入 UI、接口、闲聊、通知、普通产品讨论等噪声；测试集不预切 batch，查询统一放在 final_query_messages。",
+  "chat_id": "oc_anti_noise_medium_food",
+  "test_type": "anti_noise",
+  "replay_policy": {
+    "mode": "single_stream_with_final_queries",
+    "description": "专项抗干扰测试：messages 是一段连续、完整的历史对话，不预先切分 batch；系统后续自行完成时间窗口切分或 Event Segmentation。final_query_messages 是历史对话结束后的统一查询入口。",
+    "segmentation_policy": "测试集不预切 batch。被测系统需要基于 messages 的 create_time 和语义内容自行完成切分、沉淀与检索。",
+    "scope_control": [
+      "messages 中不包含 @机器人查询",
+      "messages 中不包含日程/待办触发类信息",
+      "messages 中不包含矛盾更新专项内容"
+    ],
+    "noise_types": [
+      "接口命名",
+      "UI 细节",
+      "普通闲聊",
+      "通知卡片",
+      "非核心产品讨论",
+      "重复或轻微相关但不应覆盖主决策的信息"
+    ]
+  },
+  "messages": [
+    {
+      "content": "{\"text\": \"我们这个校园外卖拼单产品，P1 先做同楼栋拼单，不做全校开放广场。\"}",
+      "create_time": "2026-04-14 10:00",
+      "deleted": false,
+      "message_id": "om_anti_medium_stream_0001",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_1",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"同意。全校开放会有太多陌生人交易，取餐地点和纠纷都不好管。\"}",
+      "create_time": "2026-04-14 10:15",
+      "deleted": false,
+      "message_id": "om_anti_medium_stream_0002",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_2",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"同楼栋更自然，大家取餐点接近，也容易形成固定习惯。\"}",
+      "create_time": "2026-04-14 10:25",
+      "deleted": false,
+      "message_id": "om_anti_medium_stream_0003",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_3",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"那首页就以楼栋为入口，不做全校动态流。\"}",
+      "create_time": "2026-04-14 10:40",
+      "deleted": false,
+      "message_id": "om_anti_medium_stream_0004",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_4",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"定一下：P1 只做同楼栋拼单，不做全校开放拼单广场。\"}",
+      "create_time": "2026-04-14 10:55",
+      "deleted": false,
+      "message_id": "om_anti_medium_stream_0005",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_1",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"理由是履约范围可控、取餐地点近、纠纷少，demo 也更清楚。\"}",
+      "create_time": "2026-04-14 11:10",
+      "deleted": false,
+      "message_id": "om_anti_medium_stream_0006",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_5",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"这个是主决策，我会放到测试里。\"}",
+      "create_time": "2026-04-14 11:30",
+      "deleted": false,
+      "message_id": "om_anti_medium_stream_0007",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_6",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"要不要接真实支付？\"}",
+      "create_time": "2026-04-14 11:50",
+      "deleted": false,
+      "message_id": "om_anti_medium_stream_0008",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_3",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"P1 不接真实支付，先做订单意向和拼单确认。\"}",
+      "create_time": "2026-04-14 12:05",
+      "deleted": false,
+      "message_id": "om_anti_medium_stream_0009",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_1",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"对，真实支付涉及资质和退款，不适合比赛阶段。\"}",
+      "create_time": "2026-04-14 12:20",
+      "deleted": false,
+      "message_id": "om_anti_medium_stream_0010",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_2",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"那订单状态先是 created、joined、confirmed 三个。\"}",
+      "create_time": "2026-04-14 12:35",
+      "deleted": false,
+      "message_id": "om_anti_medium_stream_0011",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_3",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"可以，P1 只记录拼单意向，不处理实际资金流。\"}",
+      "create_time": "2026-04-14 12:50",
+      "deleted": false,
+      "message_id": "om_anti_medium_stream_0012",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_1",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"按钮颜色我想用橙色，比较像外卖。\"}",
+      "create_time": "2026-04-15 10:00",
+      "deleted": false,
+      "message_id": "om_anti_medium_stream_0013",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_4",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"接口路径我先写 /api/group-orders。\"}",
+      "create_time": "2026-04-15 11:35",
+      "deleted": false,
+      "message_id": "om_anti_medium_stream_0014",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_3",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"我刚点了一杯奶茶，配送好慢。\"}",
+      "create_time": "2026-04-15 13:10",
+      "deleted": false,
+      "message_id": "om_anti_medium_stream_0015",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_7",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"测试账号需要几个？\"}",
+      "create_time": "2026-04-15 14:45",
+      "deleted": false,
+      "message_id": "om_anti_medium_stream_0016",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_6",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"宿舍楼名称要不要用真实数据？\"}",
+      "create_time": "2026-04-15 16:20",
+      "deleted": false,
+      "message_id": "om_anti_medium_stream_0017",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_5",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"先用 mock 楼栋，别接学校真实数据。\"}",
+      "create_time": "2026-04-15 17:55",
+      "deleted": false,
+      "message_id": "om_anti_medium_stream_0018",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_1",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"mock 楼栋我放 A1、A2、B1、B2。\"}",
+      "create_time": "2026-04-15 19:30",
+      "deleted": false,
+      "message_id": "om_anti_medium_stream_0019",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_3",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"商家数据也先 mock 吧，别做真实商家入驻。\"}",
+      "create_time": "2026-04-15 21:05",
+      "deleted": false,
+      "message_id": "om_anti_medium_stream_0020",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_2",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"同意，P1 商家和菜品都用 mock 数据，不做商家后台。\"}",
+      "create_time": "2026-04-15 22:40",
+      "deleted": false,
+      "message_id": "om_anti_medium_stream_0021",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_1",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"页面底部 tab 只放首页和我的，不要加消息。\"}",
+      "create_time": "2026-04-16 00:15",
+      "deleted": false,
+      "message_id": "om_anti_medium_stream_0022",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_4",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"消息系统太大了，不做即时聊天。\"}",
+      "create_time": "2026-04-16 01:50",
+      "deleted": false,
+      "message_id": "om_anti_medium_stream_0023",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_3",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"对，P1 不做用户私聊，只用拼单备注。\"}",
+      "create_time": "2026-04-16 03:25",
+      "deleted": false,
+      "message_id": "om_anti_medium_stream_0024",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_1",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "<card title=\"校园讲座提醒\">\\n今晚有创业分享\\n</card>",
+      "create_time": "2026-04-16 05:00",
+      "deleted": false,
+      "message_id": "om_anti_medium_stream_0025",
+      "msg_type": "interactive",
+      "sender": {
+        "id": "ou_7",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"这个卡片应该过滤掉。\"}",
+      "create_time": "2026-04-16 06:35",
+      "deleted": false,
+      "message_id": "om_anti_medium_stream_0026",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_6",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"取餐点怎么定？\"}",
+      "create_time": "2026-04-16 08:10",
+      "deleted": false,
+      "message_id": "om_anti_medium_stream_0027",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_5",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"每个楼栋先固定一个默认取餐点，比如楼下大厅。\"}",
+      "create_time": "2026-04-16 09:45",
+      "deleted": false,
+      "message_id": "om_anti_medium_stream_0028",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_2",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"P1 取餐点先固定为楼栋默认点，不做自定义位置。\"}",
+      "create_time": "2026-04-16 11:20",
+      "deleted": false,
+      "message_id": "om_anti_medium_stream_0029",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_1",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"那坐标就不用做了，存 pickup_location_name 就行。\"}",
+      "create_time": "2026-04-16 12:55",
+      "deleted": false,
+      "message_id": "om_anti_medium_stream_0030",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_3",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"我把取餐点展示在订单卡片上。\"}",
+      "create_time": "2026-04-16 14:30",
+      "deleted": false,
+      "message_id": "om_anti_medium_stream_0031",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_4",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"午饭吃什么？\"}",
+      "create_time": "2026-04-16 16:05",
+      "deleted": false,
+      "message_id": "om_anti_medium_stream_0032",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_7",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"首页 banner 文案我先写‘找同楼的人一起点’。\"}",
+      "create_time": "2026-04-16 17:40",
+      "deleted": false,
+      "message_id": "om_anti_medium_stream_0033",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_4",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"数据库表名 group_orders 可以吗？\"}",
+      "create_time": "2026-04-16 19:15",
+      "deleted": false,
+      "message_id": "om_anti_medium_stream_0034",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_3",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"楼栋列表需要搜索吗？\"}",
+      "create_time": "2026-04-16 20:50",
+      "deleted": false,
+      "message_id": "om_anti_medium_stream_0035",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_5",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"楼栋数量少，P1 先不做搜索。\"}",
+      "create_time": "2026-04-16 22:25",
+      "deleted": false,
+      "message_id": "om_anti_medium_stream_0036",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_1",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"能不能展示拼单剩余时间？\"}",
+      "create_time": "2026-04-17 00:00",
+      "deleted": false,
+      "message_id": "om_anti_medium_stream_0037",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_2",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"可以，倒计时前端算。\"}",
+      "create_time": "2026-04-17 01:35",
+      "deleted": false,
+      "message_id": "om_anti_medium_stream_0038",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_3",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"倒计时结束后订单状态怎么变？\"}",
+      "create_time": "2026-04-17 03:10",
+      "deleted": false,
+      "message_id": "om_anti_medium_stream_0039",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_6",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"先变成 expired，不自动成团。\"}",
+      "create_time": "2026-04-17 04:45",
+      "deleted": false,
+      "message_id": "om_anti_medium_stream_0040",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_1",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"我电脑快没电了。\"}",
+      "create_time": "2026-04-17 06:20",
+      "deleted": false,
+      "message_id": "om_anti_medium_stream_0041",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_7",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"详情页我准备放菜品、人数、取餐点和备注。\"}",
+      "create_time": "2026-04-17 07:55",
+      "deleted": false,
+      "message_id": "om_anti_medium_stream_0042",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_4",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"备注字段要限制长度吗？\"}",
+      "create_time": "2026-04-17 09:30",
+      "deleted": false,
+      "message_id": "om_anti_medium_stream_0043",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_3",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"先限制 50 字，避免乱写。\"}",
+      "create_time": "2026-04-17 11:05",
+      "deleted": false,
+      "message_id": "om_anti_medium_stream_0044",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_1",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"如果有人乱发广告怎么办？\"}",
+      "create_time": "2026-04-17 12:40",
+      "deleted": false,
+      "message_id": "om_anti_medium_stream_0045",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_5",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"P1 先不做复杂风控，保留举报入口就行。\"}",
+      "create_time": "2026-04-17 14:15",
+      "deleted": false,
+      "message_id": "om_anti_medium_stream_0046",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_6",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"同意，广告风控放后续。\"}",
+      "create_time": "2026-04-17 15:50",
+      "deleted": false,
+      "message_id": "om_anti_medium_stream_0047",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_1",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"按钮颜色我想用橙色，比较像外卖。\"}",
+      "create_time": "2026-04-17 17:25",
+      "deleted": false,
+      "message_id": "om_anti_medium_stream_0048",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_4",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"接口路径我先写 /api/group-orders。\"}",
+      "create_time": "2026-04-17 19:00",
+      "deleted": false,
+      "message_id": "om_anti_medium_stream_0049",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_3",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"我刚点了一杯奶茶，配送好慢。\"}",
+      "create_time": "2026-04-17 20:35",
+      "deleted": false,
+      "message_id": "om_anti_medium_stream_0050",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_7",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"测试账号需要几个？\"}",
+      "create_time": "2026-04-17 22:10",
+      "deleted": false,
+      "message_id": "om_anti_medium_stream_0051",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_6",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"宿舍楼名称要不要用真实数据？\"}",
+      "create_time": "2026-04-17 23:45",
+      "deleted": false,
+      "message_id": "om_anti_medium_stream_0052",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_5",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"先用 mock 楼栋，别接学校真实数据。\"}",
+      "create_time": "2026-04-18 01:20",
+      "deleted": false,
+      "message_id": "om_anti_medium_stream_0053",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_1",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"mock 楼栋我放 A1、A2、B1、B2。\"}",
+      "create_time": "2026-04-18 02:55",
+      "deleted": false,
+      "message_id": "om_anti_medium_stream_0054",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_3",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"商家数据也先 mock 吧，别做真实商家入驻。\"}",
+      "create_time": "2026-04-18 04:30",
+      "deleted": false,
+      "message_id": "om_anti_medium_stream_0055",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_2",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"同意，P1 商家和菜品都用 mock 数据，不做商家后台。\"}",
+      "create_time": "2026-04-18 06:05",
+      "deleted": false,
+      "message_id": "om_anti_medium_stream_0056",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_1",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"页面底部 tab 只放首页和我的，不要加消息。\"}",
+      "create_time": "2026-04-18 07:40",
+      "deleted": false,
+      "message_id": "om_anti_medium_stream_0057",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_4",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"消息系统太大了，不做即时聊天。\"}",
+      "create_time": "2026-04-18 09:15",
+      "deleted": false,
+      "message_id": "om_anti_medium_stream_0058",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_3",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"对，P1 不做用户私聊，只用拼单备注。\"}",
+      "create_time": "2026-04-18 10:50",
+      "deleted": false,
+      "message_id": "om_anti_medium_stream_0059",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_1",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "<card title=\"校园讲座提醒\">\\n今晚有创业分享\\n</card>",
+      "create_time": "2026-04-18 12:25",
+      "deleted": false,
+      "message_id": "om_anti_medium_stream_0060",
+      "msg_type": "interactive",
+      "sender": {
+        "id": "ou_7",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"这个卡片应该过滤掉。\"}",
+      "create_time": "2026-04-18 14:00",
+      "deleted": false,
+      "message_id": "om_anti_medium_stream_0061",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_6",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"取餐点怎么定？\"}",
+      "create_time": "2026-04-18 15:35",
+      "deleted": false,
+      "message_id": "om_anti_medium_stream_0062",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_5",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"每个楼栋先固定一个默认取餐点，比如楼下大厅。\"}",
+      "create_time": "2026-04-18 17:10",
+      "deleted": false,
+      "message_id": "om_anti_medium_stream_0063",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_2",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"P1 取餐点先固定为楼栋默认点，不做自定义位置。\"}",
+      "create_time": "2026-04-18 18:45",
+      "deleted": false,
+      "message_id": "om_anti_medium_stream_0064",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_1",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"那坐标就不用做了，存 pickup_location_name 就行。\"}",
+      "create_time": "2026-04-18 20:20",
+      "deleted": false,
+      "message_id": "om_anti_medium_stream_0065",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_3",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"我把取餐点展示在订单卡片上。\"}",
+      "create_time": "2026-04-18 21:55",
+      "deleted": false,
+      "message_id": "om_anti_medium_stream_0066",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_4",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"午饭吃什么？\"}",
+      "create_time": "2026-04-18 23:30",
+      "deleted": false,
+      "message_id": "om_anti_medium_stream_0067",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_7",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"首页 banner 文案我先写‘找同楼的人一起点’。\"}",
+      "create_time": "2026-04-19 01:05",
+      "deleted": false,
+      "message_id": "om_anti_medium_stream_0068",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_4",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"数据库表名 group_orders 可以吗？\"}",
+      "create_time": "2026-04-19 02:40",
+      "deleted": false,
+      "message_id": "om_anti_medium_stream_0069",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_3",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"楼栋列表需要搜索吗？\"}",
+      "create_time": "2026-04-19 04:15",
+      "deleted": false,
+      "message_id": "om_anti_medium_stream_0070",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_5",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"楼栋数量少，P1 先不做搜索。\"}",
+      "create_time": "2026-04-19 05:50",
+      "deleted": false,
+      "message_id": "om_anti_medium_stream_0071",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_1",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"能不能展示拼单剩余时间？\"}",
+      "create_time": "2026-04-19 07:25",
+      "deleted": false,
+      "message_id": "om_anti_medium_stream_0072",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_2",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"可以，倒计时前端算。\"}",
+      "create_time": "2026-04-19 09:00",
+      "deleted": false,
+      "message_id": "om_anti_medium_stream_0073",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_3",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"倒计时结束后订单状态怎么变？\"}",
+      "create_time": "2026-04-19 10:35",
+      "deleted": false,
+      "message_id": "om_anti_medium_stream_0074",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_6",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"先变成 expired，不自动成团。\"}",
+      "create_time": "2026-04-19 12:10",
+      "deleted": false,
+      "message_id": "om_anti_medium_stream_0075",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_1",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"我电脑快没电了。\"}",
+      "create_time": "2026-04-19 13:45",
+      "deleted": false,
+      "message_id": "om_anti_medium_stream_0076",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_7",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"详情页我准备放菜品、人数、取餐点和备注。\"}",
+      "create_time": "2026-04-19 15:20",
+      "deleted": false,
+      "message_id": "om_anti_medium_stream_0077",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_4",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"备注字段要限制长度吗？\"}",
+      "create_time": "2026-04-19 16:55",
+      "deleted": false,
+      "message_id": "om_anti_medium_stream_0078",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_3",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"先限制 50 字，避免乱写。\"}",
+      "create_time": "2026-04-19 18:30",
+      "deleted": false,
+      "message_id": "om_anti_medium_stream_0079",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_1",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"如果有人乱发广告怎么办？\"}",
+      "create_time": "2026-04-19 20:05",
+      "deleted": false,
+      "message_id": "om_anti_medium_stream_0080",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_5",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"P1 先不做复杂风控，保留举报入口就行。\"}",
+      "create_time": "2026-04-19 21:40",
+      "deleted": false,
+      "message_id": "om_anti_medium_stream_0081",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_6",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"同意，广告风控放后续。\"}",
+      "create_time": "2026-04-19 23:15",
+      "deleted": false,
+      "message_id": "om_anti_medium_stream_0082",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_1",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"按钮颜色我想用橙色，比较像外卖。\"}",
+      "create_time": "2026-04-20 00:50",
+      "deleted": false,
+      "message_id": "om_anti_medium_stream_0083",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_4",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"接口路径我先写 /api/group-orders。\"}",
+      "create_time": "2026-04-20 02:25",
+      "deleted": false,
+      "message_id": "om_anti_medium_stream_0084",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_3",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"我刚点了一杯奶茶，配送好慢。\"}",
+      "create_time": "2026-04-20 04:00",
+      "deleted": false,
+      "message_id": "om_anti_medium_stream_0085",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_7",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"测试账号需要几个？\"}",
+      "create_time": "2026-04-20 05:35",
+      "deleted": false,
+      "message_id": "om_anti_medium_stream_0086",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_6",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"宿舍楼名称要不要用真实数据？\"}",
+      "create_time": "2026-04-20 07:10",
+      "deleted": false,
+      "message_id": "om_anti_medium_stream_0087",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_5",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"先用 mock 楼栋，别接学校真实数据。\"}",
+      "create_time": "2026-04-20 08:45",
+      "deleted": false,
+      "message_id": "om_anti_medium_stream_0088",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_1",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"mock 楼栋我放 A1、A2、B1、B2。\"}",
+      "create_time": "2026-04-20 10:20",
+      "deleted": false,
+      "message_id": "om_anti_medium_stream_0089",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_3",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"商家数据也先 mock 吧，别做真实商家入驻。\"}",
+      "create_time": "2026-04-20 11:55",
+      "deleted": false,
+      "message_id": "om_anti_medium_stream_0090",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_2",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"同意，P1 商家和菜品都用 mock 数据，不做商家后台。\"}",
+      "create_time": "2026-04-20 13:30",
+      "deleted": false,
+      "message_id": "om_anti_medium_stream_0091",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_1",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"页面底部 tab 只放首页和我的，不要加消息。\"}",
+      "create_time": "2026-04-20 15:05",
+      "deleted": false,
+      "message_id": "om_anti_medium_stream_0092",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_4",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"消息系统太大了，不做即时聊天。\"}",
+      "create_time": "2026-04-20 16:40",
+      "deleted": false,
+      "message_id": "om_anti_medium_stream_0093",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_3",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"对，P1 不做用户私聊，只用拼单备注。\"}",
+      "create_time": "2026-04-20 18:15",
+      "deleted": false,
+      "message_id": "om_anti_medium_stream_0094",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_1",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "<card title=\"校园讲座提醒\">\\n今晚有创业分享\\n</card>",
+      "create_time": "2026-04-20 19:50",
+      "deleted": false,
+      "message_id": "om_anti_medium_stream_0095",
+      "msg_type": "interactive",
+      "sender": {
+        "id": "ou_7",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"这个卡片应该过滤掉。\"}",
+      "create_time": "2026-04-20 21:25",
+      "deleted": false,
+      "message_id": "om_anti_medium_stream_0096",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_6",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    }
+  ],
+  "final_query_messages": [
+    {
+      "content": "{\"text\": \"@机器人 之前 P1 为什么不做全校开放拼单广场？\"}",
+      "create_time": "2026-04-20 22:25",
+      "deleted": false,
+      "message_id": "om_anti_medium_stream_1001",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_1",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"@机器人 P1 要不要接真实支付？\"}",
+      "create_time": "2026-04-20 22:26",
+      "deleted": false,
+      "message_id": "om_anti_medium_stream_1002",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_3",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"@机器人 P1 为什么不做商家后台？\"}",
+      "create_time": "2026-04-20 22:27",
+      "deleted": false,
+      "message_id": "om_anti_medium_stream_1003",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_2",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"@机器人 原话在哪？谁说真实支付不适合比赛阶段？\"}",
+      "create_time": "2026-04-20 22:28",
+      "deleted": false,
+      "message_id": "om_anti_medium_stream_1004",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_6",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    }
+  ],
+  "expected": {
+    "target_memories": [
+      {
+        "memory_id": "target_001",
+        "description": "P1 范围：只做同楼栋拼单，不做全校开放拼单广场。",
+        "expected_granularity": "memory_card",
+        "expected_keywords": [
+          "同楼栋",
+          "不做全校开放",
+          "取餐地点",
+          "纠纷",
+          "demo"
+        ],
+        "source_message_ids": [
+          "om_anti_medium_stream_0001",
+          "om_anti_medium_stream_0002",
+          "om_anti_medium_stream_0003",
+          "om_anti_medium_stream_0004",
+          "om_anti_medium_stream_0005",
+          "om_anti_medium_stream_0006"
+        ]
+      },
+      {
+        "memory_id": "target_002",
+        "description": "支付边界：不接真实支付，只做订单意向和拼单确认。",
+        "expected_granularity": "memory_card",
+        "expected_keywords": [
+          "不接真实支付",
+          "订单意向",
+          "拼单确认",
+          "退款",
+          "资金流"
+        ],
+        "source_message_ids": [
+          "om_anti_medium_stream_0008",
+          "om_anti_medium_stream_0009",
+          "om_anti_medium_stream_0010",
+          "om_anti_medium_stream_0011"
+        ]
+      },
+      {
+        "memory_id": "target_003",
+        "description": "商家数据：使用 mock 商家和菜品，不做商家后台。",
+        "expected_granularity": "memory_card",
+        "expected_keywords": [
+          "mock 商家",
+          "mock 菜品",
+          "不做商家后台"
+        ],
+        "source_message_ids": []
+      }
+    ],
+    "noise_profile": {
+      "history_message_count": 96,
+      "time_span": "约 5 天",
+      "noise_level": "medium"
+    },
+    "final_memory_checks": [
+      {
+        "query_message_id": "om_anti_medium_stream_1001",
+        "query": "之前 P1 为什么不做全校开放拼单广场？",
+        "expected_answer": "P1 不做全校开放拼单广场，是因为全校开放会让陌生人交易、取餐地点、纠纷处理都变复杂。团队选择同楼栋拼单，是因为同楼栋履约范围更可控，取餐点更近，纠纷更少，也更适合比赛 demo 展示。",
+        "expected_granularity": "memory_card",
+        "expected_keywords": [
+          "不做全校开放",
+          "同楼栋",
+          "取餐地点",
+          "纠纷",
+          "履约范围",
+          "demo"
+        ],
+        "forbidden_keywords": [
+          "P1 做全校开放广场"
+        ]
+      },
+      {
+        "query_message_id": "om_anti_medium_stream_1002",
+        "query": "P1 要不要接真实支付？",
+        "expected_answer": "P1 不接真实支付，只记录订单意向和拼单确认。团队认为真实支付会涉及资质、退款和资金流处理，不适合比赛阶段。",
+        "expected_granularity": "memory_card",
+        "expected_keywords": [
+          "不接真实支付",
+          "订单意向",
+          "拼单确认",
+          "退款",
+          "资金流"
+        ],
+        "forbidden_keywords": [
+          "已经接入真实支付"
+        ]
+      },
+      {
+        "query_message_id": "om_anti_medium_stream_1003",
+        "query": "P1 为什么不做商家后台？",
+        "expected_answer": "P1 的商家和菜品都使用 mock 数据，不做真实商家入驻和商家后台。这样可以降低业务复杂度，让 demo 聚焦在同楼栋拼单流程本身。",
+        "expected_granularity": "memory_card",
+        "expected_keywords": [
+          "mock 商家",
+          "mock 菜品",
+          "不做商家后台",
+          "demo 聚焦"
+        ],
+        "forbidden_keywords": [
+          "商家后台已经进入 P1"
+        ]
+      },
+      {
+        "query_message_id": "om_anti_medium_stream_1004",
+        "query": "原话在哪？谁说真实支付不适合比赛阶段？",
+        "expected_answer": "来源应指向关于支付的早期讨论：团队先决定不接真实支付，只做订单意向和拼单确认；随后有人说明真实支付涉及资质和退款，不适合比赛阶段。",
+        "expected_granularity": "evidence_block",
+        "expected_keywords": [
+          "不接真实支付",
+          "订单意向",
+          "拼单确认",
+          "资质",
+          "退款"
+        ],
+        "forbidden_keywords": []
+      }
+    ],
+    "llm_judge_rubric": {
+      "score_2": "回答语义完全匹配 expected_answer，包含核心决策、理由和当前状态，且没有被噪声干扰。",
+      "score_1": "回答大体正确，但缺少部分理由、来源或边界。",
+      "score_0": "回答错误、混入噪声决策、使用相反结论或编造。"
+    }
+  }
+}

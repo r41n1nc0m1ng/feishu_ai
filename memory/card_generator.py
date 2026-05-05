@@ -20,6 +20,7 @@ from memory.topics import format_for_prompt as _topics_for_prompt
 from memory.schemas import (
     CardStatus,
     EvidenceBlock,
+    ExtractedMemory,
     MemoryCard,
     MemoryRelation,
     MemoryRelationType,

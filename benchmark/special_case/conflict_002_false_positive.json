@@ -1,0 +1,1082 @@
+{
+  "schema_version": "conflict_single_stream_v2",
+  "case_id": "conflict_003_false_positive",
+  "description": "矛盾更新测试：学习打卡产品。该 case 包含多个看似相关但不应覆盖的内容：分享图、私密监督小组、个人成就徽章。它们与公开社区/排行榜相关，但不应覆盖旧决策。",
+  "chat_id": "oc_conflict_false_positive_study_multi_related",
+  "test_type": "conflict_false_positive",
+  "replay_policy": {
+    "mode": "single_stream_with_final_queries",
+    "description": "专项误冲突识别测试：messages 是一段连续、完整的历史对话，不预先切分 batch；系统后续自行完成 Event Segmentation、记忆抽取、版本关系判断和检索。final_query_messages 是历史对话结束后的统一查询入口。",
+    "segmentation_policy": "测试集不预切 batch。被测系统需要基于 messages 的 create_time 和语义内容自行完成切分、沉淀与检索。",
+    "scope_control": [
+      "messages 中不包含 @机器人查询",
+      "messages 中不包含日程/待办触发类信息",
+      "messages 中不包含抗干扰专项的大量无关噪声",
+      "本 case 只评估新旧决策关系是否处理正确"
+    ]
+  },
+  "messages": [
+    {
+      "content": "{\"text\": \"学习打卡产品 P1 先不要做公开社区，先做个人打卡和私密复盘。\"}",
+      "create_time": "2026-04-22 14:00",
+      "deleted": false,
+      "message_id": "om_conflict_false_positive_study_ext_0001",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_001",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"同意。公开社区会涉及内容审核、陌生人互动和运营治理，比赛 demo 很容易失焦。\"}",
+      "create_time": "2026-04-22 14:08",
+      "deleted": false,
+      "message_id": "om_conflict_false_positive_study_ext_0002",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_002",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"我们先把个人学习计划、每日打卡、AI 复盘这条链路做好。\"}",
+      "create_time": "2026-04-22 14:16",
+      "deleted": false,
+      "message_id": "om_conflict_false_positive_study_ext_0003",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_003",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"那首页就是今日任务、打卡按钮、连续天数和复盘入口。\"}",
+      "create_time": "2026-04-22 14:24",
+      "deleted": false,
+      "message_id": "om_conflict_false_positive_study_ext_0004",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_004",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"先定：P1 不做公开社区，不做陌生人动态流，只做个人打卡和 AI 复盘。\"}",
+      "create_time": "2026-04-22 14:32",
+      "deleted": false,
+      "message_id": "om_conflict_false_positive_study_ext_0005",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_001",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"这个不是反社交，而是 P1 阶段要把个人闭环做清楚。\"}",
+      "create_time": "2026-04-22 14:45",
+      "deleted": false,
+      "message_id": "om_conflict_false_positive_study_ext_0006",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_005",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"我会把“公开社区放 P2 或后续规划”写进报告。\"}",
+      "create_time": "2026-04-22 14:58",
+      "deleted": false,
+      "message_id": "om_conflict_false_positive_study_ext_0007",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_006",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"排行榜也先别做吧，打卡产品做排名容易制造焦虑。\"}",
+      "create_time": "2026-04-22 15:20",
+      "deleted": false,
+      "message_id": "om_conflict_false_positive_study_ext_0008",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_002",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"同意，P1 不做公开排行榜，也不做用户之间的排名比较。\"}",
+      "create_time": "2026-04-22 15:30",
+      "deleted": false,
+      "message_id": "om_conflict_false_positive_study_ext_0009",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_001",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"那就只展示用户自己的连续天数和完成率。\"}",
+      "create_time": "2026-04-22 15:42",
+      "deleted": false,
+      "message_id": "om_conflict_false_positive_study_ext_0010",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_004",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"这个也要写进边界：不做竞争型激励。\"}",
+      "create_time": "2026-04-22 15:55",
+      "deleted": false,
+      "message_id": "om_conflict_false_positive_study_ext_0011",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_005",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"我刚看到一个番茄钟 app，那个进度条挺好看。\"}",
+      "create_time": "2026-04-23 14:10",
+      "deleted": false,
+      "message_id": "om_conflict_false_positive_study_ext_0012",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_007",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"打卡完成后的动画要不要做？\"}",
+      "create_time": "2026-04-23 14:22",
+      "deleted": false,
+      "message_id": "om_conflict_false_positive_study_ext_0013",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_004",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"可以做一个轻量成功反馈，不要做复杂成就系统。\"}",
+      "create_time": "2026-04-23 14:30",
+      "deleted": false,
+      "message_id": "om_conflict_false_positive_study_ext_0014",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_001",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"接口上我先记录 checkin_records。\"}",
+      "create_time": "2026-04-23 14:42",
+      "deleted": false,
+      "message_id": "om_conflict_false_positive_study_ext_0015",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_003",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"AI 复盘里要不要展示用户最近 7 天表现？\"}",
+      "create_time": "2026-04-23 14:55",
+      "deleted": false,
+      "message_id": "om_conflict_false_positive_study_ext_0016",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_002",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"可以展示最近 7 天个人趋势，但只给用户自己看。\"}",
+      "create_time": "2026-04-23 15:07",
+      "deleted": false,
+      "message_id": "om_conflict_false_positive_study_ext_0017",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_001",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"这里要注意，个人趋势不是社区，也不涉及别人内容。\"}",
+      "create_time": "2026-04-23 15:14",
+      "deleted": false,
+      "message_id": "om_conflict_false_positive_study_ext_0018",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_005",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"对，这个只是个人历史数据展示。\"}",
+      "create_time": "2026-04-23 15:29",
+      "deleted": false,
+      "message_id": "om_conflict_false_positive_study_ext_0019",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_006",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"我想加一个“分享给好友”按钮，用户可以把某天的打卡结果生成图片。\"}",
+      "create_time": "2026-04-24 14:12",
+      "deleted": false,
+      "message_id": "om_conflict_false_positive_study_ext_0020",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_002",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"这个会不会和不做社区冲突？\"}",
+      "create_time": "2026-04-24 14:20",
+      "deleted": false,
+      "message_id": "om_conflict_false_positive_study_ext_0021",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_003",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"不冲突。分享图片是用户主动导出，不是在产品内建公开社区。\"}",
+      "create_time": "2026-04-24 14:31",
+      "deleted": false,
+      "message_id": "om_conflict_false_positive_study_ext_0022",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_001",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"也就是说 P1 可以做分享海报，但不做站内动态流。\"}",
+      "create_time": "2026-04-24 14:40",
+      "deleted": false,
+      "message_id": "om_conflict_false_positive_study_ext_0023",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_004",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"对，分享出去之后发生在外部平台，不在我们产品里做互动。\"}",
+      "create_time": "2026-04-24 14:52",
+      "deleted": false,
+      "message_id": "om_conflict_false_positive_study_ext_0024",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_002",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"那定一下：P1 可以生成个人打卡分享图，但仍然不做公开社区和陌生人动态流。\"}",
+      "create_time": "2026-04-24 15:05",
+      "deleted": false,
+      "message_id": "om_conflict_false_positive_study_ext_0025",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_001",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"这应该是 related_to，不是 supersedes。社区决策没有被推翻。\"}",
+      "create_time": "2026-04-24 15:18",
+      "deleted": false,
+      "message_id": "om_conflict_false_positive_study_ext_0026",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_005",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"我还有个想法：能不能做一个私密监督小组，用户用邀请码拉 2-3 个熟人一起打卡？\"}",
+      "create_time": "2026-04-25 14:00",
+      "deleted": false,
+      "message_id": "om_conflict_false_positive_study_ext_0027",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_006",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"这听起来有点像社区，会不会覆盖之前不做公开社区？\"}",
+      "create_time": "2026-04-25 14:12",
+      "deleted": false,
+      "message_id": "om_conflict_false_positive_study_ext_0028",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_002",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"不覆盖。私密监督小组是邀请制熟人关系，不是公开社区，也没有陌生人动态流。\"}",
+      "create_time": "2026-04-25 14:25",
+      "deleted": false,
+      "message_id": "om_conflict_false_positive_study_ext_0029",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_001",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"P1 可以先不做完整小组协作，只保留邀请码加入和互相看到完成状态。\"}",
+      "create_time": "2026-04-25 14:38",
+      "deleted": false,
+      "message_id": "om_conflict_false_positive_study_ext_0030",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_003",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"也不要做小组广场，不要推荐陌生小组。\"}",
+      "create_time": "2026-04-25 14:50",
+      "deleted": false,
+      "message_id": "om_conflict_false_positive_study_ext_0031",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_004",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"所以它和公开社区是 related_to，但不是 supersedes。公开社区仍然不做。\"}",
+      "create_time": "2026-04-25 15:02",
+      "deleted": false,
+      "message_id": "om_conflict_false_positive_study_ext_0032",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_005",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"我会把这个写成“私密熟人监督”，不是社区。\"}",
+      "create_time": "2026-04-25 15:15",
+      "deleted": false,
+      "message_id": "om_conflict_false_positive_study_ext_0033",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_006",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"连续打卡徽章要不要做？比如连续 7 天给一个小徽章。\"}",
+      "create_time": "2026-04-26 14:05",
+      "deleted": false,
+      "message_id": "om_conflict_false_positive_study_ext_0034",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_004",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"这个会不会变成排行榜？\"}",
+      "create_time": "2026-04-26 14:16",
+      "deleted": false,
+      "message_id": "om_conflict_false_positive_study_ext_0035",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_002",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"不会。徽章只对用户自己展示，不排名，也不和别人比较。\"}",
+      "create_time": "2026-04-26 14:26",
+      "deleted": false,
+      "message_id": "om_conflict_false_positive_study_ext_0036",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_001",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"那 P1 可以做个人成就徽章，但不做公开排行榜。\"}",
+      "create_time": "2026-04-26 14:38",
+      "deleted": false,
+      "message_id": "om_conflict_false_positive_study_ext_0037",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_003",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"这也不是覆盖旧决策，旧的“不做排行榜”仍然有效。\"}",
+      "create_time": "2026-04-26 14:50",
+      "deleted": false,
+      "message_id": "om_conflict_false_positive_study_ext_0038",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_005",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"边界就是：个人激励可以有，竞争排名没有。\"}",
+      "create_time": "2026-04-26 15:02",
+      "deleted": false,
+      "message_id": "om_conflict_false_positive_study_ext_0039",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_006",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "<card title=\"学习资料分享\">\\n今晚有 AI 学习方法直播\\n</card>",
+      "create_time": "2026-04-27 14:05",
+      "deleted": false,
+      "message_id": "om_conflict_false_positive_study_ext_0040",
+      "msg_type": "interactive",
+      "sender": {
+        "id": "ou_007",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"分享图接口我可以先只返回图片 URL。\"}",
+      "create_time": "2026-04-27 14:20",
+      "deleted": false,
+      "message_id": "om_conflict_false_positive_study_ext_0041",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_003",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"海报上放连续天数、今日任务和一句 AI 鼓励。\"}",
+      "create_time": "2026-04-27 14:34",
+      "deleted": false,
+      "message_id": "om_conflict_false_positive_study_ext_0042",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_004",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"可以，但不要放排行榜，不要暗示和别人比较。\"}",
+      "create_time": "2026-04-27 14:50",
+      "deleted": false,
+      "message_id": "om_conflict_false_positive_study_ext_0043",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_001",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"排行榜肯定不做，那个更像社区竞争。\"}",
+      "create_time": "2026-04-27 15:02",
+      "deleted": false,
+      "message_id": "om_conflict_false_positive_study_ext_0044",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_002",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"总结一下：P1 没有公开社区，也没有公开排行榜；只有个人数据、私密熟人监督和用户主动导出的分享图。\"}",
+      "create_time": "2026-04-27 15:20",
+      "deleted": false,
+      "message_id": "om_conflict_false_positive_study_ext_0045",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_006",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    }
+  ],
+  "final_query_messages": [
+    {
+      "content": "{\"text\": \"@机器人 P1 现在到底做不做公开社区？\"}",
+      "create_time": "2026-04-29 00:00",
+      "deleted": false,
+      "message_id": "om_conflict_false_positive_study_ext_1001",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_001",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"@机器人 分享给好友是不是覆盖了之前不做社区的决策？\"}",
+      "create_time": "2026-04-29 00:01",
+      "deleted": false,
+      "message_id": "om_conflict_false_positive_study_ext_1002",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_003",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"@机器人 私密监督小组是不是覆盖了不做公开社区？\"}",
+      "create_time": "2026-04-29 00:02",
+      "deleted": false,
+      "message_id": "om_conflict_false_positive_study_ext_1003",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_002",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"@机器人 个人成就徽章是不是覆盖了不做排行榜？\"}",
+      "create_time": "2026-04-29 00:03",
+      "deleted": false,
+      "message_id": "om_conflict_false_positive_study_ext_1004",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_004",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"@机器人 现在 P1 到底有哪些社交相关能力？\"}",
+      "create_time": "2026-04-29 00:04",
+      "deleted": false,
+      "message_id": "om_conflict_false_positive_study_ext_1005",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_005",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"@机器人 哪些是 related_to 而不是 supersedes？\"}",
+      "create_time": "2026-04-29 00:05",
+      "deleted": false,
+      "message_id": "om_conflict_false_positive_study_ext_1006",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_006",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"@机器人 分享图和公开社区的区别是什么？\"}",
+      "create_time": "2026-04-29 00:06",
+      "deleted": false,
+      "message_id": "om_conflict_false_positive_study_ext_1007",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_002",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"@机器人 原话在哪？谁说分享图是 related_to 不是 supersedes？\"}",
+      "create_time": "2026-04-29 00:07",
+      "deleted": false,
+      "message_id": "om_conflict_false_positive_study_ext_1008",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_003",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"@机器人 原话在哪？谁说私密监督小组不是公开社区？\"}",
+      "create_time": "2026-04-29 00:08",
+      "deleted": false,
+      "message_id": "om_conflict_false_positive_study_ext_1009",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_001",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"@机器人 当前学习打卡 P1 的社交边界是什么？\"}",
+      "create_time": "2026-04-29 00:09",
+      "deleted": false,
+      "message_id": "om_conflict_false_positive_study_ext_1010",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_004",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    }
+  ],
+  "expected": {
+    "target_memories": [
+      {
+        "memory_id": "memory_community_boundary",
+        "description": "P1 不做公开社区，不做陌生人动态流，只做个人打卡和 AI 复盘。",
+        "expected_status_after_update": "active",
+        "expected_keywords": [
+          "不做公开社区",
+          "不做陌生人动态流",
+          "个人打卡",
+          "AI 复盘"
+        ],
+        "source_message_ids": [
+          "om_conflict_false_positive_study_ext_0001",
+          "om_conflict_false_positive_study_ext_0002",
+          "om_conflict_false_positive_study_ext_0003",
+          "om_conflict_false_positive_study_ext_0004",
+          "om_conflict_false_positive_study_ext_0005",
+          "om_conflict_false_positive_study_ext_0006",
+          "om_conflict_false_positive_study_ext_0007"
+        ]
+      },
+      {
+        "memory_id": "memory_leaderboard_boundary",
+        "description": "P1 不做公开排行榜，也不做用户之间的排名比较。",
+        "expected_status_after_update": "active",
+        "expected_keywords": [
+          "不做公开排行榜",
+          "不做排名比较",
+          "不做竞争型激励"
+        ],
+        "source_message_ids": [
+          "om_conflict_false_positive_study_ext_0008",
+          "om_conflict_false_positive_study_ext_0009",
+          "om_conflict_false_positive_study_ext_0010",
+          "om_conflict_false_positive_study_ext_0011"
+        ]
+      },
+      {
+        "memory_id": "memory_share_poster",
+        "description": "P1 可以生成个人打卡分享图，但这不是站内公开社区。",
+        "expected_status_after_update": "active",
+        "expected_keywords": [
+          "个人打卡分享图",
+          "用户主动导出",
+          "不做站内动态流"
+        ],
+        "source_message_ids": [
+          "om_conflict_false_positive_study_ext_0020",
+          "om_conflict_false_positive_study_ext_0021",
+          "om_conflict_false_positive_study_ext_0022",
+          "om_conflict_false_positive_study_ext_0023",
+          "om_conflict_false_positive_study_ext_0024",
+          "om_conflict_false_positive_study_ext_0025",
+          "om_conflict_false_positive_study_ext_0026"
+        ]
+      },
+      {
+        "memory_id": "memory_private_group",
+        "description": "P1 可做私密熟人监督小组，但不做公开社区、小组广场或陌生小组推荐。",
+        "expected_status_after_update": "active",
+        "expected_keywords": [
+          "私密监督小组",
+          "邀请制熟人关系",
+          "不做小组广场"
+        ],
+        "source_message_ids": [
+          "om_conflict_false_positive_study_ext_0027",
+          "om_conflict_false_positive_study_ext_0028",
+          "om_conflict_false_positive_study_ext_0029",
+          "om_conflict_false_positive_study_ext_0030",
+          "om_conflict_false_positive_study_ext_0031",
+          "om_conflict_false_positive_study_ext_0032",
+          "om_conflict_false_positive_study_ext_0033"
+        ]
+      },
+      {
+        "memory_id": "memory_personal_badge",
+        "description": "P1 可做个人成就徽章，但不做公开排行榜或竞争排名。",
+        "expected_status_after_update": "active",
+        "expected_keywords": [
+          "个人成就徽章",
+          "只对用户自己展示",
+          "不排名"
+        ],
+        "source_message_ids": [
+          "om_conflict_false_positive_study_ext_0034",
+          "om_conflict_false_positive_study_ext_0035",
+          "om_conflict_false_positive_study_ext_0036",
+          "om_conflict_false_positive_study_ext_0037",
+          "om_conflict_false_positive_study_ext_0038",
+          "om_conflict_false_positive_study_ext_0039"
+        ]
+      }
+    ],
+    "relation_checks": [
+      {
+        "relation_type": "related_to",
+        "old_expected_keywords": [
+          "不做公开社区"
+        ],
+        "new_expected_keywords": [
+          "个人打卡分享图"
+        ],
+        "forbidden_relation_type": "supersedes"
+      },
+      {
+        "relation_type": "related_to",
+        "old_expected_keywords": [
+          "不做公开社区"
+        ],
+        "new_expected_keywords": [
+          "私密监督小组"
+        ],
+        "forbidden_relation_type": "supersedes"
+      },
+      {
+        "relation_type": "related_to",
+        "old_expected_keywords": [
+          "不做公开排行榜"
+        ],
+        "new_expected_keywords": [
+          "个人成就徽章"
+        ],
+        "forbidden_relation_type": "supersedes"
+      }
+    ],
+    "final_memory_checks": [
+      {
+        "query_message_id": "om_conflict_false_positive_study_ext_1001",
+        "query": "P1 现在到底做不做公开社区？",
+        "expected_answer": "P1 现在仍然不做公开社区，也不做陌生人动态流。当前生效边界仍是个人打卡和 AI 复盘为主；分享图、私密监督小组都不等于公开社区，因为它们没有站内公开动态流和陌生人互动。",
+        "expected_granularity": "memory_card",
+        "expected_keywords": [
+          "仍然不做公开社区",
+          "不做陌生人动态流",
+          "分享图不等于公开社区",
+          "私密监督不等于公开社区"
+        ],
+        "forbidden_keywords": [
+          "旧决策已被覆盖",
+          "P1 已经做公开社区"
+        ]
+      },
+      {
+        "query_message_id": "om_conflict_false_positive_study_ext_1002",
+        "query": "分享给好友是不是覆盖了之前不做社区的决策？",
+        "expected_answer": "没有覆盖。分享给好友只是生成个人打卡分享图，由用户主动导出到外部平台；它不在产品内形成公开社区、站内动态流或陌生人互动。因此它应与“不做公开社区”的旧决策建立 related_to 关系，而不是 supersedes 覆盖关系。",
+        "expected_granularity": "memory_card",
+        "expected_keywords": [
+          "没有覆盖",
+          "用户主动导出",
+          "外部平台",
+          "related_to",
+          "不是 supersedes"
+        ],
+        "forbidden_keywords": [
+          "覆盖了旧决策",
+          "已经做社区"
+        ]
+      },
+      {
+        "query_message_id": "om_conflict_false_positive_study_ext_1003",
+        "query": "私密监督小组是不是覆盖了不做公开社区？",
+        "expected_answer": "不是。私密监督小组是邀请制的熟人关系，只让少数被邀请的人互相看到完成状态；它不做小组广场、不推荐陌生小组，也不是陌生人动态流，所以不覆盖“不做公开社区”的旧决策。",
+        "expected_granularity": "memory_card",
+        "expected_keywords": [
+          "不是覆盖",
+          "邀请制熟人关系",
+          "不做小组广场",
+          "不推荐陌生小组"
+        ],
+        "forbidden_keywords": [
+          "公开社区已进入 P1"
+        ]
+      },
+      {
+        "query_message_id": "om_conflict_false_positive_study_ext_1004",
+        "query": "个人成就徽章是不是覆盖了不做排行榜？",
+        "expected_answer": "不是。个人成就徽章只对用户自己展示，用于个人激励；它不公开排名，也不和别人比较。因此它与“不做公开排行榜、不做排名比较”相关，但不是覆盖关系。",
+        "expected_granularity": "memory_card",
+        "expected_keywords": [
+          "不是覆盖",
+          "只对用户自己展示",
+          "不公开排名",
+          "不和别人比较"
+        ],
+        "forbidden_keywords": [
+          "排行榜进入 P1"
+        ]
+      },
+      {
+        "query_message_id": "om_conflict_false_positive_study_ext_1005",
+        "query": "现在 P1 到底有哪些社交相关能力？",
+        "expected_answer": "P1 的社交相关能力边界很窄：可以生成个人打卡分享图，用户可主动导出到外部平台；可以有私密熟人监督小组，通过邀请码加入并互相看到完成状态。但 P1 仍不做公开社区、陌生人动态流、小组广场、陌生小组推荐和公开排行榜。",
+        "expected_granularity": "topic_summary",
+        "expected_keywords": [
+          "分享图",
+          "主动导出",
+          "私密熟人监督小组",
+          "邀请码",
+          "不做公开社区",
+          "不做公开排行榜"
+        ],
+        "forbidden_keywords": [
+          "陌生人动态流进入 P1"
+        ]
+      },
+      {
+        "query_message_id": "om_conflict_false_positive_study_ext_1006",
+        "query": "哪些是 related_to 而不是 supersedes？",
+        "expected_answer": "本 case 中至少有三组 related_to 而不是 supersedes：分享图与不做公开社区相关，但不覆盖；私密监督小组与不做公开社区相关，但不覆盖；个人成就徽章与不做公开排行榜相关，但不覆盖。",
+        "expected_granularity": "topic_summary",
+        "expected_keywords": [
+          "三组 related_to",
+          "分享图",
+          "私密监督小组",
+          "个人成就徽章",
+          "不是 supersedes"
+        ],
+        "forbidden_keywords": [
+          "这些都覆盖旧决策"
+        ]
+      },
+      {
+        "query_message_id": "om_conflict_false_positive_study_ext_1007",
+        "query": "分享图和公开社区的区别是什么？",
+        "expected_answer": "分享图是用户把自己的打卡结果主动导出成图片，可能发到外部平台；公开社区则是在产品内提供陌生人可见的动态流、互动和内容治理。P1 允许前者，但仍然不做后者。",
+        "expected_granularity": "memory_card",
+        "expected_keywords": [
+          "主动导出",
+          "外部平台",
+          "站内动态流",
+          "陌生人互动",
+          "不做公开社区"
+        ],
+        "forbidden_keywords": [
+          "分享图就是公开社区"
+        ]
+      },
+      {
+        "query_message_id": "om_conflict_false_positive_study_ext_1008",
+        "query": "原话在哪？谁说分享图是 related_to 不是 supersedes？",
+        "expected_answer": "来源应追溯到钱七的表述：这应该是 related_to，不是 supersedes，社区决策没有被推翻。上下文还包括张三说明分享图片是用户主动导出，不是在产品内建公开社区。",
+        "expected_granularity": "evidence_block",
+        "expected_keywords": [
+          "related_to",
+          "不是 supersedes",
+          "社区决策没有被推翻",
+          "用户主动导出"
+        ],
+        "forbidden_keywords": []
+      },
+      {
+        "query_message_id": "om_conflict_false_positive_study_ext_1009",
+        "query": "原话在哪？谁说私密监督小组不是公开社区？",
+        "expected_answer": "来源应追溯到张三的表述：私密监督小组不覆盖公开社区决策，因为它是邀请制熟人关系，不是公开社区，也没有陌生人动态流。后续钱七也明确说它是 related_to，但不是 supersedes。",
+        "expected_granularity": "evidence_block",
+        "expected_keywords": [
+          "邀请制熟人关系",
+          "不是公开社区",
+          "没有陌生人动态流",
+          "related_to"
+        ],
+        "forbidden_keywords": []
+      },
+      {
+        "query_message_id": "om_conflict_false_positive_study_ext_1010",
+        "query": "当前学习打卡 P1 的社交边界是什么？",
+        "expected_answer": "当前 P1 的社交边界是：不做公开社区、不做陌生人动态流、不做公开排行榜和排名比较；可以做用户主动导出的个人打卡分享图，可以做邀请制的私密熟人监督小组，也可以做只对自己可见的个人成就徽章。",
+        "expected_granularity": "topic_summary",
+        "expected_keywords": [
+          "不做公开社区",
+          "不做陌生人动态流",
+          "不做公开排行榜",
+          "分享图",
+          "私密熟人监督小组",
+          "个人成就徽章"
+        ],
+        "forbidden_keywords": [
+          "公开社区进入 P1"
+        ]
+      }
+    ],
+    "llm_judge_rubric": {
+      "score_2": "回答语义完全匹配 expected_answer，正确处理新旧决策关系，并明确当前生效版本。",
+      "score_1": "回答大体正确，但对旧版本、新版本、关系类型或理由解释不完整。",
+      "score_0": "回答错误、把旧版本当作当前版本、误判覆盖关系，或编造未出现的结论。"
+    }
+  }
+}

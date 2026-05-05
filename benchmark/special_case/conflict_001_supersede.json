@@ -1,0 +1,1107 @@
+{
+  "schema_version": "conflict_single_stream_v2",
+  "case_id": "conflict_002_supersede",
+  "description": "矛盾更新测试：个人日记产品。该 case 包含三个新决策覆盖旧决策：语音从不支持改为支持语音转文字；同步从不支持改为支持账号级云端同步；情绪趋势从完全不做改为支持最近 7 天情绪卡片。",
+  "chat_id": "oc_conflict_supersede_diary_multi_update",
+  "test_type": "conflict_supersede",
+  "replay_policy": {
+    "mode": "single_stream_with_final_queries",
+    "description": "专项矛盾覆盖测试：messages 是一段连续、完整的历史对话，不预先切分 batch；系统后续自行完成 Event Segmentation、记忆抽取、版本关系判断和检索。final_query_messages 是历史对话结束后的统一查询入口。",
+    "segmentation_policy": "测试集不预切 batch。被测系统需要基于 messages 的 create_time 和语义内容自行完成切分、沉淀与检索。",
+    "scope_control": [
+      "messages 中不包含 @机器人查询",
+      "messages 中不包含日程/待办触发类信息",
+      "messages 中不包含抗干扰专项的大量无关噪声",
+      "本 case 只评估新旧决策关系是否处理正确"
+    ]
+  },
+  "messages": [
+    {
+      "content": "{\"text\": \"我们这个个人日记产品 P1 先只做文字日记，先别做语音日记。\"}",
+      "create_time": "2026-04-20 09:00",
+      "deleted": false,
+      "message_id": "om_conflict_supersede_diary_ext_0001",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_001",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"同意。语音要做录音、转写、权限提示，开发成本比较高。\"}",
+      "create_time": "2026-04-20 09:08",
+      "deleted": false,
+      "message_id": "om_conflict_supersede_diary_ext_0002",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_002",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"而且语音情绪分析也容易被理解成心理判断，风险比较大。\"}",
+      "create_time": "2026-04-20 09:15",
+      "deleted": false,
+      "message_id": "om_conflict_supersede_diary_ext_0003",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_003",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"那 P1 先把写日记、AI 总结、情绪标签做好。\"}",
+      "create_time": "2026-04-20 09:22",
+      "deleted": false,
+      "message_id": "om_conflict_supersede_diary_ext_0004",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_004",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"先定：P1 不支持语音日记，只支持文字日记；语音相关放 P2。\"}",
+      "create_time": "2026-04-20 09:30",
+      "deleted": false,
+      "message_id": "om_conflict_supersede_diary_ext_0005",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_001",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"这条我会写进版本范围，避免 demo 里被问到录音功能。\"}",
+      "create_time": "2026-04-20 09:40",
+      "deleted": false,
+      "message_id": "om_conflict_supersede_diary_ext_0006",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_005",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"同步这块我也建议先别做，P1 就本机账号内保存，别做跨设备同步。\"}",
+      "create_time": "2026-04-20 10:05",
+      "deleted": false,
+      "message_id": "om_conflict_supersede_diary_ext_0007",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_002",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"跨设备同步要处理数据一致性、登录态和冲突合并，有点重。\"}",
+      "create_time": "2026-04-20 10:14",
+      "deleted": false,
+      "message_id": "om_conflict_supersede_diary_ext_0008",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_003",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"那先定：P1 不做跨设备同步，只保证当前设备登录后的日记列表。\"}",
+      "create_time": "2026-04-20 10:22",
+      "deleted": false,
+      "message_id": "om_conflict_supersede_diary_ext_0009",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_001",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"这样页面也简单，不需要同步状态提示。\"}",
+      "create_time": "2026-04-20 10:34",
+      "deleted": false,
+      "message_id": "om_conflict_supersede_diary_ext_0010",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_004",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"情绪趋势图要不要做？如果只有几篇日记，图可能没啥意义。\"}",
+      "create_time": "2026-04-20 11:00",
+      "deleted": false,
+      "message_id": "om_conflict_supersede_diary_ext_0011",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_005",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"我倾向 P1 不做趋势图，只展示单篇日记的情绪标签。\"}",
+      "create_time": "2026-04-20 11:08",
+      "deleted": false,
+      "message_id": "om_conflict_supersede_diary_ext_0012",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_002",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"先这样：P1 不做情绪趋势图，只在单篇日记里显示情绪标签。\"}",
+      "create_time": "2026-04-20 11:16",
+      "deleted": false,
+      "message_id": "om_conflict_supersede_diary_ext_0013",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_001",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"趋势图放后续，先别进主链路。\"}",
+      "create_time": "2026-04-20 11:25",
+      "deleted": false,
+      "message_id": "om_conflict_supersede_diary_ext_0014",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_006",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"我今天看了几个日记 app，有些界面挺简洁的。\"}",
+      "create_time": "2026-04-21 09:05",
+      "deleted": false,
+      "message_id": "om_conflict_supersede_diary_ext_0015",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_007",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"编辑页我想做成顶部日期、中间正文、底部 AI 回顾。\"}",
+      "create_time": "2026-04-21 09:12",
+      "deleted": false,
+      "message_id": "om_conflict_supersede_diary_ext_0016",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_004",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"接口我先写 diary_entries 和 ai_reflections 两张表。\"}",
+      "create_time": "2026-04-21 09:20",
+      "deleted": false,
+      "message_id": "om_conflict_supersede_diary_ext_0017",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_003",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"情绪标签先用开心、平静、焦虑、低落、愤怒这几类够不够？\"}",
+      "create_time": "2026-04-21 09:31",
+      "deleted": false,
+      "message_id": "om_conflict_supersede_diary_ext_0018",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_002",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"够，P1 不要搞太多标签。\"}",
+      "create_time": "2026-04-21 09:45",
+      "deleted": false,
+      "message_id": "om_conflict_supersede_diary_ext_0019",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_001",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "<card title=\"产品直播通知\">\\n今晚 8 点有 AI 产品分享\\n</card>",
+      "create_time": "2026-04-21 09:57",
+      "deleted": false,
+      "message_id": "om_conflict_supersede_diary_ext_0020",
+      "msg_type": "interactive",
+      "sender": {
+        "id": "ou_007",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"我重新想了一下，完全不做语音好像有点可惜，很多人写日记就是懒得打字。\"}",
+      "create_time": "2026-04-22 09:10",
+      "deleted": false,
+      "message_id": "om_conflict_supersede_diary_ext_0021",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_005",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"可以考虑只做语音转文字，不做语音情绪分析。这样用户体验有提升，风险也小很多。\"}",
+      "create_time": "2026-04-22 09:18",
+      "deleted": false,
+      "message_id": "om_conflict_supersede_diary_ext_0022",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_002",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"技术上也可控。录音文件只用于转写，转写完成后可以不保存音频。\"}",
+      "create_time": "2026-04-22 09:26",
+      "deleted": false,
+      "message_id": "om_conflict_supersede_diary_ext_0023",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_003",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"那页面上可以加一个语音输入按钮，结果还是进入文字日记编辑框。\"}",
+      "create_time": "2026-04-22 09:35",
+      "deleted": false,
+      "message_id": "om_conflict_supersede_diary_ext_0024",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_004",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"我同意更新：P1 支持语音转文字输入，但不做语音情绪分析，也不长期保存原始音频。\"}",
+      "create_time": "2026-04-22 09:44",
+      "deleted": false,
+      "message_id": "om_conflict_supersede_diary_ext_0025",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_001",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"这相当于覆盖之前“P1 不支持语音日记”的说法，新版本是支持语音输入，但范围很窄。\"}",
+      "create_time": "2026-04-22 09:52",
+      "deleted": false,
+      "message_id": "om_conflict_supersede_diary_ext_0026",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_002",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"对，语音只作为输入方式，不作为单独的日记类型。\"}",
+      "create_time": "2026-04-22 10:00",
+      "deleted": false,
+      "message_id": "om_conflict_supersede_diary_ext_0027",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_005",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"我后端就把转写结果当 text 保存，不单独存 voice_diary。\"}",
+      "create_time": "2026-04-22 10:12",
+      "deleted": false,
+      "message_id": "om_conflict_supersede_diary_ext_0028",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_003",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"跨设备同步我觉得可以再讨论一下，不做同步的话，换手机之后 demo 体验会很弱。\"}",
+      "create_time": "2026-04-23 09:05",
+      "deleted": false,
+      "message_id": "om_conflict_supersede_diary_ext_0029",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_006",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"我们不做复杂冲突合并，但可以做账号级云端同步，最后写入覆盖即可。\"}",
+      "create_time": "2026-04-23 09:18",
+      "deleted": false,
+      "message_id": "om_conflict_supersede_diary_ext_0030",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_003",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"也就是说不是多端实时协作，只是同一账号的日记在多设备能看到。\"}",
+      "create_time": "2026-04-23 09:30",
+      "deleted": false,
+      "message_id": "om_conflict_supersede_diary_ext_0031",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_002",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"那我更新一下：P1 支持账号级云端同步，但不做多端实时协作，也不做复杂冲突合并。\"}",
+      "create_time": "2026-04-23 09:40",
+      "deleted": false,
+      "message_id": "om_conflict_supersede_diary_ext_0032",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_001",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"这个会覆盖之前“P1 不做跨设备同步”的说法。新版本是做轻量同步。\"}",
+      "create_time": "2026-04-23 09:52",
+      "deleted": false,
+      "message_id": "om_conflict_supersede_diary_ext_0033",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_005",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"页面需要一个同步中和同步失败的状态，但不要做版本冲突 UI。\"}",
+      "create_time": "2026-04-23 10:05",
+      "deleted": false,
+      "message_id": "om_conflict_supersede_diary_ext_0034",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_004",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"后端按 updated_at 保留最后一次写入版本。\"}",
+      "create_time": "2026-04-23 10:15",
+      "deleted": false,
+      "message_id": "om_conflict_supersede_diary_ext_0035",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_003",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"情绪趋势这块我又想了一下，如果完全没有趋势，用户看不到长期价值。\"}",
+      "create_time": "2026-04-24 09:00",
+      "deleted": false,
+      "message_id": "om_conflict_supersede_diary_ext_0036",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_005",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"可以不做复杂折线图，但做最近 7 天情绪卡片，显示主要情绪和连续记录天数。\"}",
+      "create_time": "2026-04-24 09:12",
+      "deleted": false,
+      "message_id": "om_conflict_supersede_diary_ext_0037",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_002",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"这个比折线图轻很多，也能体现长期回顾。\"}",
+      "create_time": "2026-04-24 09:23",
+      "deleted": false,
+      "message_id": "om_conflict_supersede_diary_ext_0038",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_004",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"更新一下：P1 支持最近 7 天情绪卡片，但不做复杂趋势折线图。\"}",
+      "create_time": "2026-04-24 09:34",
+      "deleted": false,
+      "message_id": "om_conflict_supersede_diary_ext_0039",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_001",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"所以旧的“完全不做情绪趋势”要改成“做轻量 7 天情绪卡片，不做复杂折线图”。\"}",
+      "create_time": "2026-04-24 09:44",
+      "deleted": false,
+      "message_id": "om_conflict_supersede_diary_ext_0040",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_006",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"数据就从单篇日记情绪标签聚合，不新增诊断模型。\"}",
+      "create_time": "2026-04-24 09:56",
+      "deleted": false,
+      "message_id": "om_conflict_supersede_diary_ext_0041",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_003",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"语音按钮放在输入框右侧，点击开始、点击结束，不做复杂手势。\"}",
+      "create_time": "2026-04-25 09:20",
+      "deleted": false,
+      "message_id": "om_conflict_supersede_diary_ext_0042",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_004",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"权限弹窗要说明：音频仅用于转文字。\"}",
+      "create_time": "2026-04-25 09:31",
+      "deleted": false,
+      "message_id": "om_conflict_supersede_diary_ext_0043",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_002",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"同步失败要给用户重试入口，但不要展示太多技术细节。\"}",
+      "create_time": "2026-04-25 09:40",
+      "deleted": false,
+      "message_id": "om_conflict_supersede_diary_ext_0044",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_005",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"7 天情绪卡片也要写清楚只是回顾，不是心理诊断。\"}",
+      "create_time": "2026-04-25 09:52",
+      "deleted": false,
+      "message_id": "om_conflict_supersede_diary_ext_0045",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_001",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"我会把这三个更新点写到版本链测试里。\"}",
+      "create_time": "2026-04-25 10:05",
+      "deleted": false,
+      "message_id": "om_conflict_supersede_diary_ext_0046",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_006",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    }
+  ],
+  "final_query_messages": [
+    {
+      "content": "{\"text\": \"@机器人 P1 现在到底支不支持语音日记？\"}",
+      "create_time": "2026-04-26 19:00",
+      "deleted": false,
+      "message_id": "om_conflict_supersede_diary_ext_1001",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_001",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"@机器人 之前不是说 P1 不做语音吗，后来怎么改的？\"}",
+      "create_time": "2026-04-26 19:01",
+      "deleted": false,
+      "message_id": "om_conflict_supersede_diary_ext_1002",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_002",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"@机器人 P1 现在做不做跨设备同步？\"}",
+      "create_time": "2026-04-26 19:02",
+      "deleted": false,
+      "message_id": "om_conflict_supersede_diary_ext_1003",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_003",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"@机器人 之前不是说不做同步吗，现在版本是什么？\"}",
+      "create_time": "2026-04-26 19:03",
+      "deleted": false,
+      "message_id": "om_conflict_supersede_diary_ext_1004",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_004",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"@机器人 P1 现在有没有情绪趋势？\"}",
+      "create_time": "2026-04-26 19:04",
+      "deleted": false,
+      "message_id": "om_conflict_supersede_diary_ext_1005",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_005",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"@机器人 情绪趋势这块旧版本和新版本分别是什么？\"}",
+      "create_time": "2026-04-26 19:05",
+      "deleted": false,
+      "message_id": "om_conflict_supersede_diary_ext_1006",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_006",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"@机器人 这几个更新里哪些是 supersedes？\"}",
+      "create_time": "2026-04-26 19:06",
+      "deleted": false,
+      "message_id": "om_conflict_supersede_diary_ext_1007",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_003",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"@机器人 原话在哪？谁说新版本覆盖了之前不支持语音的说法？\"}",
+      "create_time": "2026-04-26 19:07",
+      "deleted": false,
+      "message_id": "om_conflict_supersede_diary_ext_1008",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_002",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"@机器人 原话在哪？谁说轻量同步覆盖了之前不做跨设备同步？\"}",
+      "create_time": "2026-04-26 19:08",
+      "deleted": false,
+      "message_id": "om_conflict_supersede_diary_ext_1009",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_001",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"@机器人 当前日记产品 P1 的更新后边界是什么？\"}",
+      "create_time": "2026-04-26 19:09",
+      "deleted": false,
+      "message_id": "om_conflict_supersede_diary_ext_1010",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_004",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    }
+  ],
+  "expected": {
+    "target_memories": [
+      {
+        "memory_id": "old_voice_memory",
+        "description": "旧决策：P1 不支持语音日记，只支持文字日记；语音相关放 P2。",
+        "expected_status_after_update": "deprecated",
+        "expected_keywords": [
+          "P1 不支持语音日记",
+          "只支持文字日记",
+          "语音相关放 P2"
+        ],
+        "source_message_ids": [
+          "om_conflict_supersede_diary_ext_0001",
+          "om_conflict_supersede_diary_ext_0002",
+          "om_conflict_supersede_diary_ext_0003",
+          "om_conflict_supersede_diary_ext_0004",
+          "om_conflict_supersede_diary_ext_0005",
+          "om_conflict_supersede_diary_ext_0006"
+        ]
+      },
+      {
+        "memory_id": "new_voice_memory",
+        "description": "新决策：P1 支持语音转文字输入，但不做语音情绪分析，也不长期保存原始音频。",
+        "expected_status_after_update": "active",
+        "expected_keywords": [
+          "支持语音转文字输入",
+          "不做语音情绪分析",
+          "不长期保存原始音频",
+          "语音只作为输入方式"
+        ],
+        "source_message_ids": [
+          "om_conflict_supersede_diary_ext_0021",
+          "om_conflict_supersede_diary_ext_0022",
+          "om_conflict_supersede_diary_ext_0023",
+          "om_conflict_supersede_diary_ext_0024",
+          "om_conflict_supersede_diary_ext_0025",
+          "om_conflict_supersede_diary_ext_0026",
+          "om_conflict_supersede_diary_ext_0027",
+          "om_conflict_supersede_diary_ext_0028"
+        ]
+      },
+      {
+        "memory_id": "old_sync_memory",
+        "description": "旧决策：P1 不做跨设备同步。",
+        "expected_status_after_update": "deprecated",
+        "expected_keywords": [
+          "P1 不做跨设备同步",
+          "当前设备",
+          "日记列表"
+        ],
+        "source_message_ids": [
+          "om_conflict_supersede_diary_ext_0007",
+          "om_conflict_supersede_diary_ext_0008",
+          "om_conflict_supersede_diary_ext_0009",
+          "om_conflict_supersede_diary_ext_0010"
+        ]
+      },
+      {
+        "memory_id": "new_sync_memory",
+        "description": "新决策：P1 支持账号级云端同步，但不做多端实时协作，也不做复杂冲突合并。",
+        "expected_status_after_update": "active",
+        "expected_keywords": [
+          "账号级云端同步",
+          "不做多端实时协作",
+          "不做复杂冲突合并",
+          "最后一次写入"
+        ],
+        "source_message_ids": [
+          "om_conflict_supersede_diary_ext_0029",
+          "om_conflict_supersede_diary_ext_0030",
+          "om_conflict_supersede_diary_ext_0031",
+          "om_conflict_supersede_diary_ext_0032",
+          "om_conflict_supersede_diary_ext_0033",
+          "om_conflict_supersede_diary_ext_0034",
+          "om_conflict_supersede_diary_ext_0035"
+        ]
+      },
+      {
+        "memory_id": "old_trend_memory",
+        "description": "旧决策：P1 不做情绪趋势图，只在单篇日记里显示情绪标签。",
+        "expected_status_after_update": "deprecated",
+        "expected_keywords": [
+          "不做情绪趋势图",
+          "单篇日记",
+          "情绪标签"
+        ],
+        "source_message_ids": [
+          "om_conflict_supersede_diary_ext_0011",
+          "om_conflict_supersede_diary_ext_0012",
+          "om_conflict_supersede_diary_ext_0013",
+          "om_conflict_supersede_diary_ext_0014"
+        ]
+      },
+      {
+        "memory_id": "new_trend_memory",
+        "description": "新决策：P1 支持最近 7 天情绪卡片，但不做复杂趋势折线图。",
+        "expected_status_after_update": "active",
+        "expected_keywords": [
+          "最近 7 天情绪卡片",
+          "不做复杂趋势折线图",
+          "长期回顾",
+          "不是心理诊断"
+        ],
+        "source_message_ids": [
+          "om_conflict_supersede_diary_ext_0036",
+          "om_conflict_supersede_diary_ext_0037",
+          "om_conflict_supersede_diary_ext_0038",
+          "om_conflict_supersede_diary_ext_0039",
+          "om_conflict_supersede_diary_ext_0040",
+          "om_conflict_supersede_diary_ext_0041"
+        ]
+      }
+    ],
+    "relation_checks": [
+      {
+        "relation_type": "supersedes",
+        "old_expected_keywords": [
+          "P1 不支持语音日记"
+        ],
+        "new_expected_keywords": [
+          "支持语音转文字输入"
+        ]
+      },
+      {
+        "relation_type": "supersedes",
+        "old_expected_keywords": [
+          "P1 不做跨设备同步"
+        ],
+        "new_expected_keywords": [
+          "账号级云端同步"
+        ]
+      },
+      {
+        "relation_type": "supersedes",
+        "old_expected_keywords": [
+          "不做情绪趋势图"
+        ],
+        "new_expected_keywords": [
+          "最近 7 天情绪卡片"
+        ]
+      }
+    ],
+    "final_memory_checks": [
+      {
+        "query_message_id": "om_conflict_supersede_diary_ext_1001",
+        "query": "P1 现在到底支不支持语音日记？",
+        "expected_answer": "当前生效版本是：P1 支持语音转文字输入，但不做完整语音日记。语音只作为输入方式，转写结果进入文字日记；系统不做语音情绪分析，也不长期保存原始音频。旧的“P1 不支持语音日记、语音放 P2”已经被后续新决策覆盖。",
+        "expected_granularity": "memory_card",
+        "expected_keywords": [
+          "当前生效",
+          "支持语音转文字输入",
+          "不做语音情绪分析",
+          "不长期保存原始音频",
+          "旧版本已覆盖"
+        ],
+        "forbidden_keywords": [
+          "P1 仍然完全不支持语音",
+          "语音情绪分析已进入 P1"
+        ]
+      },
+      {
+        "query_message_id": "om_conflict_supersede_diary_ext_1002",
+        "query": "之前不是说 P1 不做语音吗，后来怎么改的？",
+        "expected_answer": "一开始团队确实决定 P1 不支持语音日记，只做文字日记，因为录音、转写、权限提示和语音情绪分析成本较高。后来团队重新评估后修改为：P1 可以支持语音转文字输入，但不做语音情绪分析、不长期保存原始音频。这个新决策覆盖了旧决策。",
+        "expected_granularity": "memory_card",
+        "expected_keywords": [
+          "一开始不支持语音日记",
+          "后来改为支持语音转文字",
+          "覆盖旧决策"
+        ],
+        "forbidden_keywords": [
+          "旧决策仍然是当前版本"
+        ]
+      },
+      {
+        "query_message_id": "om_conflict_supersede_diary_ext_1003",
+        "query": "P1 现在做不做跨设备同步？",
+        "expected_answer": "当前生效版本是：P1 支持账号级云端同步，同一账号的日记可以在多设备看到。但它不是多端实时协作，也不做复杂冲突合并；冲突处理采用较轻的最后一次写入版本。旧的“不做跨设备同步”已被这个轻量同步方案覆盖。",
+        "expected_granularity": "memory_card",
+        "expected_keywords": [
+          "账号级云端同步",
+          "多设备",
+          "不做多端实时协作",
+          "不做复杂冲突合并",
+          "旧版本已覆盖"
+        ],
+        "forbidden_keywords": [
+          "P1 不做任何同步",
+          "支持多人协作编辑"
+        ]
+      },
+      {
+        "query_message_id": "om_conflict_supersede_diary_ext_1004",
+        "query": "之前不是说不做同步吗，现在版本是什么？",
+        "expected_answer": "旧版本确实是 P1 不做跨设备同步，只保证当前设备登录后的日记列表。后续更新为 P1 支持账号级云端同步，但范围很轻：只让同一账号在多设备看到日记，不做多端实时协作和复杂冲突合并。",
+        "expected_granularity": "memory_card",
+        "expected_keywords": [
+          "旧版本不做跨设备同步",
+          "后续更新",
+          "账号级云端同步",
+          "不做多端实时协作"
+        ],
+        "forbidden_keywords": [
+          "旧版本仍然当前生效"
+        ]
+      },
+      {
+        "query_message_id": "om_conflict_supersede_diary_ext_1005",
+        "query": "P1 现在有没有情绪趋势？",
+        "expected_answer": "当前版本有轻量情绪趋势能力：P1 支持最近 7 天情绪卡片，用来展示主要情绪和连续记录天数；但不做复杂趋势折线图，也不新增心理诊断模型。",
+        "expected_granularity": "memory_card",
+        "expected_keywords": [
+          "最近 7 天情绪卡片",
+          "主要情绪",
+          "连续记录天数",
+          "不做复杂趋势折线图"
+        ],
+        "forbidden_keywords": [
+          "完全不做情绪趋势",
+          "复杂折线图已进入 P1"
+        ]
+      },
+      {
+        "query_message_id": "om_conflict_supersede_diary_ext_1006",
+        "query": "情绪趋势这块旧版本和新版本分别是什么？",
+        "expected_answer": "旧版本是 P1 不做情绪趋势图，只在单篇日记里显示情绪标签。新版本更新为 P1 做最近 7 天情绪卡片，但仍不做复杂趋势折线图；这个更新把“完全不做趋势”改成了“做轻量趋势卡片”。",
+        "expected_granularity": "memory_card",
+        "expected_keywords": [
+          "旧版本不做情绪趋势图",
+          "新版本最近 7 天情绪卡片",
+          "不做复杂趋势折线图"
+        ],
+        "forbidden_keywords": [
+          "旧版本仍然完全生效"
+        ]
+      },
+      {
+        "query_message_id": "om_conflict_supersede_diary_ext_1007",
+        "query": "这几个更新里哪些是 supersedes？",
+        "expected_answer": "本 case 中应有三组 supersedes：第一，语音从“P1 不支持语音日记”更新为“支持语音转文字输入”；第二，同步从“不做跨设备同步”更新为“支持账号级云端同步”；第三，情绪趋势从“完全不做情绪趋势图”更新为“支持最近 7 天情绪卡片”。",
+        "expected_granularity": "topic_summary",
+        "expected_keywords": [
+          "三组 supersedes",
+          "语音转文字",
+          "账号级云端同步",
+          "最近 7 天情绪卡片"
+        ],
+        "forbidden_keywords": [
+          "没有覆盖关系"
+        ]
+      },
+      {
+        "query_message_id": "om_conflict_supersede_diary_ext_1008",
+        "query": "原话在哪？谁说新版本覆盖了之前不支持语音的说法？",
+        "expected_answer": "来源应追溯到李四的表述：这相当于覆盖之前“P1 不支持语音日记”的说法，新版本是支持语音输入，但范围很窄。同时也应能看到张三前一句确认：P1 支持语音转文字输入，但不做语音情绪分析，也不长期保存原始音频。",
+        "expected_granularity": "evidence_block",
+        "expected_keywords": [
+          "覆盖之前",
+          "P1 不支持语音日记",
+          "支持语音输入",
+          "范围很窄"
+        ],
+        "forbidden_keywords": []
+      },
+      {
+        "query_message_id": "om_conflict_supersede_diary_ext_1009",
+        "query": "原话在哪？谁说轻量同步覆盖了之前不做跨设备同步？",
+        "expected_answer": "来源应追溯到钱七的表述：这个会覆盖之前“P1 不做跨设备同步”的说法，新版本是做轻量同步。上下文里张三确认了新版本：P1 支持账号级云端同步，但不做多端实时协作，也不做复杂冲突合并。",
+        "expected_granularity": "evidence_block",
+        "expected_keywords": [
+          "覆盖之前",
+          "P1 不做跨设备同步",
+          "轻量同步",
+          "账号级云端同步"
+        ],
+        "forbidden_keywords": []
+      },
+      {
+        "query_message_id": "om_conflict_supersede_diary_ext_1010",
+        "query": "当前日记产品 P1 的更新后边界是什么？",
+        "expected_answer": "更新后，P1 仍以个人日记为核心，但边界变为：支持文字日记和语音转文字输入；支持账号级云端同步但不做多端实时协作或复杂冲突合并；支持最近 7 天情绪卡片但不做复杂趋势折线图；AI 回顾和情绪展示都只是辅助回顾，不是心理诊断。",
+        "expected_granularity": "topic_summary",
+        "expected_keywords": [
+          "文字日记",
+          "语音转文字",
+          "账号级云端同步",
+          "最近 7 天情绪卡片",
+          "不是心理诊断"
+        ],
+        "forbidden_keywords": [
+          "完全不支持语音",
+          "完全不支持同步"
+        ]
+      }
+    ],
+    "llm_judge_rubric": {
+      "score_2": "回答语义完全匹配 expected_answer，正确处理新旧决策关系，并明确当前生效版本。",
+      "score_1": "回答大体正确，但对旧版本、新版本、关系类型或理由解释不完整。",
+      "score_0": "回答错误、把旧版本当作当前版本、误判覆盖关系，或编造未出现的结论。"
+    }
+  }
+}

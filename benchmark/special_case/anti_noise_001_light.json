@@ -1,0 +1,439 @@
+{
+  "schema_version": "anti_noise_single_stream_v1",
+  "case_id": "anti_noise_001_light",
+  "description": "轻量抗干扰：校园二手书交易小程序。历史消息跨度约 3 天，早期形成 P1 品类边界决策，随后混入少量接口、UI、通知、闲聊等噪声；测试集不预切 batch，查询统一放在 final_query_messages。",
+  "chat_id": "oc_anti_noise_light_books",
+  "test_type": "anti_noise",
+  "replay_policy": {
+    "mode": "single_stream_with_final_queries",
+    "description": "专项抗干扰测试：messages 是一段连续、完整的历史对话，不预先切分 batch；系统后续自行完成时间窗口切分或 Event Segmentation。final_query_messages 是历史对话结束后的统一查询入口。",
+    "segmentation_policy": "测试集不预切 batch。被测系统需要基于 messages 的 create_time 和语义内容自行完成切分、沉淀与检索。",
+    "scope_control": [
+      "messages 中不包含 @机器人查询",
+      "messages 中不包含日程/待办触发类信息",
+      "messages 中不包含矛盾更新专项内容"
+    ],
+    "noise_types": [
+      "接口命名",
+      "UI 细节",
+      "普通闲聊",
+      "通知卡片",
+      "非核心产品讨论",
+      "重复或轻微相关但不应覆盖主决策的信息"
+    ]
+  },
+  "messages": [
+    {
+      "content": "{\"text\": \"我建议校园二手书交易小程序 P1 先只做教材和考试资料，先别做全品类二手市场。\"}",
+      "create_time": "2026-04-21 09:00",
+      "deleted": false,
+      "message_id": "om_anti_light_stream_0001",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_1",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"同意。全品类会涉及电子产品、衣服、宿舍用品，审核和纠纷都复杂。\"}",
+      "create_time": "2026-04-21 09:08",
+      "deleted": false,
+      "message_id": "om_anti_light_stream_0002",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_2",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"教材和考试资料场景更明确，学生也更容易理解这个 demo。\"}",
+      "create_time": "2026-04-21 09:15",
+      "deleted": false,
+      "message_id": "om_anti_light_stream_0003",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_3",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"那首页就围绕课程、学院和教材名称筛选，不用做复杂类目。\"}",
+      "create_time": "2026-04-21 09:22",
+      "deleted": false,
+      "message_id": "om_anti_light_stream_0004",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_4",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"先定：P1 只做教材和考试资料交易，不做全品类二手市场。\"}",
+      "create_time": "2026-04-21 09:31",
+      "deleted": false,
+      "message_id": "om_anti_light_stream_0005",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_1",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"理由是品类可控、审核难度低，也更适合校园 demo。\"}",
+      "create_time": "2026-04-21 09:37",
+      "deleted": false,
+      "message_id": "om_anti_light_stream_0006",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_5",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"这个边界要写进报告，避免被问为什么不做衣服和电子产品。\"}",
+      "create_time": "2026-04-21 09:49",
+      "deleted": false,
+      "message_id": "om_anti_light_stream_0007",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_6",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"我刚看天气预报，今天可能下雨。\"}",
+      "create_time": "2026-04-22 09:06",
+      "deleted": false,
+      "message_id": "om_anti_light_stream_0008",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_7",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"接口名我先用 book_items。\"}",
+      "create_time": "2026-04-22 09:12",
+      "deleted": false,
+      "message_id": "om_anti_light_stream_0009",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_3",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"按钮颜色我想用绿色，感觉更校园。\"}",
+      "create_time": "2026-04-22 09:25",
+      "deleted": false,
+      "message_id": "om_anti_light_stream_0010",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_4",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "<card title=\"校园活动通知\">\\n今晚有社团招新直播\\n</card>",
+      "create_time": "2026-04-22 09:39",
+      "deleted": false,
+      "message_id": "om_anti_light_stream_0011",
+      "msg_type": "interactive",
+      "sender": {
+        "id": "ou_7",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"要不要加举报入口？\"}",
+      "create_time": "2026-04-22 09:50",
+      "deleted": false,
+      "message_id": "om_anti_light_stream_0012",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_2",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"举报入口可以有，但 P1 先只做最基础的下架标记，不做复杂仲裁。\"}",
+      "create_time": "2026-04-22 09:58",
+      "deleted": false,
+      "message_id": "om_anti_light_stream_0013",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_1",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"我把举报按钮放详情页，后端只存 report 状态。\"}",
+      "create_time": "2026-04-22 10:15",
+      "deleted": false,
+      "message_id": "om_anti_light_stream_0014",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_3",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"这个不是主链路，测试可以轻一点。\"}",
+      "create_time": "2026-04-22 10:30",
+      "deleted": false,
+      "message_id": "om_anti_light_stream_0015",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_6",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"列表页要不要显示原价？\"}",
+      "create_time": "2026-04-23 09:10",
+      "deleted": false,
+      "message_id": "om_anti_light_stream_0016",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_4",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"显示原价有价值，能体现折扣。\"}",
+      "create_time": "2026-04-23 09:18",
+      "deleted": false,
+      "message_id": "om_anti_light_stream_0017",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_5",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"可以显示原价和现价，但不做自动估价。\"}",
+      "create_time": "2026-04-23 09:30",
+      "deleted": false,
+      "message_id": "om_anti_light_stream_0018",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_1",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"自动估价没必要，教材版本差异太多。\"}",
+      "create_time": "2026-04-23 09:45",
+      "deleted": false,
+      "message_id": "om_anti_light_stream_0019",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_3",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"我去吃饭了，晚点看原型。\"}",
+      "create_time": "2026-04-23 10:05",
+      "deleted": false,
+      "message_id": "om_anti_light_stream_0020",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_7",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    }
+  ],
+  "final_query_messages": [
+    {
+      "content": "{\"text\": \"@机器人 之前 P1 为什么只做教材和考试资料？\"}",
+      "create_time": "2026-04-23 11:05",
+      "deleted": false,
+      "message_id": "om_anti_light_stream_1001",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_2",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"@机器人 P1 为什么不做全品类二手市场？\"}",
+      "create_time": "2026-04-23 11:06",
+      "deleted": false,
+      "message_id": "om_anti_light_stream_1002",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_5",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    },
+    {
+      "content": "{\"text\": \"@机器人 原话在哪？谁说审核和纠纷复杂？\"}",
+      "create_time": "2026-04-23 11:07",
+      "deleted": false,
+      "message_id": "om_anti_light_stream_1003",
+      "msg_type": "text",
+      "sender": {
+        "id": "ou_3",
+        "id_type": "open_id",
+        "sender_type": "user",
+        "tenant_key": "demo_tenant"
+      },
+      "updated": false
+    }
+  ],
+  "expected": {
+    "target_memories": [
+      {
+        "memory_id": "target_001",
+        "description": "P1 品类边界：只做教材和考试资料，不做全品类二手市场。",
+        "expected_granularity": "memory_card",
+        "expected_keywords": [
+          "教材",
+          "考试资料",
+          "不做全品类",
+          "审核",
+          "纠纷",
+          "校园 demo"
+        ],
+        "source_message_ids": [
+          "om_anti_light_stream_0001",
+          "om_anti_light_stream_0002",
+          "om_anti_light_stream_0003",
+          "om_anti_light_stream_0004",
+          "om_anti_light_stream_0005",
+          "om_anti_light_stream_0006",
+          "om_anti_light_stream_0007"
+        ]
+      }
+    ],
+    "noise_profile": {
+      "history_message_count": 20,
+      "time_span": "约 3 天",
+      "noise_level": "light"
+    },
+    "final_memory_checks": [
+      {
+        "query_message_id": "om_anti_light_stream_1001",
+        "query": "之前 P1 为什么只做教材和考试资料？",
+        "expected_answer": "P1 只做教材和考试资料，是因为项目不想扩成全品类二手市场。全品类会引入电子产品、衣服、宿舍用品等复杂品类，审核、纠纷处理和交易治理都会变重；教材和考试资料的校园场景更明确、品类更可控，也更适合比赛 demo 展示。",
+        "expected_granularity": "memory_card",
+        "expected_keywords": [
+          "教材",
+          "考试资料",
+          "不做全品类",
+          "审核",
+          "纠纷",
+          "校园 demo"
+        ],
+        "forbidden_keywords": [
+          "P1 做全品类",
+          "支持衣服交易",
+          "支持电子产品交易"
+        ]
+      },
+      {
+        "query_message_id": "om_anti_light_stream_1002",
+        "query": "P1 为什么不做全品类二手市场？",
+        "expected_answer": "因为团队认为全品类二手市场范围过大，会带来更复杂的审核、纠纷处理和跨品类治理问题。P1 为了让 demo 聚焦，选择只支持教材和考试资料交易。",
+        "expected_granularity": "memory_card",
+        "expected_keywords": [
+          "范围过大",
+          "审核",
+          "纠纷",
+          "教材",
+          "考试资料",
+          "demo 聚焦"
+        ],
+        "forbidden_keywords": [
+          "已经决定做全品类"
+        ]
+      },
+      {
+        "query_message_id": "om_anti_light_stream_1003",
+        "query": "原话在哪？谁说审核和纠纷复杂？",
+        "expected_answer": "来源应追溯到早期讨论中李四提到的内容：全品类会涉及电子产品、衣服、宿舍用品，审核和纠纷都复杂。该原话是团队决定不做全品类二手市场的重要依据。",
+        "expected_granularity": "evidence_block",
+        "expected_keywords": [
+          "全品类",
+          "电子产品",
+          "衣服",
+          "宿舍用品",
+          "审核和纠纷"
+        ],
+        "forbidden_keywords": []
+      }
+    ],
+    "llm_judge_rubric": {
+      "score_2": "回答语义完全匹配 expected_answer，包含核心决策、理由和当前状态，且没有被噪声干扰。",
+      "score_1": "回答大体正确，但缺少部分理由、来源或边界。",
+      "score_0": "回答错误、混入噪声决策、使用相反结论或编造。"
+    }
+  }
+}

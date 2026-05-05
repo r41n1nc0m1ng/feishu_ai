@@ -1,0 +1,3246 @@
+{
+  "schema_version": "dual_channel_benchmark_v2",
+  "case_id": "full_demo_v2_productionish_pack_001",
+  "description": "独立 benchmark v2 多群聊专项覆盖集：核心产品/研发群、发布运营群、会务组织群与压力测试群分离，覆盖干扰噪声、日程待办、半截话题、refine、supersede、矛盾更新、source/version/topic 查询、多主题并行与稀疏窗口补上下文。",
+  "chat_id": "oc_proj_core",
+  "replay_policy": {
+    "mode": "dual_channel_batch_replay",
+    "description": "每个 batch 内消息先逐条进入实时层，再将整批消息交给写入层。",
+    "write_layer_should_ignore": [
+      "@机器人查询消息",
+      "普通历史提问",
+      "日程/待办触发消息",
+      "interactive 噪声卡片",
+      "机器人回复",
+      "系统通知"
+    ],
+    "partial_topic_policy": "半截话题允许生成 Progress，也允许暂不落正式卡片；后续批次可通过 refine 或 supersede 更新。"
+  },
+  "coverage_targets": {
+    "realtime": [
+      "query",
+      "topic_list",
+      "schedule",
+      "task",
+      "noop"
+    ],
+    "write_side": [
+      "anti_noise",
+      "progress",
+      "refine_candidate",
+      "supersede_candidate",
+      "conflict_candidate",
+      "multi_topic_batch",
+      "sparse_window_context"
+    ],
+    "query_followups": [
+      "source",
+      "version",
+      "summary",
+      "topic_list"
+    ]
+  },
+  "answer_policy": {
+    "expected_brief_field": "expected_brief",
+    "brief_use": "供人工/模型相似度评测的单句标准答案",
+    "structured_use": "expected / expected_write_result 供动作级和关系级自动校验",
+    "format_expectation": "每个 batch 同时保留结构化预期和一句话预期，兼顾格式与标准答案"
+  },
+  "construction_method": {
+    "pipeline": [
+      "ontology_base",
+      "timeline_base",
+      "thread_slots",
+      "iceberg_context",
+      "visible_projection",
+      "expectation_annotation"
+    ],
+    "ontology_axes": [
+      "chat_role",
+      "message_act",
+      "memory_object",
+      "update_relation",
+      "realtime_intent"
+    ],
+    "why": "直接生成最终 messages 容易把 query、schedule、policy、risk 和版本更新混写；先定本体、时间基底和线程槽位，再投影可见消息，结构更稳。"
+  },
+  "iceberg_policy": {
+    "principle": "先构造真实任务与群聊多任务背景，再从中抽取群内可见消息作为 messages。",
+    "hidden_layer_field": "iceberg_context",
+    "visible_layer_field": "messages",
+    "benefit": [
+      "让群聊消息更随机、更贴近真实上下文",
+      "减少 LLM 直接造句带来的单薄感",
+      "方便后续扩展隐藏任务、干扰任务和并行任务"
+    ]
+  },
+  "evaluation_axes": {
+    "cluster_generation_and_update": true,
+    "long_term_recall": true,
+    "format_adherence": true,
+    "standard_answer_available": true,
+    "multi_line_parallel_classification": true,
+    "anti_interference": true,
+    "refine_and_supersede": true,
+    "topic_summary_listing": true
+  },
+  "batches": [
+    {
+      "batch_id": "batch_001_seed_scope",
+      "scenario": "初始边界决策 + 噪声查询",
+      "tags": [
+        "scope",
+        "noise",
+        "seed"
+      ],
+      "fetch_time": "2026-05-05 10:00",
+      "iceberg_context": {
+        "scene": "产品组在定 P1 范围，PM、算法、前端、评测同群讨论。",
+        "hidden_tasks": [
+          "定群聊记忆的产品边界",
+          "决定简历初筛 MVP 的输出形式",
+          "处理一条对历史决策的查询噪声"
+        ],
+        "hidden_state": {
+          "topic_stack": [
+            "产品边界",
+            "MVP 输出",
+            "历史查询"
+          ],
+          "emotional_tone": "认真推进中，有少量试探和插话",
+          "non_visible_assumptions": [
+            "评测同学想保留可追溯来源",
+            "前端希望输出足够简单便于展示"
+          ]
+        },
+        "project_name": "校招简历初筛助手 Demo",
+        "tenant_type": "高校竞赛项目组",
+        "delivery_window": "2026-05-04 至 2026-05-06",
+        "primary_group_goal": "在飞书群里完成产品边界对齐、演示组织、物料准备与记忆系统验证",
+        "work_item": "确定 P1 产品边界和 MVP 展示路径",
+        "deliverables": [
+          "边界决策",
+          "MVP 页面范围",
+          "演示说明口径"
+        ],
+        "off_group_events": [
+          "产品文档初稿已在会前整理完，但未在群里全文贴出"
+        ],
+        "message_projection_rule": "只摘取会真正发到群里的决策句、回应句和查询噪声。",
+        "participants": [
+          {
+            "role": "产品负责人",
+            "focus": "范围、优先级、对外演示"
+          },
+          {
+            "role": "后端开发",
+            "focus": "接口、数据结构、稳定性"
+          },
+          {
+            "role": "设计/前端",
+            "focus": "页面结构、展示观感"
+          },
+          {
+            "role": "测试/评测",
+            "focus": "样例、可追溯性、验收"
+          }
+        ],
+        "home_chat_theme": "产品边界、技术实现、长期记忆与追问"
+      },
+      "expected_brief": "系统应忽略查询噪声，只沉淀群聊边界与初始方案。",
+      "messages": [
+        {
+          "content": "{\"text\":\"先把这次需求边界定一下，不做完整 ATS。\"}",
+          "create_time": "2026-05-05 10:00",
+          "deleted": false,
+          "message_id": "v2_0001",
+          "msg_type": "text",
+          "sender": {
+            "id": "ou_v2_pm",
+            "id_type": "open_id",
+            "sender_type": "user",
+            "tenant_key": "demo_tenant"
+          },
+          "updated": false
+        },
+        {
+          "content": "{\"text\":\"同意，先做群聊记忆，不碰企业级共享。\"}",
+          "create_time": "2026-05-05 10:01",
+          "deleted": false,
+          "message_id": "v2_0002",
+          "msg_type": "text",
+          "sender": {
+            "id": "ou_v2_dev",
+            "id_type": "open_id",
+            "sender_type": "user",
+            "tenant_key": "demo_tenant"
+          },
+          "updated": false
+        },
+        {
+          "content": "{\"text\":\"上传 JD、上传简历、输出分析报告，这版就够了。\"}",
+          "create_time": "2026-05-05 10:01",
+          "deleted": false,
+          "message_id": "v2_0003",
+          "msg_type": "text",
+          "sender": {
+            "id": "ou_v2_design",
+            "id_type": "open_id",
+            "sender_type": "user",
+            "tenant_key": "demo_tenant"
+          },
+          "updated": false
+        },
+        {
+          "content": "{\"text\":\"@机器人 这句先别记，帮我查下上次怎么定的。\"}",
+          "create_time": "2026-05-05 10:02",
+          "deleted": false,
+          "message_id": "v2_0004",
+          "msg_type": "text",
+          "sender": {
+            "id": "ou_v2_qa",
+            "id_type": "open_id",
+            "sender_type": "user",
+            "tenant_key": "demo_tenant"
+          },
+          "updated": false
+        },
+        {
+          "content": "{\"text\":\"那就统一成群聊内记忆，不碰企业级边界。\"}",
+          "create_time": "2026-05-05 10:03",
+          "deleted": false,
+          "message_id": "v2_0005",
+          "msg_type": "text",
+          "sender": {
+            "id": "ou_v2_pm",
+            "id_type": "open_id",
+            "sender_type": "user",
+            "tenant_key": "demo_tenant"
+          },
+          "updated": false
+        }
+      ],
+      "expected": {
+        "realtime_actions": [
+          "noop",
+          "noop",
+          "noop",
+          "query",
+          "noop"
+        ],
+        "write_result_count": 1
+      },
+      "expected_write_result": {
+        "should_ignore_message_ids": [
+          "v2_0004"
+        ],
+        "expected_memory_cards": [
+          {
+            "expected_keywords": [
+              "不做完整 ATS",
+              "群聊记忆",
+              "不碰企业级共享"
+            ]
+          }
+        ]
+      },
+      "chat_id": "oc_proj_core"
+    },
+    {
+      "batch_id": "batch_002_action_noise",
+      "scenario": "日程和待办触发，不应污染长期记忆",
+      "tags": [
+        "schedule",
+        "task",
+        "ignore"
+      ],
+      "fetch_time": "2026-05-05 10:10",
+      "iceberg_context": {
+        "scene": "同一群里还在推进评审安排和样例补齐，消息里混入执行型通知。",
+        "hidden_tasks": [
+          "协调后天下午的碰头会",
+          "给成员分配 demo 提交待办",
+          "确认这些执行型消息不进入长期记忆"
+        ],
+        "hidden_state": {
+          "topic_stack": [
+            "评审安排",
+            "待办分配",
+            "长期记忆隔离"
+          ],
+          "emotional_tone": "忙碌但明确",
+          "non_visible_assumptions": [
+            "群里有人只想快速确认时间",
+            "机器人应只做即时执行，不沉淀这些通知"
+          ]
+        },
+        "project_name": "校招简历初筛助手 Demo",
+        "tenant_type": "高校竞赛项目组",
+        "delivery_window": "2026-05-04 至 2026-05-06",
+        "primary_group_goal": "在飞书群里完成产品边界对齐、演示组织、物料准备与记忆系统验证",
+        "work_item": "安排碰头会并分配 demo 提交待办",
+        "deliverables": [
+          "评审会时间",
+          "demo 提交责任人"
+        ],
+        "off_group_events": [
+          "线下已经口头确认 5 月 7 日要向老师做展示"
+        ],
+        "message_projection_rule": "群里只会发执行通知，不会讨论长期产品方向。",
+        "participants": [
+          {
+            "role": "产品负责人",
+            "focus": "范围、优先级、对外演示"
+          },
+          {
+            "role": "后端开发",
+            "focus": "接口、数据结构、稳定性"
+          }
+        ],
+        "home_chat_theme": "产品边界、技术实现、长期记忆与追问"
+      },
+      "expected_brief": "系统应识别日程和待办，但不把它们写进长期记忆。",
+      "messages": [
+        {
+          "content": "{\"text\":\"后天下午三点半开个半小时碰头会。\"}",
+          "create_time": "2026-05-05 10:10",
+          "deleted": false,
+          "message_id": "v2_0010",
+          "msg_type": "text",
+          "sender": {
+            "id": "ou_v2_pm",
+            "id_type": "open_id",
+            "sender_type": "user",
+            "tenant_key": "demo_tenant"
+          },
+          "updated": false
+        },
+        {
+          "content": "{\"text\":\"张三 7号中午十二点之前必须提交 demo。\"}",
+          "create_time": "2026-05-05 10:11",
+          "deleted": false,
+          "message_id": "v2_0011",
+          "msg_type": "text",
+          "sender": {
+            "id": "ou_v2_pm",
+            "id_type": "open_id",
+            "sender_type": "user",
+            "tenant_key": "demo_tenant"
+          },
+          "updated": false
+        },
+        {
+          "content": "{\"text\":\"收到。\"}",
+          "create_time": "2026-05-05 10:11",
+          "deleted": false,
+          "message_id": "v2_0012",
+          "msg_type": "text",
+          "sender": {
+            "id": "ou_v2_dev",
+            "id_type": "open_id",
+            "sender_type": "user",
+            "tenant_key": "demo_tenant"
+          },
+          "updated": false
+        }
+      ],
+      "expected": {
+        "realtime_actions": [
+          "schedule",
+          "task",
+          "noop"
+        ],
+        "write_result_count": 1
+      },
+      "expected_write_result": {
+        "should_ignore_message_ids": [
+          "v2_0010",
+          "v2_0011"
+        ]
+      },
+      "chat_id": "oc_proj_core"
+    },
+    {
+      "batch_id": "batch_003_progress_partial",
+      "scenario": "半截话题，只形成 progress 候选",
+      "tags": [
+        "progress",
+        "partial_topic"
+      ],
+      "fetch_time": "2026-05-05 10:20",
+      "iceberg_context": {
+        "scene": "算法组在讨论匹配分，但产品还没拍板，群里有人倾向保守推进。",
+        "hidden_tasks": [
+          "评估是否启用匹配分",
+          "判断这是不是正式决策还是进度讨论",
+          "避免提前把未定事项写成决策"
+        ],
+        "hidden_state": {
+          "topic_stack": [
+            "评分策略",
+            "解释性",
+            "未定决策"
+          ],
+          "emotional_tone": "试探性讨论",
+          "non_visible_assumptions": [
+            "大家在等更明确的标准",
+            "当前只够形成 progress"
+          ]
+        },
+        "project_name": "校招简历初筛助手 Demo",
+        "tenant_type": "高校竞赛项目组",
+        "delivery_window": "2026-05-04 至 2026-05-06",
+        "primary_group_goal": "在飞书群里完成产品边界对齐、演示组织、物料准备与记忆系统验证",
+        "work_item": "是否引入匹配分",
+        "deliverables": [
+          "讨论记录",
+          "未拍板议题"
+        ],
+        "off_group_events": [
+          "算法同学线下跑过一个粗糙分数实验，但结果不稳定"
+        ],
+        "message_projection_rule": "群里只出现试探性讨论，不出现最终拍板语句。",
+        "participants": [
+          {
+            "role": "算法同学",
+            "focus": "匹配逻辑、评分与解释性"
+          },
+          {
+            "role": "产品负责人",
+            "focus": "范围、优先级、对外演示"
+          }
+        ],
+        "home_chat_theme": "产品边界、技术实现、长期记忆与追问"
+      },
+      "expected_brief": "系统应把匹配分保留为未定议题，不强行生成正式决策。",
+      "messages": [
+        {
+          "content": "{\"text\":\"匹配分要不要做？我倾向做，但先别拍板。\"}",
+          "create_time": "2026-05-05 10:20",
+          "deleted": false,
+          "message_id": "v2_0020",
+          "msg_type": "text",
+          "sender": {
+            "id": "ou_v2_algo",
+            "id_type": "open_id",
+            "sender_type": "user",
+            "tenant_key": "demo_tenant"
+          },
+          "updated": false
+        },
+        {
+          "content": "{\"text\":\"先讨论下解释性，不急着定最终规则。\"}",
+          "create_time": "2026-05-05 10:21",
+          "deleted": false,
+          "message_id": "v2_0021",
+          "msg_type": "text",
+          "sender": {
+            "id": "ou_v2_pm",
+            "id_type": "open_id",
+            "sender_type": "user",
+            "tenant_key": "demo_tenant"
+          },
+          "updated": false
+        }
+      ],
+      "expected": {
+        "realtime_actions": [
+          "noop",
+          "noop"
+        ],
+        "write_result_count": 1
+      },
+      "expected_write_result": {
+        "optional_progress_cards": [
+          {
+            "expected_keywords": [
+              "匹配分",
+              "先别拍板",
+              "解释性"
+            ]
+          }
+        ]
+      },
+      "chat_id": "oc_proj_core"
+    },
+    {
+      "batch_id": "batch_004_refine_scoring",
+      "scenario": "对既有打分方向做 refine，而不是 supersede",
+      "tags": [
+        "refine",
+        "scoring"
+      ],
+      "fetch_time": "2026-05-05 10:30",
+      "iceberg_context": {
+        "scene": "在前一轮讨论基础上，算法继续细化评分边界，产品给出约束。",
+        "hidden_tasks": [
+          "把评分策略从口头方向变成可执行规则",
+          "保留原方向",
+          "补充人工复核与强推荐边界"
+        ],
+        "hidden_state": {
+          "topic_stack": [
+            "评分策略",
+            "阈值规则",
+            "人工复核"
+          ],
+          "emotional_tone": "收敛与细化",
+          "non_visible_assumptions": [
+            "这不是改口，而是补规则",
+            "旧方向应该继续 active"
+          ]
+        },
+        "project_name": "校招简历初筛助手 Demo",
+        "tenant_type": "高校竞赛项目组",
+        "delivery_window": "2026-05-04 至 2026-05-06",
+        "primary_group_goal": "在飞书群里完成产品边界对齐、演示组织、物料准备与记忆系统验证",
+        "work_item": "细化匹配分区间解释规则",
+        "deliverables": [
+          "阈值规则",
+          "人工复核策略"
+        ],
+        "off_group_events": [
+          "评测标准要求输出不能过度武断"
+        ],
+        "message_projection_rule": "群里摘取的是补规则的话，不是重新否定旧方向。",
+        "participants": [
+          {
+            "role": "算法同学",
+            "focus": "匹配逻辑、评分与解释性"
+          },
+          {
+            "role": "产品负责人",
+            "focus": "范围、优先级、对外演示"
+          },
+          {
+            "role": "后端开发",
+            "focus": "接口、数据结构、稳定性"
+          }
+        ],
+        "home_chat_theme": "产品边界、技术实现、长期记忆与追问"
+      },
+      "expected_brief": "系统应在保留原方向的基础上补充打分规则，形成 refine。",
+      "messages": [
+        {
+          "content": "{\"text\":\"匹配分先给参考分区间，不要直接输出淘汰。\"}",
+          "create_time": "2026-05-05 10:30",
+          "deleted": false,
+          "message_id": "v2_0030",
+          "msg_type": "text",
+          "sender": {
+            "id": "ou_v2_algo",
+            "id_type": "open_id",
+            "sender_type": "user",
+            "tenant_key": "demo_tenant"
+          },
+          "updated": false
+        },
+        {
+          "content": "{\"text\":\"补充一下，低于60人工复核，高于80再给强推荐。\"}",
+          "create_time": "2026-05-05 10:31",
+          "deleted": false,
+          "message_id": "v2_0031",
+          "msg_type": "text",
+          "sender": {
+            "id": "ou_v2_pm",
+            "id_type": "open_id",
+            "sender_type": "user",
+            "tenant_key": "demo_tenant"
+          },
+          "updated": false
+        },
+        {
+          "content": "{\"text\":\"中间区间就标 needs_review。\"}",
+          "create_time": "2026-05-05 10:32",
+          "deleted": false,
+          "message_id": "v2_0032",
+          "msg_type": "text",
+          "sender": {
+            "id": "ou_v2_dev",
+            "id_type": "open_id",
+            "sender_type": "user",
+            "tenant_key": "demo_tenant"
+          },
+          "updated": false
+        }
+      ],
+      "expected": {
+        "realtime_actions": [
+          "noop",
+          "noop",
+          "noop"
+        ],
+        "write_result_count": 1
+      },
+      "expected_write_result": {
+        "expected_memory_cards": [
+          {
+            "expected_keywords": [
+              "参考分区间",
+              "人工复核",
+              "needs_review"
+            ]
+          }
+        ],
+        "expected_relations": [
+          {
+            "relation_type": "refines",
+            "new_expected_keywords": [
+              "低于60",
+              "高于80",
+              "needs_review"
+            ]
+          }
+        ]
+      },
+      "chat_id": "oc_proj_core"
+    },
+    {
+      "batch_id": "batch_005_supersede_scope",
+      "scenario": "新决策覆盖旧边界，触发 supersede",
+      "tags": [
+        "supersede",
+        "scope"
+      ],
+      "fetch_time": "2026-05-05 10:40",
+      "iceberg_context": {
+        "scene": "项目边界在复盘后被重新定义，旧的群聊限定方案被替换。",
+        "hidden_tasks": [
+          "把原先群聊限定改为企业级共享方向",
+          "识别这是覆盖而不是补充",
+          "保证版本链可追溯"
+        ],
+        "hidden_state": {
+          "topic_stack": [
+            "产品边界",
+            "版本更新",
+            "覆盖旧方案"
+          ],
+          "emotional_tone": "明确改向",
+          "non_visible_assumptions": [
+            "旧方案不再适合作为当前生效版本",
+            "应保留历史链"
+          ]
+        },
+        "project_name": "校招简历初筛助手 Demo",
+        "tenant_type": "高校竞赛项目组",
+        "delivery_window": "2026-05-04 至 2026-05-06",
+        "primary_group_goal": "在飞书群里完成产品边界对齐、演示组织、物料准备与记忆系统验证",
+        "work_item": "重设产品边界是否进入企业级共享",
+        "deliverables": [
+          "新边界决策",
+          "旧版本作废信号"
+        ],
+        "off_group_events": [
+          "导师在群外建议方案可以更激进，支持更大故事线"
+        ],
+        "message_projection_rule": "群里会明确出现改口和旧方案作废的句子。",
+        "participants": [
+          {
+            "role": "产品负责人",
+            "focus": "范围、优先级、对外演示"
+          },
+          {
+            "role": "后端开发",
+            "focus": "接口、数据结构、稳定性"
+          }
+        ],
+        "home_chat_theme": "产品边界、技术实现、长期记忆与追问"
+      },
+      "expected_brief": "系统应把企业级共享作为新决策，覆盖旧的群聊限定方案。",
+      "messages": [
+        {
+          "content": "{\"text\":\"现在改口：还是要做企业级共享，不只群聊。\"}",
+          "create_time": "2026-05-05 10:40",
+          "deleted": false,
+          "message_id": "v2_0040",
+          "msg_type": "text",
+          "sender": {
+            "id": "ou_v2_pm",
+            "id_type": "open_id",
+            "sender_type": "user",
+            "tenant_key": "demo_tenant"
+          },
+          "updated": false
+        },
+        {
+          "content": "{\"text\":\"那旧的群聊限定方案就作废了。\"}",
+          "create_time": "2026-05-05 10:41",
+          "deleted": false,
+          "message_id": "v2_0041",
+          "msg_type": "text",
+          "sender": {
+            "id": "ou_v2_dev",
+            "id_type": "open_id",
+            "sender_type": "user",
+            "tenant_key": "demo_tenant"
+          },
+          "updated": false
+        }
+      ],
+      "expected": {
+        "realtime_actions": [
+          "noop",
+          "noop"
+        ],
+        "write_result_count": 1
+      },
+      "expected_write_result": {
+        "expected_relations": [
+          {
+            "relation_type": "supersedes",
+            "old_expected_keywords": [
+              "群聊内记忆",
+              "不碰企业级共享"
+            ],
+            "new_expected_keywords": [
+              "企业级共享",
+              "不只群聊"
+            ]
+          }
+        ]
+      },
+      "chat_id": "oc_proj_core"
+    },
+    {
+      "batch_id": "batch_006_conflict_deploy",
+      "scenario": "独立议题上的矛盾更新",
+      "tags": [
+        "conflict",
+        "deploy",
+        "supersede_candidate"
+      ],
+      "fetch_time": "2026-05-05 10:50",
+      "iceberg_context": {
+        "scene": "部署策略在演示和真实交付之间摇摆，最终要回到可展示又可落地的方案。",
+        "hidden_tasks": [
+          "判断本地 mock 和真实飞书的优先级",
+          "识别旧方案是否冲突",
+          "把矛盾更新落成可追溯版本链"
+        ],
+        "hidden_state": {
+          "topic_stack": [
+            "部署策略",
+            "演示约束",
+            "真实环境"
+          ],
+          "emotional_tone": "分歧后收敛",
+          "non_visible_assumptions": [
+            "demo 不能只停留在本地",
+            "离线测试仍然要保留"
+          ]
+        },
+        "project_name": "校招简历初筛助手 Demo",
+        "tenant_type": "高校竞赛项目组",
+        "delivery_window": "2026-05-04 至 2026-05-06",
+        "primary_group_goal": "在飞书群里完成产品边界对齐、演示组织、物料准备与记忆系统验证",
+        "work_item": "决定 demo 是纯本地 mock 还是接真实飞书",
+        "deliverables": [
+          "部署策略",
+          "演示链路约定"
+        ],
+        "off_group_events": [
+          "真实飞书应用已经申请好权限，理论上可用"
+        ],
+        "message_projection_rule": "群里会出现先否定再收敛的冲突链。",
+        "participants": [
+          {
+            "role": "产品负责人",
+            "focus": "范围、优先级、对外演示"
+          },
+          {
+            "role": "运维/集成",
+            "focus": "部署、真实环境、演示连通性"
+          }
+        ],
+        "home_chat_theme": "产品边界、技术实现、长期记忆与追问"
+      },
+      "expected_brief": "系统应识别部署立场变化，并把旧 mock-only 方案标记为被覆盖。",
+      "messages": [
+        {
+          "content": "{\"text\":\"部署先全部本地 mock，不接真实飞书。\"}",
+          "create_time": "2026-05-05 10:50",
+          "deleted": false,
+          "message_id": "v2_0050",
+          "msg_type": "text",
+          "sender": {
+            "id": "ou_v2_pm",
+            "id_type": "open_id",
+            "sender_type": "user",
+            "tenant_key": "demo_tenant"
+          },
+          "updated": false
+        },
+        {
+          "content": "{\"text\":\"不行，演示必须接真实飞书群。\"}",
+          "create_time": "2026-05-05 10:51",
+          "deleted": false,
+          "message_id": "v2_0051",
+          "msg_type": "text",
+          "sender": {
+            "id": "ou_v2_ops",
+            "id_type": "open_id",
+            "sender_type": "user",
+            "tenant_key": "demo_tenant"
+          },
+          "updated": false
+        },
+        {
+          "content": "{\"text\":\"那就保留真实飞书群演示，本地 mock 只做离线测试。\"}",
+          "create_time": "2026-05-05 10:52",
+          "deleted": false,
+          "message_id": "v2_0052",
+          "msg_type": "text",
+          "sender": {
+            "id": "ou_v2_pm",
+            "id_type": "open_id",
+            "sender_type": "user",
+            "tenant_key": "demo_tenant"
+          },
+          "updated": false
+        }
+      ],
+      "expected": {
+        "realtime_actions": [
+          "noop",
+          "noop",
+          "noop"
+        ],
+        "write_result_count": 1
+      },
+      "expected_write_result": {
+        "expected_memory_cards": [
+          {
+            "expected_keywords": [
+              "真实飞书群演示",
+              "本地mock只做离线测试"
+            ]
+          }
+        ]
+      },
+      "chat_id": "oc_proj_core"
+    },
+    {
+      "batch_id": "batch_007_source_query",
+      "scenario": "来源追问",
+      "tags": [
+        "query",
+        "source"
+      ],
+      "fetch_time": "2026-05-05 11:00",
+      "iceberg_context": {
+        "scene": "评测同学在回问边界决策的证据，想确认原话和出处。",
+        "hidden_tasks": [
+          "展开原始 EvidenceBlock",
+          "确认回答不只是结论而是来源",
+          "验证 source 回答链路"
+        ],
+        "hidden_state": {
+          "topic_stack": [
+            "来源追问",
+            "证据展开",
+            "记忆可追溯性"
+          ],
+          "emotional_tone": "审查式追问",
+          "non_visible_assumptions": [
+            "只有决策结论不够",
+            "必须能定位到原话"
+          ]
+        },
+        "project_name": "校招简历初筛助手 Demo",
+        "tenant_type": "高校竞赛项目组",
+        "delivery_window": "2026-05-04 至 2026-05-06",
+        "primary_group_goal": "在飞书群里完成产品边界对齐、演示组织、物料准备与记忆系统验证",
+        "work_item": "追问边界决策来源",
+        "deliverables": [
+          "原话追溯"
+        ],
+        "off_group_events": [
+          "评测同学在写报告，需要证据引用"
+        ],
+        "message_projection_rule": "群里只发一句来源追问。",
+        "participants": [
+          {
+            "role": "测试/评测",
+            "focus": "样例、可追溯性、验收"
+          }
+        ],
+        "home_chat_theme": "产品边界、技术实现、长期记忆与追问"
+      },
+      "expected_brief": "系统应对来源追问走原话展开，而不是只回决策结论。",
+      "messages": [
+        {
+          "content": "{\"text\":\"@机器人 原话在哪说的？\"}",
+          "create_time": "2026-05-05 11:00",
+          "deleted": false,
+          "message_id": "v2_0060",
+          "msg_type": "text",
+          "sender": {
+            "id": "ou_v2_qa",
+            "id_type": "open_id",
+            "sender_type": "user",
+            "tenant_key": "demo_tenant"
+          },
+          "updated": false
+        }
+      ],
+      "expected": {
+        "realtime_actions": [
+          "query"
+        ],
+        "write_result_count": 0
+      },
+      "chat_id": "oc_proj_core"
+    },
+    {
+      "batch_id": "batch_008_version_query",
+      "scenario": "版本链追问",
+      "tags": [
+        "query",
+        "version"
+      ],
+      "fetch_time": "2026-05-05 11:10",
+      "iceberg_context": {
+        "scene": "用户怀疑决策被改过，想看当前生效版本与历史链。",
+        "hidden_tasks": [
+          "确认旧版本是否被 supersede",
+          "展示最新生效版本",
+          "保留历史链"
+        ],
+        "hidden_state": {
+          "topic_stack": [
+            "版本链",
+            "历史更新",
+            "当前生效"
+          ],
+          "emotional_tone": "核对式追问",
+          "non_visible_assumptions": [
+            "最新版本不一定等于最优版本",
+            "旧版仍应可追溯"
+          ]
+        },
+        "project_name": "校招简历初筛助手 Demo",
+        "tenant_type": "高校竞赛项目组",
+        "delivery_window": "2026-05-04 至 2026-05-06",
+        "primary_group_goal": "在飞书群里完成产品边界对齐、演示组织、物料准备与记忆系统验证",
+        "work_item": "追问版本链",
+        "deliverables": [
+          "当前生效版本说明"
+        ],
+        "off_group_events": [
+          "有人准备做答辩，需要确认最新口径"
+        ],
+        "message_projection_rule": "群里只发一句版本追问。",
+        "participants": [
+          {
+            "role": "测试/评测",
+            "focus": "样例、可追溯性、验收"
+          }
+        ],
+        "home_chat_theme": "产品边界、技术实现、长期记忆与追问"
+      },
+      "expected_brief": "系统应对版本追问返回最新版本和更新链。",
+      "messages": [
+        {
+          "content": "{\"text\":\"@机器人 后来改了吗？\"}",
+          "create_time": "2026-05-05 11:10",
+          "deleted": false,
+          "message_id": "v2_0070",
+          "msg_type": "text",
+          "sender": {
+            "id": "ou_v2_qa",
+            "id_type": "open_id",
+            "sender_type": "user",
+            "tenant_key": "demo_tenant"
+          },
+          "updated": false
+        }
+      ],
+      "expected": {
+        "realtime_actions": [
+          "query"
+        ],
+        "write_result_count": 0
+      },
+      "chat_id": "oc_proj_core"
+    },
+    {
+      "batch_id": "batch_009_topic_list_query",
+      "scenario": "topic list 总览",
+      "tags": [
+        "query",
+        "topic_list"
+      ],
+      "fetch_time": "2026-05-05 11:20",
+      "iceberg_context": {
+        "scene": "产品侧想看记忆聚类效果，要求把当前主题按条列出。",
+        "hidden_tasks": [
+          "验证 TopicSummary 是否生成",
+          "查看每个主题是否覆盖到正确 memory",
+          "测试 topic_list 多条输出"
+        ],
+        "hidden_state": {
+          "topic_stack": [
+            "聚类结果",
+            "主题总览",
+            "效果检查"
+          ],
+          "emotional_tone": "检查效果",
+          "non_visible_assumptions": [
+            "单条回答看不出聚类质量",
+            "逐条列出更直观"
+          ]
+        },
+        "project_name": "校招简历初筛助手 Demo",
+        "tenant_type": "高校竞赛项目组",
+        "delivery_window": "2026-05-04 至 2026-05-06",
+        "primary_group_goal": "在飞书群里完成产品边界对齐、演示组织、物料准备与记忆系统验证",
+        "work_item": "检查 TopicSummary 聚类是否合理",
+        "deliverables": [
+          "主题总览"
+        ],
+        "off_group_events": [
+          "产品同学在群外看过单条回答，但觉得看不出聚类效果"
+        ],
+        "message_projection_rule": "群里直接要求列出所有主题。",
+        "participants": [
+          {
+            "role": "测试/评测",
+            "focus": "样例、可追溯性、验收"
+          }
+        ],
+        "home_chat_theme": "产品边界、技术实现、长期记忆与追问"
+      },
+      "expected_brief": "系统应把当前 TopicSummary 逐条列出。",
+      "messages": [
+        {
+          "content": "{\"text\":\"当前所有 TopicSummary 列一下，我想看整体效果。\"}",
+          "create_time": "2026-05-05 11:20",
+          "deleted": false,
+          "message_id": "v2_0080",
+          "msg_type": "text",
+          "sender": {
+            "id": "ou_v2_qa",
+            "id_type": "open_id",
+            "sender_type": "user",
+            "tenant_key": "demo_tenant"
+          },
+          "updated": false
+        }
+      ],
+      "expected": {
+        "realtime_actions": [
+          "topic_list"
+        ],
+        "write_result_count": 0
+      },
+      "chat_id": "oc_proj_core"
+    },
+    {
+      "batch_id": "batch_010_sparse_window_context",
+      "scenario": "时间窗口新增很少，需要前文补上下文",
+      "tags": [
+        "lookback",
+        "anti_interference",
+        "sparse_window"
+      ],
+      "fetch_time": "2026-05-05 11:30",
+      "iceberg_context": {
+        "scene": "拉取窗口里只有一句收尾，但真实含义依赖前一段对话。",
+        "hidden_tasks": [
+          "测试 lookback 是否补前文",
+          "避免稀疏窗口误判为新决策",
+          "验证补上下文是否生效"
+        ],
+        "hidden_state": {
+          "topic_stack": [
+            "lookback",
+            "窗口稀疏",
+            "上下文补足"
+          ],
+          "emotional_tone": "依赖上下文",
+          "non_visible_assumptions": [
+            "单句收尾不应单独解释",
+            "前文对语义至关重要"
+          ]
+        },
+        "project_name": "校招简历初筛助手 Demo",
+        "tenant_type": "高校竞赛项目组",
+        "delivery_window": "2026-05-04 至 2026-05-06",
+        "primary_group_goal": "在飞书群里完成产品边界对齐、演示组织、物料准备与记忆系统验证",
+        "work_item": "验证时间窗口 lookback",
+        "deliverables": [
+          "窗口补上下文能力"
+        ],
+        "off_group_events": [
+          "前两句是上一轮末尾的残留对话"
+        ],
+        "message_projection_rule": "最终只在当前窗口出现一句“那这个就定了”。",
+        "participants": [
+          {
+            "role": "运维/集成",
+            "focus": "部署、真实环境、演示连通性"
+          },
+          {
+            "role": "产品负责人",
+            "focus": "范围、优先级、对外演示"
+          }
+        ],
+        "home_chat_theme": "产品边界、技术实现、长期记忆与追问"
+      },
+      "expected_brief": "系统应补足前文上下文，不因窗口内消息少而丢失语义。",
+      "messages": [
+        {
+          "content": "{\"text\":\"昨天我们说展示时一定要接真实飞书群。\"}",
+          "create_time": "2026-05-05 11:25",
+          "deleted": false,
+          "message_id": "v2_0090",
+          "msg_type": "text",
+          "sender": {
+            "id": "ou_v2_ops",
+            "id_type": "open_id",
+            "sender_type": "user",
+            "tenant_key": "demo_tenant"
+          },
+          "updated": false
+        },
+        {
+          "content": "{\"text\":\"对，不然评委看不到真实交互。\"}",
+          "create_time": "2026-05-05 11:26",
+          "deleted": false,
+          "message_id": "v2_0091",
+          "msg_type": "text",
+          "sender": {
+            "id": "ou_v2_pm",
+            "id_type": "open_id",
+            "sender_type": "user",
+            "tenant_key": "demo_tenant"
+          },
+          "updated": false
+        },
+        {
+          "content": "{\"text\":\"那这个就定了。\"}",
+          "create_time": "2026-05-05 11:30",
+          "deleted": false,
+          "message_id": "v2_0092",
+          "msg_type": "text",
+          "sender": {
+            "id": "ou_v2_pm",
+            "id_type": "open_id",
+            "sender_type": "user",
+            "tenant_key": "demo_tenant"
+          },
+          "updated": false
+        }
+      ],
+      "expected": {
+        "realtime_actions": [
+          "noop",
+          "noop",
+          "noop"
+        ],
+        "write_result_count": 1
+      },
+      "chat_id": "oc_proj_core"
+    },
+    {
+      "batch_id": "batch_011_multi_topic_parallel",
+      "scenario": "同一批次中并行讨论两个主题",
+      "tags": [
+        "multi_topic",
+        "parallel_discussion"
+      ],
+      "fetch_time": "2026-05-05 11:40",
+      "iceberg_context": {
+        "scene": "同一轮讨论里，前端、评语、字段设计三条线并行推进。",
+        "hidden_tasks": [
+          "确保不同主题被拆开而不是糊成一团",
+          "验证多主题卡片生成",
+          "检验并行消息的分类能力"
+        ],
+        "hidden_state": {
+          "topic_stack": [
+            "前端结构",
+            "输出措辞",
+            "字段设计"
+          ],
+          "emotional_tone": "并行推进",
+          "non_visible_assumptions": [
+            "消息顺序不代表单一主题",
+            "应该能拆出多个主题簇"
+          ]
+        },
+        "project_name": "校招简历初筛助手 Demo",
+        "tenant_type": "高校竞赛项目组",
+        "delivery_window": "2026-05-04 至 2026-05-06",
+        "primary_group_goal": "在飞书群里完成产品边界对齐、演示组织、物料准备与记忆系统验证",
+        "work_item": "同步推进前端结构、评语措辞和字段抽取",
+        "deliverables": [
+          "UI 结构决策",
+          "措辞规则",
+          "字段定义"
+        ],
+        "off_group_events": [
+          "设计稿和字段表分别在群外文档里，但群里会摘重点同步"
+        ],
+        "message_projection_rule": "群里三条消息分别映射三个不同主题。",
+        "participants": [
+          {
+            "role": "设计/前端",
+            "focus": "页面结构、展示观感"
+          },
+          {
+            "role": "业务顾问",
+            "focus": "措辞风险、招聘流程合理性"
+          },
+          {
+            "role": "算法同学",
+            "focus": "匹配逻辑、评分与解释性"
+          }
+        ],
+        "home_chat_theme": "产品边界、技术实现、长期记忆与追问"
+      },
+      "expected_brief": "系统应同时沉淀前端、评语和字段三个并行主题。",
+      "messages": [
+        {
+          "content": "{\"text\":\"前端页面就保留一个输入区、一个上传区、一个结果区。\"}",
+          "create_time": "2026-05-05 11:40",
+          "deleted": false,
+          "message_id": "v2_0100",
+          "msg_type": "text",
+          "sender": {
+            "id": "ou_v2_design",
+            "id_type": "open_id",
+            "sender_type": "user",
+            "tenant_key": "demo_tenant"
+          },
+          "updated": false
+        },
+        {
+          "content": "{\"text\":\"输出措辞不要写淘汰，统一写建议人工复核。\"}",
+          "create_time": "2026-05-05 11:41",
+          "deleted": false,
+          "message_id": "v2_0101",
+          "msg_type": "text",
+          "sender": {
+            "id": "ou_v2_hr",
+            "id_type": "open_id",
+            "sender_type": "user",
+            "tenant_key": "demo_tenant"
+          },
+          "updated": false
+        },
+        {
+          "content": "{\"text\":\"解析字段先定教育、项目、实习、技能、证书。\"}",
+          "create_time": "2026-05-05 11:42",
+          "deleted": false,
+          "message_id": "v2_0102",
+          "msg_type": "text",
+          "sender": {
+            "id": "ou_v2_algo",
+            "id_type": "open_id",
+            "sender_type": "user",
+            "tenant_key": "demo_tenant"
+          },
+          "updated": false
+        }
+      ],
+      "expected": {
+        "realtime_actions": [
+          "noop",
+          "noop",
+          "noop"
+        ],
+        "write_result_count": 1
+      },
+      "expected_write_result": {
+        "expected_memory_cards": [
+          {
+            "expected_keywords": [
+              "输入区",
+              "上传区",
+              "结果区"
+            ]
+          },
+          {
+            "expected_keywords": [
+              "建议人工复核",
+              "不要写淘汰"
+            ]
+          },
+          {
+            "expected_keywords": [
+              "教育",
+              "项目",
+              "实习",
+              "技能",
+              "证书"
+            ]
+          }
+        ]
+      },
+      "chat_id": "oc_proj_core"
+    },
+    {
+      "batch_id": "batch_012_summary_query",
+      "scenario": "整体总结追问",
+      "tags": [
+        "query",
+        "summary"
+      ],
+      "fetch_time": "2026-05-05 11:50",
+      "iceberg_context": {
+        "scene": "评测端想看当前整个项目方向的高层摘要。",
+        "hidden_tasks": [
+          "返回整体方案摘要",
+          "不要掉到单条 memory 细节里",
+          "验证 summary 路由"
+        ],
+        "hidden_state": {
+          "topic_stack": [
+            "整体摘要",
+            "高层方案",
+            "评测汇总"
+          ],
+          "emotional_tone": "总结式查询",
+          "non_visible_assumptions": [
+            "用户要的是概览",
+            "不是某条来源"
+          ]
+        },
+        "project_name": "校招简历初筛助手 Demo",
+        "tenant_type": "高校竞赛项目组",
+        "delivery_window": "2026-05-04 至 2026-05-06",
+        "primary_group_goal": "在飞书群里完成产品边界对齐、演示组织、物料准备与记忆系统验证",
+        "work_item": "获取整体摘要用于答辩说明",
+        "deliverables": [
+          "当前总体方案摘要"
+        ],
+        "off_group_events": [
+          "答辩 PPT 正在整理，需要一句整体总结"
+        ],
+        "message_projection_rule": "群里只出现一句高层追问。",
+        "participants": [
+          {
+            "role": "测试/评测",
+            "focus": "样例、可追溯性、验收"
+          }
+        ],
+        "home_chat_theme": "产品边界、技术实现、长期记忆与追问"
+      },
+      "expected_brief": "系统应返回群聊整体方案摘要。",
+      "messages": [
+        {
+          "content": "{\"text\":\"@机器人 当前整体方案是什么？\"}",
+          "create_time": "2026-05-05 11:50",
+          "deleted": false,
+          "message_id": "v2_0110",
+          "msg_type": "text",
+          "sender": {
+            "id": "ou_v2_qa",
+            "id_type": "open_id",
+            "sender_type": "user",
+            "tenant_key": "demo_tenant"
+          },
+          "updated": false
+        }
+      ],
+      "expected": {
+        "realtime_actions": [
+          "query"
+        ],
+        "write_result_count": 0
+      },
+      "chat_id": "oc_proj_core"
+    },
+    {
+      "batch_id": "batch_013_long_term_update",
+      "scenario": "长线更新：展示策略从纯离线切换为真实群优先",
+      "tags": [
+        "long_term_update",
+        "topic_summary",
+        "supersede"
+      ],
+      "fetch_time": "2026-05-05 12:00",
+      "iceberg_context": {
+        "scene": "跑了一轮后，团队决定改变 demo 策略并同步到长线主题。",
+        "hidden_tasks": [
+          "把新的展示策略沉淀成新卡",
+          "让旧策略进入版本链",
+          "验证长期更新是否保留历史"
+        ],
+        "hidden_state": {
+          "topic_stack": [
+            "展示策略",
+            "长线更新",
+            "版本链"
+          ],
+          "emotional_tone": "策略调整",
+          "non_visible_assumptions": [
+            "方向变化需要版本链保留",
+            "长线摘要应同步更新"
+          ]
+        },
+        "project_name": "校招简历初筛助手 Demo",
+        "tenant_type": "高校竞赛项目组",
+        "delivery_window": "2026-05-04 至 2026-05-06",
+        "primary_group_goal": "在飞书群里完成产品边界对齐、演示组织、物料准备与记忆系统验证",
+        "work_item": "长线更新展示策略",
+        "deliverables": [
+          "新展示策略",
+          "历史链保留"
+        ],
+        "off_group_events": [
+          "和老师沟通后决定强调真实飞书演示"
+        ],
+        "message_projection_rule": "群里会明确声明“旧方案作废”。",
+        "participants": [
+          {
+            "role": "产品负责人",
+            "focus": "范围、优先级、对外演示"
+          },
+          {
+            "role": "运维/集成",
+            "focus": "部署、真实环境、演示连通性"
+          }
+        ],
+        "home_chat_theme": "产品边界、技术实现、长期记忆与追问"
+      },
+      "expected_brief": "系统应在展示策略变更后更新长线主题，并保留旧版本链。",
+      "messages": [
+        {
+          "content": "{\"text\":\"展示策略改一下：真实飞书群演示优先，本地 mock 只做离线测试。\"}",
+          "create_time": "2026-05-05 12:00",
+          "deleted": false,
+          "message_id": "v2_0120",
+          "msg_type": "text",
+          "sender": {
+            "id": "ou_v2_pm",
+            "id_type": "open_id",
+            "sender_type": "user",
+            "tenant_key": "demo_tenant"
+          },
+          "updated": false
+        },
+        {
+          "content": "{\"text\":\"那旧的纯本地 demo 方案作废。\"}",
+          "create_time": "2026-05-05 12:01",
+          "deleted": false,
+          "message_id": "v2_0121",
+          "msg_type": "text",
+          "sender": {
+            "id": "ou_v2_ops",
+            "id_type": "open_id",
+            "sender_type": "user",
+            "tenant_key": "demo_tenant"
+          },
+          "updated": false
+        }
+      ],
+      "expected": {
+        "realtime_actions": [
+          "noop",
+          "noop"
+        ],
+        "write_result_count": 1
+      },
+      "expected_write_result": {
+        "expected_relations": [
+          {
+            "relation_type": "supersedes",
+            "old_expected_keywords": [
+              "纯本地 demo",
+              "离线测试"
+            ],
+            "new_expected_keywords": [
+              "真实飞书群演示优先",
+              "本地 mock"
+            ]
+          }
+        ]
+      },
+      "chat_id": "oc_proj_core"
+    },
+    {
+      "batch_id": "batch_014_long_term_recall",
+      "scenario": "长线召回：回问最早边界",
+      "tags": [
+        "long_term_recall",
+        "source",
+        "version"
+      ],
+      "fetch_time": "2026-05-05 12:10",
+      "iceberg_context": {
+        "scene": "距离最初边界决策已经过了一段时间，用户再次追问原始原因。",
+        "hidden_tasks": [
+          "验证长线 recall",
+          "来源和版本链都要能命中",
+          "确认不是只记得最近一轮"
+        ],
+        "hidden_state": {
+          "topic_stack": [
+            "长线召回",
+            "边界决策",
+            "证据回溯"
+          ],
+          "emotional_tone": "复盘式查询",
+          "non_visible_assumptions": [
+            "最初原因仍然重要",
+            "历史不应被最近讨论覆盖掉"
+          ]
+        },
+        "project_name": "校招简历初筛助手 Demo",
+        "tenant_type": "高校竞赛项目组",
+        "delivery_window": "2026-05-04 至 2026-05-06",
+        "primary_group_goal": "在飞书群里完成产品边界对齐、演示组织、物料准备与记忆系统验证",
+        "work_item": "跨时段追问最初边界决策",
+        "deliverables": [
+          "长线召回结果",
+          "原话证据"
+        ],
+        "off_group_events": [
+          "答辩前复盘需要核对最初边界动机"
+        ],
+        "message_projection_rule": "群里连续发两句追问，先问结论再问依据。",
+        "participants": [
+          {
+            "role": "测试/评测",
+            "focus": "样例、可追溯性、验收"
+          }
+        ],
+        "home_chat_theme": "产品边界、技术实现、长期记忆与追问"
+      },
+      "expected_brief": "系统应在长间隔后仍召回最早的边界决策。",
+      "messages": [
+        {
+          "content": "{\"text\":\"@机器人 当初为什么不做完整 ATS？\"}",
+          "create_time": "2026-05-05 12:10",
+          "deleted": false,
+          "message_id": "v2_0130",
+          "msg_type": "text",
+          "sender": {
+            "id": "ou_v2_qa",
+            "id_type": "open_id",
+            "sender_type": "user",
+            "tenant_key": "demo_tenant"
+          },
+          "updated": false
+        },
+        {
+          "content": "{\"text\":\"@机器人 原话和依据是什么？\"}",
+          "create_time": "2026-05-05 12:11",
+          "deleted": false,
+          "message_id": "v2_0131",
+          "msg_type": "text",
+          "sender": {
+            "id": "ou_v2_qa",
+            "id_type": "open_id",
+            "sender_type": "user",
+            "tenant_key": "demo_tenant"
+          },
+          "updated": false
+        }
+      ],
+      "expected": {
+        "realtime_actions": [
+          "query",
+          "query"
+        ],
+        "write_result_count": 0
+      },
+      "chat_id": "oc_proj_core"
+    },
+    {
+      "batch_id": "batch_015_parallel_classification_stress",
+      "scenario": "多线并行分类压力测试",
+      "tags": [
+        "parallel",
+        "classification",
+        "schedule",
+        "task",
+        "query",
+        "noise"
+      ],
+      "fetch_time": "2026-05-05 12:20",
+      "iceberg_context": {
+        "scene": "同一批消息里同时存在查询、日程、待办、总览和闲聊。",
+        "hidden_tasks": [
+          "考察实时侧分类是否正确",
+          "考察能否并行处理多种意图",
+          "考察噪声是否会误触发"
+        ],
+        "hidden_state": {
+          "topic_stack": [
+            "实时分类",
+            "并行任务",
+            "噪声过滤"
+          ],
+          "emotional_tone": "高密度交互",
+          "non_visible_assumptions": [
+            "一个 batch 里不止一个意图",
+            "系统需要稳定区分不同请求"
+          ]
+        },
+        "project_name": "校招简历初筛助手 Demo",
+        "tenant_type": "高校竞赛项目组",
+        "delivery_window": "2026-05-04 至 2026-05-06",
+        "primary_group_goal": "在飞书群里完成产品边界对齐、演示组织、物料准备与记忆系统验证",
+        "work_item": "高密度意图并发分类测试",
+        "deliverables": [
+          "query/schedule/task/topic/noise 分类结果"
+        ],
+        "off_group_events": [
+          "这是一次人工设计的压力回放，但消息形式仍模拟真实群聊"
+        ],
+        "message_projection_rule": "多种意图在极短时间内混发。",
+        "participants": [
+          {
+            "role": "测试/评测",
+            "focus": "样例、可追溯性、验收"
+          },
+          {
+            "role": "产品负责人",
+            "focus": "范围、优先级、对外演示"
+          },
+          {
+            "role": "后端开发",
+            "focus": "接口、数据结构、稳定性"
+          }
+        ],
+        "home_chat_theme": "实时意图分类压力测试"
+      },
+      "expected_brief": "系统应在同一批次里正确分类 query、schedule、task、topic_list 和噪声。",
+      "messages": [
+        {
+          "content": "{\"text\":\"@机器人 之前怎么定的？\"}",
+          "create_time": "2026-05-05 12:20",
+          "deleted": false,
+          "message_id": "v2_0140",
+          "msg_type": "text",
+          "sender": {
+            "id": "ou_v2_qa",
+            "id_type": "open_id",
+            "sender_type": "user",
+            "tenant_key": "demo_tenant"
+          },
+          "updated": false
+        },
+        {
+          "content": "{\"text\":\"明天下午三点开评审会。\"}",
+          "create_time": "2026-05-05 12:20",
+          "deleted": false,
+          "message_id": "v2_0141",
+          "msg_type": "text",
+          "sender": {
+            "id": "ou_v2_pm",
+            "id_type": "open_id",
+            "sender_type": "user",
+            "tenant_key": "demo_tenant"
+          },
+          "updated": false
+        },
+        {
+          "content": "{\"text\":\"小王负责补测试样例，今天之内提交。\"}",
+          "create_time": "2026-05-05 12:21",
+          "deleted": false,
+          "message_id": "v2_0142",
+          "msg_type": "text",
+          "sender": {
+            "id": "ou_v2_pm",
+            "id_type": "open_id",
+            "sender_type": "user",
+            "tenant_key": "demo_tenant"
+          },
+          "updated": false
+        },
+        {
+          "content": "{\"text\":\"当前所有 TopicSummary 列一下。\"}",
+          "create_time": "2026-05-05 12:21",
+          "deleted": false,
+          "message_id": "v2_0143",
+          "msg_type": "text",
+          "sender": {
+            "id": "ou_v2_qa",
+            "id_type": "open_id",
+            "sender_type": "user",
+            "tenant_key": "demo_tenant"
+          },
+          "updated": false
+        },
+        {
+          "content": "{\"text\":\"收到。\"}",
+          "create_time": "2026-05-05 12:21",
+          "deleted": false,
+          "message_id": "v2_0144",
+          "msg_type": "text",
+          "sender": {
+            "id": "ou_v2_dev",
+            "id_type": "open_id",
+            "sender_type": "user",
+            "tenant_key": "demo_tenant"
+          },
+          "updated": false
+        }
+      ],
+      "expected": {
+        "realtime_actions": [
+          "query",
+          "schedule",
+          "task",
+          "topic_list",
+          "noop"
+        ],
+        "write_result_count": 1
+      },
+      "chat_id": "oc_proj_stress"
+    },
+    {
+      "batch_id": "batch_016_product_launch_ops",
+      "scenario": "产品发布协调：公告、客服口径与灰度时间",
+      "tags": [
+        "product_launch",
+        "ops",
+        "near_miss",
+        "anti_interference",
+        "customer_success",
+        "multi_topic"
+      ],
+      "fetch_time": "2026-05-05 12:40",
+      "construction_context": {
+        "timeline_base": {
+          "anchor_time": "2026-05-05 12:40",
+          "window_minutes": 10,
+          "relative_position": "pre_release_alignment",
+          "depends_on_batches": []
+        },
+        "thread_slots": [
+          {
+            "slot": "A",
+            "topic": "发布窗口是策略时间，不是会议日程",
+            "message_ids": [
+              "v2_0150"
+            ]
+          },
+          {
+            "slot": "B",
+            "topic": "公告措辞边界",
+            "message_ids": [
+              "v2_0151"
+            ]
+          },
+          {
+            "slot": "C",
+            "topic": "客服答疑口径",
+            "message_ids": [
+              "v2_0152"
+            ]
+          }
+        ],
+        "stress_target": [
+          "时间表达不应一律走 schedule",
+          "发布口径与客服口径应写入长期记忆"
+        ]
+      },
+      "iceberg_context": {
+        "project_name": "校园版 AI 初筛助手 Beta 发布",
+        "tenant_type": "校园创业团队",
+        "delivery_window": "2026-05-05 晚间",
+        "primary_group_goal": "完成 Beta 发布公告、客服答疑口径和灰度开放时间对齐",
+        "work_item": "发布前运营协调",
+        "deliverables": [
+          "公告口径",
+          "客服 FAQ 口径",
+          "灰度开放时间"
+        ],
+        "off_group_events": [
+          "运营同学已在群外拟好公告草稿，客服整理了常见问题"
+        ],
+        "message_projection_rule": "群里只同步发布窗口、公告措辞和答疑边界，不贴整份文档。",
+        "participants": [
+          {
+            "role": "产品负责人",
+            "focus": "范围、优先级、对外演示"
+          },
+          {
+            "role": "运营同学",
+            "focus": "公告发布与灰度节奏"
+          },
+          {
+            "role": "客服同学",
+            "focus": "答疑口径与风险措辞"
+          }
+        ],
+        "hidden_tasks": [
+          "确定晚上八点灰度开放",
+          "公告中避免承诺“完全替代人工”",
+          "统一客服回复口径"
+        ],
+        "hidden_state": {
+          "topic_stack": [
+            "发布窗口",
+            "公告措辞",
+            "客服FAQ"
+          ],
+          "emotional_tone": "临发布前协调",
+          "non_visible_assumptions": [
+            "一旦发布就会有老师和同学来试用",
+            "措辞不能过度承诺"
+          ]
+        },
+        "scene": "Beta 发布前，产品、运营和客服在群里统一对外发布与答疑口径。",
+        "home_chat_theme": "产品发布与客服口径统一"
+      },
+      "expected_brief": "系统应把发布时间表达识别为发布策略，而不是日程，同时沉淀公告和客服口径。",
+      "messages": [
+        {
+          "content": "{\"text\":\"晚上八点先灰度开放给校内老师试用，别全量放开。\"}",
+          "create_time": "2026-05-05 12:40",
+          "deleted": false,
+          "message_id": "v2_0150",
+          "msg_type": "text",
+          "sender": {
+            "id": "ou_v2_ops2",
+            "id_type": "open_id",
+            "sender_type": "user",
+            "tenant_key": "demo_tenant"
+          },
+          "updated": false
+        },
+        {
+          "content": "{\"text\":\"公告里不要写完全替代人工筛选，统一说辅助初筛。\"}",
+          "create_time": "2026-05-05 12:41",
+          "deleted": false,
+          "message_id": "v2_0151",
+          "msg_type": "text",
+          "sender": {
+            "id": "ou_v2_pm2",
+            "id_type": "open_id",
+            "sender_type": "user",
+            "tenant_key": "demo_tenant"
+          },
+          "updated": false
+        },
+        {
+          "content": "{\"text\":\"客服回复就按这个口径：结果仅供参考，最终以老师人工判断为准。\"}",
+          "create_time": "2026-05-05 12:42",
+          "deleted": false,
+          "message_id": "v2_0152",
+          "msg_type": "text",
+          "sender": {
+            "id": "ou_v2_cs",
+            "id_type": "open_id",
+            "sender_type": "user",
+            "tenant_key": "demo_tenant"
+          },
+          "updated": false
+        }
+      ],
+      "expected": {
+        "realtime_actions": [
+          "noop",
+          "noop",
+          "noop"
+        ],
+        "write_result_count": 1
+      },
+      "expected_write_result": {
+        "expected_memory_cards": [
+          {
+            "expected_keywords": [
+              "晚上八点",
+              "灰度开放"
+            ]
+          },
+          {
+            "expected_keywords": [
+              "辅助初筛",
+              "不要写完全替代人工"
+            ]
+          },
+          {
+            "expected_keywords": [
+              "仅供参考",
+              "人工判断为准"
+            ]
+          }
+        ]
+      },
+      "chat_id": "oc_launch_ops"
+    },
+    {
+      "batch_id": "batch_017_meeting_org_external",
+      "scenario": "跨部门会议组织：嘉宾、主持、会前材料与直播备份",
+      "tags": [
+        "meeting_org",
+        "non_engineering",
+        "task",
+        "schedule",
+        "near_miss",
+        "anti_interference"
+      ],
+      "fetch_time": "2026-05-05 12:50",
+      "construction_context": {
+        "timeline_base": {
+          "anchor_time": "2026-05-05 12:50",
+          "window_minutes": 10,
+          "relative_position": "event_ops_execution",
+          "depends_on_batches": []
+        },
+        "thread_slots": [
+          {
+            "slot": "A",
+            "topic": "会议时间",
+            "message_ids": [
+              "v2_0160"
+            ]
+          },
+          {
+            "slot": "B",
+            "topic": "主持与物料待办",
+            "message_ids": [
+              "v2_0161"
+            ]
+          },
+          {
+            "slot": "C",
+            "topic": "直播失败风险预案",
+            "message_ids": [
+              "v2_0162"
+            ]
+          }
+        ],
+        "stress_target": [
+          "同一批次内区分 schedule、task 和 risk policy",
+          "不要把备用链接预案误判成 schedule"
+        ]
+      },
+      "iceberg_context": {
+        "project_name": "校内路演开放日",
+        "tenant_type": "学生团队 + 校内嘉宾",
+        "delivery_window": "2026-05-06 下午",
+        "primary_group_goal": "组织一场对外路演说明会",
+        "work_item": "会务组织与材料准备",
+        "deliverables": [
+          "会议时间",
+          "主持安排",
+          "嘉宾确认",
+          "会前材料"
+        ],
+        "off_group_events": [
+          "老师已口头确认到场，但书面海报还没发"
+        ],
+        "message_projection_rule": "群里同步会务动作、时间和责任分配。",
+        "participants": [
+          {
+            "role": "产品负责人",
+            "focus": "范围、优先级、对外演示"
+          },
+          {
+            "role": "会务同学",
+            "focus": "时间与主持"
+          },
+          {
+            "role": "宣传同学",
+            "focus": "海报与物料"
+          }
+        ],
+        "hidden_tasks": [
+          "确认明天下午三点说明会",
+          "指定主持人",
+          "会前两点前发海报和二维码"
+        ],
+        "hidden_state": {
+          "topic_stack": [
+            "会议时间",
+            "主持安排",
+            "物料提交"
+          ],
+          "emotional_tone": "组织协调",
+          "non_visible_assumptions": [
+            "会前可能有老师临时改时间",
+            "直播失败要有备份链接"
+          ]
+        },
+        "scene": "对外路演前一天，会务和宣传在群里确认时间、主持与会前物料。",
+        "home_chat_theme": "会务组织与物料协同"
+      },
+      "expected_brief": "系统应区分会议安排、会务待办和直播风险预案，不把备用链接误判成日程。",
+      "messages": [
+        {
+          "content": "{\"text\":\"明天下午三点开路演说明会，先定这个时间。\"}",
+          "create_time": "2026-05-05 12:50",
+          "deleted": false,
+          "message_id": "v2_0160",
+          "msg_type": "text",
+          "sender": {
+            "id": "ou_v2_org",
+            "id_type": "open_id",
+            "sender_type": "user",
+            "tenant_key": "demo_tenant"
+          },
+          "updated": false
+        },
+        {
+          "content": "{\"text\":\"小林负责主持串场，明天两点前把海报和签到二维码发群里。\"}",
+          "create_time": "2026-05-05 12:51",
+          "deleted": false,
+          "message_id": "v2_0161",
+          "msg_type": "text",
+          "sender": {
+            "id": "ou_v2_pm3",
+            "id_type": "open_id",
+            "sender_type": "user",
+            "tenant_key": "demo_tenant"
+          },
+          "updated": false
+        },
+        {
+          "content": "{\"text\":\"如果直播挂了，就切备用腾讯会议链接。\"}",
+          "create_time": "2026-05-05 12:52",
+          "deleted": false,
+          "message_id": "v2_0162",
+          "msg_type": "text",
+          "sender": {
+            "id": "ou_v2_org",
+            "id_type": "open_id",
+            "sender_type": "user",
+            "tenant_key": "demo_tenant"
+          },
+          "updated": false
+        }
+      ],
+      "expected": {
+        "realtime_actions": [
+          "schedule",
+          "task",
+          "noop"
+        ],
+        "write_result_count": 1
+      },
+      "expected_write_result": {
+        "should_ignore_message_ids": [
+          "v2_0160",
+          "v2_0161"
+        ]
+      },
+      "chat_id": "oc_event_org"
+    },
+    {
+      "batch_id": "batch_018_customer_policy_boundary",
+      "scenario": "客服口径与风险边界，不应被误判成 schedule",
+      "tags": [
+        "customer_success",
+        "policy",
+        "risk",
+        "non_engineering"
+      ],
+      "fetch_time": "2026-05-05 13:00",
+      "iceberg_context": {
+        "project_name": "校园版 AI 初筛助手 Beta 发布",
+        "tenant_type": "校园创业团队",
+        "delivery_window": "2026-05-05 晚间",
+        "primary_group_goal": "统一客服在异常情况下的应答和风险升级规则",
+        "work_item": "梳理服务异常和人工接管口径",
+        "deliverables": [
+          "异常应答口径",
+          "升级规则",
+          "风险说明边界"
+        ],
+        "off_group_events": [
+          "灰度期间预计会遇到卡顿和结果争议"
+        ],
+        "message_projection_rule": "群里只同步稳定执行的客服规则，不讨论技术细节。",
+        "participants": [
+          {
+            "role": "客服同学",
+            "focus": "异常解释与安抚"
+          },
+          {
+            "role": "产品负责人",
+            "focus": "风险边界和升级策略"
+          },
+          {
+            "role": "运营同学",
+            "focus": "对外措辞一致性"
+          }
+        ],
+        "hidden_tasks": [
+          "结果异常时不允许客服自行承诺修复时间",
+          "争议案例必须升级到老师人工复核",
+          "服务故障时统一引导用户稍后重试并登记"
+        ],
+        "hidden_state": {
+          "topic_stack": [
+            "客服口径",
+            "升级规则",
+            "风险边界"
+          ],
+          "emotional_tone": "上线前谨慎收口",
+          "non_visible_assumptions": [
+            "首批试用老师对结果稳定性很敏感",
+            "客服越界承诺会放大风险"
+          ]
+        },
+        "scene": "客服、产品和运营在群里统一风险应答和人工升级规则。",
+        "home_chat_theme": "产品发布与客服口径统一"
+      },
+      "expected_brief": "系统应沉淀客服异常应答和升级规则，而不是把它们误判成日程。",
+      "messages": [
+        {
+          "content": "{\"text\":\"如果老师质疑结果不准，客服统一回复仅供参考，并升级到人工复核。\"}",
+          "create_time": "2026-05-05 13:00",
+          "deleted": false,
+          "message_id": "v2_0170",
+          "msg_type": "text",
+          "sender": {
+            "id": "ou_v2_cs2",
+            "id_type": "open_id",
+            "sender_type": "user",
+            "tenant_key": "demo_tenant"
+          },
+          "updated": false
+        },
+        {
+          "content": "{\"text\":\"服务卡住时不要承诺几点修好，只说已登记并建议稍后重试。\"}",
+          "create_time": "2026-05-05 13:01",
+          "deleted": false,
+          "message_id": "v2_0171",
+          "msg_type": "text",
+          "sender": {
+            "id": "ou_v2_pm2",
+            "id_type": "open_id",
+            "sender_type": "user",
+            "tenant_key": "demo_tenant"
+          },
+          "updated": false
+        }
+      ],
+      "expected": {
+        "realtime_actions": [
+          "noop",
+          "noop"
+        ],
+        "write_result_count": 1
+      },
+      "expected_write_result": {
+        "expected_memory_cards": [
+          {
+            "expected_keywords": [
+              "仅供参考",
+              "人工复核",
+              "不要承诺",
+              "稍后重试"
+            ]
+          }
+        ]
+      },
+      "chat_id": "oc_launch_ops"
+    },
+    {
+      "batch_id": "batch_019_cross_group_drift_guard",
+      "scenario": "跨群相似表述不应污染主线群记忆",
+      "tags": [
+        "multi_group",
+        "topic_boundary",
+        "anti_interference"
+      ],
+      "fetch_time": "2026-05-05 13:10",
+      "iceberg_context": {
+        "project_name": "校园版 AI 初筛助手 Beta 发布",
+        "tenant_type": "校园创业团队",
+        "delivery_window": "2026-05-05 晚间",
+        "primary_group_goal": "验证不同群的相似措辞不会互相漂移",
+        "work_item": "在压测群中混入与主线相似但用途不同的表达",
+        "deliverables": [
+          "群边界验证"
+        ],
+        "off_group_events": [
+          "压测群常用和主线类似的措辞做分类测试"
+        ],
+        "message_projection_rule": "只保留压测群会出现的混合触发句。",
+        "participants": [
+          {
+            "role": "测试/评测",
+            "focus": "隔离性和误召回"
+          },
+          {
+            "role": "后端开发",
+            "focus": "实时分类"
+          }
+        ],
+        "hidden_tasks": [
+          "验证压测群不会反向污染核心推进群",
+          "验证 schedule/task/noise 仍能被分类"
+        ],
+        "hidden_state": {
+          "topic_stack": [
+            "群边界",
+            "分类压力",
+            "误召回隔离"
+          ],
+          "emotional_tone": "刻意施压",
+          "non_visible_assumptions": [
+            "相似词汇不等于同一群的长期记忆"
+          ]
+        },
+        "scene": "压测群里故意使用和主线群相似的表达，验证不会跨群漂移。",
+        "home_chat_theme": "实时分类压力测试"
+      },
+      "expected_brief": "系统应把这批消息局限在压测群，不影响核心推进群的长期记忆语义。",
+      "messages": [
+        {
+          "content": "{\"text\":\"这里也提一句企业级共享，但只是为了测误触发，不是真的改需求。\"}",
+          "create_time": "2026-05-05 13:10",
+          "deleted": false,
+          "message_id": "v2_0180",
+          "msg_type": "text",
+          "sender": {
+            "id": "ou_v2_qa2",
+            "id_type": "open_id",
+            "sender_type": "user",
+            "tenant_key": "demo_tenant"
+          },
+          "updated": false
+        },
+        {
+          "content": "{\"text\":\"收到，这句别写进主线结论。\"}",
+          "create_time": "2026-05-05 13:11",
+          "deleted": false,
+          "message_id": "v2_0181",
+          "msg_type": "text",
+          "sender": {
+            "id": "ou_v2_dev2",
+            "id_type": "open_id",
+            "sender_type": "user",
+            "tenant_key": "demo_tenant"
+          },
+          "updated": false
+        }
+      ],
+      "expected": {
+        "realtime_actions": [
+          "noop",
+          "noop"
+        ],
+        "write_result_count": 1
+      },
+      "expected_write_result": {
+        "optional_progress_cards": [
+          {
+            "expected_keywords": [
+              "误触发",
+              "不是真的改需求"
+            ],
+            "reason": "压测群可能保留一条测试说明，也可以完全忽略。"
+          }
+        ]
+      },
+      "chat_id": "oc_proj_stress"
+    },
+    {
+      "batch_id": "batch_020_roadshow_materials",
+      "scenario": "对外答辩准备：讲稿边界、演示节奏和禁说项",
+      "tags": [
+        "roadshow",
+        "non_engineering",
+        "multi_topic"
+      ],
+      "fetch_time": "2026-05-05 13:20",
+      "iceberg_context": {
+        "project_name": "校内路演开放日",
+        "tenant_type": "学生团队 + 校内嘉宾",
+        "delivery_window": "2026-05-06 下午",
+        "primary_group_goal": "统一答辩讲稿的主线、演示节奏和禁说项",
+        "work_item": "答辩前最终收口",
+        "deliverables": [
+          "主讲结构",
+          "演示节奏",
+          "风险禁说项"
+        ],
+        "off_group_events": [
+          "老师提醒不要把实验效果说成正式生产效果"
+        ],
+        "message_projection_rule": "群里只同步最终会口头表达的答辩边界和节奏。",
+        "participants": [
+          {
+            "role": "产品负责人",
+            "focus": "讲稿结构和价值表达"
+          },
+          {
+            "role": "宣传同学",
+            "focus": "对外措辞"
+          },
+          {
+            "role": "会务同学",
+            "focus": "演示节奏"
+          }
+        ],
+        "hidden_tasks": [
+          "先讲群聊痛点，再演示追问和版本链",
+          "不要说已经全面生产可用",
+          "把飞书实机演示控制在三分钟内"
+        ],
+        "hidden_state": {
+          "topic_stack": [
+            "讲稿结构",
+            "演示节奏",
+            "禁说项"
+          ],
+          "emotional_tone": "临门收口",
+          "non_visible_assumptions": [
+            "评委更看重问题定义和方法可靠性"
+          ]
+        },
+        "scene": "答辩前，产品、宣传和会务在群里统一讲稿和演示边界。",
+        "home_chat_theme": "会务组织与物料协同"
+      },
+      "expected_brief": "系统应沉淀讲稿主线、演示节奏和禁说项三类长期信息。",
+      "messages": [
+        {
+          "content": "{\"text\":\"答辩先讲群聊里反复改口的痛点，再演示来源追问和版本链。\"}",
+          "create_time": "2026-05-05 13:20",
+          "deleted": false,
+          "message_id": "v2_0190",
+          "msg_type": "text",
+          "sender": {
+            "id": "ou_v2_pm4",
+            "id_type": "open_id",
+            "sender_type": "user",
+            "tenant_key": "demo_tenant"
+          },
+          "updated": false
+        },
+        {
+          "content": "{\"text\":\"对外不要说已经全面生产可用，统一说是生产级 benchmark 驱动验证。\"}",
+          "create_time": "2026-05-05 13:21",
+          "deleted": false,
+          "message_id": "v2_0191",
+          "msg_type": "text",
+          "sender": {
+            "id": "ou_v2_pr",
+            "id_type": "open_id",
+            "sender_type": "user",
+            "tenant_key": "demo_tenant"
+          },
+          "updated": false
+        },
+        {
+          "content": "{\"text\":\"飞书实机演示控制在三分钟内，超时就只保留实时追问。\"}",
+          "create_time": "2026-05-05 13:22",
+          "deleted": false,
+          "message_id": "v2_0192",
+          "msg_type": "text",
+          "sender": {
+            "id": "ou_v2_org2",
+            "id_type": "open_id",
+            "sender_type": "user",
+            "tenant_key": "demo_tenant"
+          },
+          "updated": false
+        }
+      ],
+      "expected": {
+        "realtime_actions": [
+          "noop",
+          "noop",
+          "noop"
+        ],
+        "write_result_count": 1
+      },
+      "expected_write_result": {
+        "expected_memory_cards": [
+          {
+            "expected_keywords": [
+              "来源追问",
+              "版本链"
+            ]
+          },
+          {
+            "expected_keywords": [
+              "不要说已经全面生产可用",
+              "benchmark 驱动验证"
+            ]
+          },
+          {
+            "expected_keywords": [
+              "三分钟内",
+              "只保留实时追问"
+            ]
+          }
+        ]
+      },
+      "chat_id": "oc_event_org"
+    },
+    {
+      "batch_id": "batch_021_query_guard_scope_presentation",
+      "scenario": "非 @ 复述请求 + 对外口径收口，不应误触 query 或 supersede",
+      "tags": [
+        "anti_interference",
+        "query",
+        "near_miss",
+        "presentation_boundary",
+        "multi_topic"
+      ],
+      "fetch_time": "2026-05-05 13:30",
+      "construction_context": {
+        "timeline_base": {
+          "anchor_time": "2026-05-05 13:30",
+          "window_minutes": 10,
+          "relative_position": "post_scope_change_pre_demo",
+          "depends_on_batches": [
+            "batch_005_supersede_scope",
+            "batch_013_long_term_update"
+          ]
+        },
+        "thread_slots": [
+          {
+            "slot": "A",
+            "topic": "人对人复述请求，不是机器人 query",
+            "message_ids": [
+              "v2_0193",
+              "v2_0194"
+            ]
+          },
+          {
+            "slot": "B",
+            "topic": "答辩表述边界",
+            "message_ids": [
+              "v2_0195"
+            ]
+          },
+          {
+            "slot": "C",
+            "topic": "真正的机器人查询",
+            "message_ids": [
+              "v2_0196"
+            ]
+          }
+        ],
+        "stress_target": [
+          "query 触发应以显式 @ 机器人为主",
+          "答辩口径收口不应被误判为产品范围 supersede"
+        ]
+      },
+      "iceberg_context": {
+        "project_name": "校招简历初筛助手 Demo",
+        "tenant_type": "高校竞赛项目组",
+        "delivery_window": "2026-05-06 上午答辩前",
+        "primary_group_goal": "把真实产品边界和答辩表述边界区分清楚",
+        "work_item": "答辩前对外口径收口",
+        "deliverables": [
+          "对外表述边界",
+          "最新边界查询入口",
+          "误触发保护样例"
+        ],
+        "off_group_events": [
+          "老师提醒答辩时不要把后续架构预留说成当前必交功能"
+        ],
+        "message_projection_rule": "群里只保留会被真正说出口的口径句、追问句和一条机器人查询。",
+        "participants": [
+          {
+            "role": "产品负责人",
+            "focus": "范围和答辩讲法"
+          },
+          {
+            "role": "评测同学",
+            "focus": "查询触发和误冲突"
+          },
+          {
+            "role": "开发同学",
+            "focus": "最新范围是否一致"
+          }
+        ],
+        "hidden_tasks": [
+          "控制答辩时的措辞，不把架构预留说成已交付",
+          "保留一次真实 @机器人 查询",
+          "验证非 @ 的复述请求不会抢占 query 通道"
+        ],
+        "hidden_state": {
+          "topic_stack": [
+            "人对人复述",
+            "答辩口径",
+            "机器人查询"
+          ],
+          "emotional_tone": "临答辩前收口",
+          "non_visible_assumptions": [
+            "产品真实边界和对外表达边界不是同一层",
+            "系统不能见到“为什么”就一律当 query"
+          ]
+        },
+        "scene": "答辩前半小时，群里有人让同伴口头复述，有人收对外口径，也有人顺手真问机器人。",
+        "home_chat_theme": "产品边界、技术实现、长线记忆更新与召回"
+      },
+      "expected_brief": "系统应只把显式 @ 机器人那条识别成 query，并把“架构预留”的答辩口径记下来而不是回滚产品边界。",
+      "messages": [
+        {
+          "content": "{\"text\":\"上次为什么这么定来着，谁有空帮我口头复述一下？\"}",
+          "create_time": "2026-05-05 13:30",
+          "deleted": false,
+          "message_id": "v2_0193",
+          "msg_type": "text",
+          "sender": {
+            "id": "ou_v2_qa2",
+            "id_type": "open_id",
+            "sender_type": "user",
+            "tenant_key": "demo_tenant"
+          },
+          "updated": false
+        },
+        {
+          "content": "{\"text\":\"我不是让机器人查，就是答辩时别把企业共享说成这周必交。\"}",
+          "create_time": "2026-05-05 13:31",
+          "deleted": false,
+          "message_id": "v2_0194",
+          "msg_type": "text",
+          "sender": {
+            "id": "ou_v2_pm5",
+            "id_type": "open_id",
+            "sender_type": "user",
+            "tenant_key": "demo_tenant"
+          },
+          "updated": false
+        },
+        {
+          "content": "{\"text\":\"这轮对外只讲群聊内闭环，企业共享统一表述成架构预留。\"}",
+          "create_time": "2026-05-05 13:32",
+          "deleted": false,
+          "message_id": "v2_0195",
+          "msg_type": "text",
+          "sender": {
+            "id": "ou_v2_pm",
+            "id_type": "open_id",
+            "sender_type": "user",
+            "tenant_key": "demo_tenant"
+          },
+          "updated": false
+        },
+        {
+          "content": "{\"text\":\"@机器人 现在产品边界最新怎么定？\"}",
+          "create_time": "2026-05-05 13:33",
+          "deleted": false,
+          "message_id": "v2_0196",
+          "msg_type": "text",
+          "sender": {
+            "id": "ou_v2_dev3",
+            "id_type": "open_id",
+            "sender_type": "user",
+            "tenant_key": "demo_tenant"
+          },
+          "updated": false
+        },
+        {
+          "content": "{\"text\":\"topic 先别列，先把口径收住。\"}",
+          "create_time": "2026-05-05 13:34",
+          "deleted": false,
+          "message_id": "v2_0197",
+          "msg_type": "text",
+          "sender": {
+            "id": "ou_v2_ops3",
+            "id_type": "open_id",
+            "sender_type": "user",
+            "tenant_key": "demo_tenant"
+          },
+          "updated": false
+        }
+      ],
+      "expected": {
+        "realtime_actions": [
+          "noop",
+          "noop",
+          "noop",
+          "query",
+          "noop"
+        ],
+        "write_result_count": 1
+      },
+      "expected_write_result": {
+        "should_ignore_message_ids": [
+          "v2_0196"
+        ],
+        "expected_memory_cards": [
+          {
+            "expected_keywords": [
+              "群聊内闭环",
+              "企业共享",
+              "架构预留"
+            ]
+          }
+        ],
+        "forbidden_relations": [
+          {
+            "old_expected_keywords": [
+              "企业级共享",
+              "不只群聊"
+            ],
+            "new_expected_keywords": [
+              "群聊内闭环",
+              "架构预留"
+            ],
+            "forbidden_relation_type": "supersedes"
+          }
+        ]
+      },
+      "chat_id": "oc_proj_core"
+    },
+    {
+      "batch_id": "batch_022_release_policy_time_boundary",
+      "scenario": "带时间词的发布策略与风险边界，不应一律走 schedule",
+      "tags": [
+        "product_launch",
+        "policy",
+        "risk",
+        "task",
+        "query",
+        "near_miss",
+        "anti_interference"
+      ],
+      "fetch_time": "2026-05-05 13:40",
+      "construction_context": {
+        "timeline_base": {
+          "anchor_time": "2026-05-05 13:40",
+          "window_minutes": 10,
+          "relative_position": "release_hot_window",
+          "depends_on_batches": [
+            "batch_016_product_launch_ops",
+            "batch_018_customer_policy_boundary"
+          ]
+        },
+        "thread_slots": [
+          {
+            "slot": "A",
+            "topic": "发布时间是运营窗口，不是会议日程",
+            "message_ids": [
+              "v2_0200"
+            ]
+          },
+          {
+            "slot": "B",
+            "topic": "异常承诺边界",
+            "message_ids": [
+              "v2_0201"
+            ]
+          },
+          {
+            "slot": "C",
+            "topic": "FAQ 截止和对外口径",
+            "message_ids": [
+              "v2_0202",
+              "v2_0203"
+            ]
+          }
+        ],
+        "stress_target": [
+          "时间表达与风险说明不应被误判成 schedule",
+          "task / query / policy 混行"
+        ]
+      },
+      "iceberg_context": {
+        "project_name": "校园版 AI 初筛助手 Beta 发布",
+        "tenant_type": "校园创业团队",
+        "delivery_window": "2026-05-05 晚间",
+        "primary_group_goal": "灰度开放前把发布窗口、风险措辞和 FAQ 补齐",
+        "work_item": "灰度前最后一轮发布群收口",
+        "deliverables": [
+          "发布窗口口径",
+          "风险承诺边界",
+          "FAQ 截止"
+        ],
+        "off_group_events": [
+          "客服已经开始收到老师追问什么时候能稳定开放"
+        ],
+        "message_projection_rule": "只保留会影响发布口径和执行动作的关键句，不引入解释性旁白。",
+        "participants": [
+          {
+            "role": "运营同学",
+            "focus": "灰度窗口和看板观察"
+          },
+          {
+            "role": "产品负责人",
+            "focus": "风险承诺边界"
+          },
+          {
+            "role": "客服同学",
+            "focus": "FAQ 口径"
+          }
+        ],
+        "hidden_tasks": [
+          "发布后要先盯半小时数据",
+          "不能承诺几点修好",
+          "FAQ 要在晚间前补齐"
+        ],
+        "hidden_state": {
+          "topic_stack": [
+            "发布窗口",
+            "风险边界",
+            "FAQ 截止"
+          ],
+          "emotional_tone": "临上线前忙碌收口",
+          "non_visible_assumptions": [
+            "用户会把时间表达误解成日程安排",
+            "外部提问会马上追到客服群"
+          ]
+        },
+        "scene": "发布前十分钟，运营、产品、客服在群里把灰度窗口和异常应答收口。",
+        "home_chat_theme": "产品发布与客服口径统一"
+      },
+      "expected_brief": "系统应把“晚上八点灰度开放”和“不要承诺几点修好”识别成发布/风险口径，只把 FAQ 截止识别成 task。",
+      "messages": [
+        {
+          "content": "{\"text\":\"晚上八点灰度开放后先看半小时数据，不拉会，只盯首批反馈。\"}",
+          "create_time": "2026-05-05 13:40",
+          "deleted": false,
+          "message_id": "v2_0200",
+          "msg_type": "text",
+          "sender": {
+            "id": "ou_v2_ops2",
+            "id_type": "open_id",
+            "sender_type": "user",
+            "tenant_key": "demo_tenant"
+          },
+          "updated": false
+        },
+        {
+          "content": "{\"text\":\"有人追问修复时间时别承诺几点恢复，就说已登记并持续观察。\"}",
+          "create_time": "2026-05-05 13:41",
+          "deleted": false,
+          "message_id": "v2_0201",
+          "msg_type": "text",
+          "sender": {
+            "id": "ou_v2_pm2",
+            "id_type": "open_id",
+            "sender_type": "user",
+            "tenant_key": "demo_tenant"
+          },
+          "updated": false
+        },
+        {
+          "content": "{\"text\":\"FAQ 最晚今晚七点前补完，外部口径继续写辅助初筛。\"}",
+          "create_time": "2026-05-05 13:42",
+          "deleted": false,
+          "message_id": "v2_0202",
+          "msg_type": "text",
+          "sender": {
+            "id": "ou_v2_cs3",
+            "id_type": "open_id",
+            "sender_type": "user",
+            "tenant_key": "demo_tenant"
+          },
+          "updated": false
+        },
+        {
+          "content": "{\"text\":\"@机器人 发布运营群现在对外怎么说？\"}",
+          "create_time": "2026-05-05 13:43",
+          "deleted": false,
+          "message_id": "v2_0203",
+          "msg_type": "text",
+          "sender": {
+            "id": "ou_v2_ops4",
+            "id_type": "open_id",
+            "sender_type": "user",
+            "tenant_key": "demo_tenant"
+          },
+          "updated": false
+        }
+      ],
+      "expected": {
+        "realtime_actions": [
+          "noop",
+          "noop",
+          "task",
+          "query"
+        ],
+        "write_result_count": 1
+      },
+      "expected_write_result": {
+        "should_ignore_message_ids": [
+          "v2_0203"
+        ],
+        "expected_memory_cards": [
+          {
+            "expected_keywords": [
+              "晚上八点",
+              "灰度开放",
+              "首批反馈"
+            ]
+          },
+          {
+            "expected_keywords": [
+              "别承诺几点恢复",
+              "已登记",
+              "持续观察"
+            ]
+          },
+          {
+            "expected_keywords": [
+              "辅助初筛"
+            ]
+          }
+        ]
+      },
+      "chat_id": "oc_launch_ops"
+    },
+    {
+      "batch_id": "batch_023_long_gap_recall_with_distractors",
+      "scenario": "长间隔后追问最早边界，并显式排除后续改口干扰",
+      "tags": [
+        "long_term_recall",
+        "source",
+        "version",
+        "query",
+        "near_miss"
+      ],
+      "fetch_time": "2026-05-05 13:50",
+      "construction_context": {
+        "timeline_base": {
+          "anchor_time": "2026-05-05 13:50",
+          "window_minutes": 10,
+          "relative_position": "long_gap_recall",
+          "depends_on_batches": [
+            "batch_001_seed_scope",
+            "batch_005_supersede_scope",
+            "batch_021_query_guard_scope_presentation"
+          ]
+        },
+        "thread_slots": [
+          {
+            "slot": "A",
+            "topic": "追问最早边界，不要被后续企业共享改口干扰",
+            "message_ids": [
+              "v2_0210",
+              "v2_0211"
+            ]
+          }
+        ],
+        "stress_target": [
+          "长线召回时区分 earliest scope 与 latest scope",
+          "source / version 追问中的排除条件"
+        ]
+      },
+      "iceberg_context": {
+        "project_name": "校招简历初筛助手 Demo",
+        "tenant_type": "高校竞赛项目组",
+        "delivery_window": "2026-05-06 上午答辩前",
+        "primary_group_goal": "回看最早边界决策，为答辩解释为什么先不做完整 ATS",
+        "work_item": "长线回问最早版本的理由",
+        "deliverables": [
+          "最早边界理由",
+          "原话来源",
+          "版本区分"
+        ],
+        "off_group_events": [
+          "答辩人需要解释为什么不是一开始就做完整 ATS 和企业共享"
+        ],
+        "message_projection_rule": "只保留真正问机器人的两条追问，显式写出排除条件。",
+        "participants": [
+          {
+            "role": "答辩主讲",
+            "focus": "最早边界和版本区分"
+          },
+          {
+            "role": "评测同学",
+            "focus": "source / version recall"
+          }
+        ],
+        "hidden_tasks": [
+          "追问 earliest scope，而不是 latest scope",
+          "要求返回原话和依据"
+        ],
+        "hidden_state": {
+          "topic_stack": [
+            "最早边界",
+            "排除后续改口",
+            "来源追问"
+          ],
+          "emotional_tone": "复盘取证",
+          "non_visible_assumptions": [
+            "同一项目里已经发生过多次口径变化",
+            "系统容易把最新边界当成唯一答案"
+          ]
+        },
+        "scene": "答辩前复盘，主讲只想追问最早边界而不是后续版本。",
+        "home_chat_theme": "产品边界、技术实现、长线记忆更新与召回"
+      },
+      "expected_brief": "系统应召回最早“不做完整 ATS”的理由，而不是被后续企业共享和答辩口径干扰。",
+      "messages": [
+        {
+          "content": "{\"text\":\"@机器人 还记得最早为什么不做完整 ATS 吗？别回答企业共享那次改口，我问的是最开始的边界理由。\"}",
+          "create_time": "2026-05-05 13:50",
+          "deleted": false,
+          "message_id": "v2_0210",
+          "msg_type": "text",
+          "sender": {
+            "id": "ou_v2_pm6",
+            "id_type": "open_id",
+            "sender_type": "user",
+            "tenant_key": "demo_tenant"
+          },
+          "updated": false
+        },
+        {
+          "content": "{\"text\":\"@机器人 当时原话和依据分别是什么？\"}",
+          "create_time": "2026-05-05 13:51",
+          "deleted": false,
+          "message_id": "v2_0211",
+          "msg_type": "text",
+          "sender": {
+            "id": "ou_v2_qa3",
+            "id_type": "open_id",
+            "sender_type": "user",
+            "tenant_key": "demo_tenant"
+          },
+          "updated": false
+        }
+      ],
+      "expected": {
+        "realtime_actions": [
+          "query",
+          "query"
+        ],
+        "write_result_count": 0
+      },
+      "chat_id": "oc_proj_core"
+    },
+    {
+      "batch_id": "batch_024_parallel_fragmented_threads",
+      "scenario": "同批多线碎片化收口：打分、字段、答辩口径和架构预留交错出现",
+      "tags": [
+        "parallel",
+        "classification",
+        "multi_topic",
+        "near_miss",
+        "anti_interference"
+      ],
+      "fetch_time": "2026-05-05 14:00",
+      "construction_context": {
+        "timeline_base": {
+          "anchor_time": "2026-05-05 14:00",
+          "window_minutes": 10,
+          "relative_position": "dense_parallel_wrapup",
+          "depends_on_batches": [
+            "batch_004_refine_scoring",
+            "batch_011_multi_topic_parallel",
+            "batch_021_query_guard_scope_presentation"
+          ]
+        },
+        "thread_slots": [
+          {
+            "slot": "A",
+            "topic": "打分门槛沿用旧规则",
+            "message_ids": [
+              "v2_0220",
+              "v2_0223"
+            ]
+          },
+          {
+            "slot": "B",
+            "topic": "答辩禁说项",
+            "message_ids": [
+              "v2_0221"
+            ]
+          },
+          {
+            "slot": "C",
+            "topic": "字段展示顺序",
+            "message_ids": [
+              "v2_0222"
+            ]
+          },
+          {
+            "slot": "D",
+            "topic": "企业共享只做架构预留",
+            "message_ids": [
+              "v2_0224"
+            ]
+          }
+        ],
+        "stress_target": [
+          "同批多线程碎片化时不应强行并成一个主题",
+          "区分展示口径、评分规则、字段设计和架构预留"
+        ]
+      },
+      "iceberg_context": {
+        "project_name": "校招简历初筛助手 Demo",
+        "tenant_type": "高校竞赛项目组",
+        "delivery_window": "2026-05-06 上午答辩前",
+        "primary_group_goal": "把最后一轮碎片化意见收口，不让 topic 聚类塌成一张大卡",
+        "work_item": "并行线程的最后收口",
+        "deliverables": [
+          "打分规则确认",
+          "字段展示顺序",
+          "答辩禁说项",
+          "架构预留口径"
+        ],
+        "off_group_events": [
+          "大家分别在文档、海报和答辩稿里改了不同部分，最后回群里收口"
+        ],
+        "message_projection_rule": "保留真实群里会出现的半句、指代和交错回应，不补充解释句。",
+        "participants": [
+          {
+            "role": "算法同学",
+            "focus": "分数门槛"
+          },
+          {
+            "role": "前端同学",
+            "focus": "字段展示顺序"
+          },
+          {
+            "role": "产品负责人",
+            "focus": "答辩口径和架构预留"
+          }
+        ],
+        "hidden_tasks": [
+          "保留 60/80 区间不变",
+          "证书放最后不高亮",
+          "答辩不能说全面生产可用",
+          "企业共享仍只说架构预留"
+        ],
+        "hidden_state": {
+          "topic_stack": [
+            "分数门槛",
+            "答辩禁说项",
+            "字段排序",
+            "架构预留"
+          ],
+          "emotional_tone": "密集收尾",
+          "non_visible_assumptions": [
+            "这类碎片化对话最容易把 topic merge 错",
+            "同一时间窗口不代表同一决策对象"
+          ]
+        },
+        "scene": "答辩前最后十分钟，算法、前端、产品同时往群里补不同事项。",
+        "home_chat_theme": "产品边界、技术实现、长线记忆更新与召回"
+      },
+      "expected_brief": "系统应把这批碎片化消息拆成至少三类长期信息，而不是并成一个大而空的决策。",
+      "messages": [
+        {
+          "content": "{\"text\":\"分数门槛先别改，60/80 还沿用。\"}",
+          "create_time": "2026-05-05 14:00",
+          "deleted": false,
+          "message_id": "v2_0220",
+          "msg_type": "text",
+          "sender": {
+            "id": "ou_v2_algo3",
+            "id_type": "open_id",
+            "sender_type": "user",
+            "tenant_key": "demo_tenant"
+          },
+          "updated": false
+        },
+        {
+          "content": "{\"text\":\"答辩里别说已经全面生产可用。\"}",
+          "create_time": "2026-05-05 14:01",
+          "deleted": false,
+          "message_id": "v2_0221",
+          "msg_type": "text",
+          "sender": {
+            "id": "ou_v2_pr2",
+            "id_type": "open_id",
+            "sender_type": "user",
+            "tenant_key": "demo_tenant"
+          },
+          "updated": false
+        },
+        {
+          "content": "{\"text\":\"字段那块把证书放最后，不用单独高亮。\"}",
+          "create_time": "2026-05-05 14:01",
+          "deleted": false,
+          "message_id": "v2_0222",
+          "msg_type": "text",
+          "sender": {
+            "id": "ou_v2_design2",
+            "id_type": "open_id",
+            "sender_type": "user",
+            "tenant_key": "demo_tenant"
+          },
+          "updated": false
+        },
+        {
+          "content": "{\"text\":\"我说的是展示文案，不是算法策略。\"}",
+          "create_time": "2026-05-05 14:02",
+          "deleted": false,
+          "message_id": "v2_0223",
+          "msg_type": "text",
+          "sender": {
+            "id": "ou_v2_pm",
+            "id_type": "open_id",
+            "sender_type": "user",
+            "tenant_key": "demo_tenant"
+          },
+          "updated": false
+        },
+        {
+          "content": "{\"text\":\"企业共享还是只说架构预留。\"}",
+          "create_time": "2026-05-05 14:03",
+          "deleted": false,
+          "message_id": "v2_0224",
+          "msg_type": "text",
+          "sender": {
+            "id": "ou_v2_pm6",
+            "id_type": "open_id",
+            "sender_type": "user",
+            "tenant_key": "demo_tenant"
+          },
+          "updated": false
+        }
+      ],
+      "expected": {
+        "realtime_actions": [
+          "noop",
+          "noop",
+          "noop",
+          "noop",
+          "noop"
+        ],
+        "write_result_count": 1
+      },
+      "expected_write_result": {
+        "expected_memory_cards": [
+          {
+            "expected_keywords": [
+              "60/80"
+            ]
+          },
+          {
+            "expected_keywords": [
+              "不要说已经全面生产可用"
+            ]
+          },
+          {
+            "expected_keywords": [
+              "证书放最后"
+            ]
+          },
+          {
+            "expected_keywords": [
+              "架构预留"
+            ]
+          }
+        ]
+      },
+      "chat_id": "oc_proj_core"
+    }
+  ],
+  "expected": {
+    "final_memory_checks": [
+      {
+        "chat_id": "oc_proj_core",
+        "query": "当前核心推进群的整体方案是什么？",
+        "expected_granularity": "topic_summary",
+        "expected_keywords": [
+          "真实飞书群演示优先",
+          "人工复核",
+          "建议人工复核"
+        ],
+        "forbidden_keywords": [
+          "收到"
+        ]
+      },
+      {
+        "chat_id": "oc_launch_ops",
+        "query": "发布运营群当前口径是什么？",
+        "expected_granularity": "memory_card",
+        "expected_keywords": [
+          "辅助初筛",
+          "仅供参考",
+          "人工复核"
+        ]
+      },
+      {
+        "chat_id": "oc_proj_core",
+        "query": "答辩时企业共享现在怎么表述？",
+        "expected_granularity": "memory_card",
+        "expected_keywords": [
+          "群聊内闭环",
+          "架构预留"
+        ],
+        "forbidden_keywords": [
+          "这周必交"
+        ]
+      },
+      {
+        "chat_id": "oc_event_org",
+        "query": "路演直播出问题怎么办？",
+        "expected_granularity": "memory_card",
+        "expected_keywords": [
+          "备用腾讯会议链接"
+        ]
+      }
+    ],
+    "relation_checks": [
+      {
+        "chat_id": "oc_proj_core",
+        "relation_type": "supersedes",
+        "old_expected_keywords": [
+          "群聊内记忆",
+          "不碰企业级共享"
+        ],
+        "new_expected_keywords": [
+          "企业级共享",
+          "不只群聊"
+        ]
+      },
+      {
+        "chat_id": "oc_launch_ops",
+        "relation_type": "related_to",
+        "old_expected_keywords": [
+          "公告",
+          "辅助初筛"
+        ],
+        "new_expected_keywords": [
+          "仅供参考",
+          "人工判断为准"
+        ],
+        "forbidden_relation_type": "supersedes"
+      }
+    ],
+    "evidence_checks": [
+      {
+        "chat_id": "oc_launch_ops",
+        "query": "发布运营群里辅助初筛和仅供参考是谁提的？",
+        "expected_granularity": "evidence_block",
+        "expected_source_message_ids": [
+          "v2_0151",
+          "v2_0152"
+        ],
+        "expected_keywords": [
+          "辅助初筛",
+          "仅供参考"
+        ]
+      },
+      {
+        "chat_id": "oc_proj_core",
+        "query": "群聊内闭环和架构预留这句是谁提的？",
+        "expected_granularity": "evidence_block",
+        "expected_source_message_ids": [
+          "v2_0195"
+        ],
+        "expected_keywords": [
+          "群聊内闭环",
+          "架构预留"
+        ]
+      }
+    ]
+  },
+  "chat_profiles": {
+    "oc_proj_core": {
+      "chat_name": "P1核心推进群",
+      "theme": "产品边界、技术实现、长线记忆更新与召回",
+      "allowed_topic_span": "围绕同一项目主线的多任务并行"
+    },
+    "oc_proj_stress": {
+      "chat_name": "实时分类压测群",
+      "theme": "高密度意图并发与噪声分类",
+      "allowed_topic_span": "用于压力测试，不参与主线长期记忆评价"
+    },
+    "oc_launch_ops": {
+      "chat_name": "Beta发布运营群",
+      "theme": "灰度发布、公告措辞、客服答疑口径",
+      "allowed_topic_span": "发布与运营协作"
+    },
+    "oc_event_org": {
+      "chat_name": "路演会务群",
+      "theme": "会议时间、主持、物料和直播备份",
+      "allowed_topic_span": "会务组织与会前动作"
+    }
+  }
+}
