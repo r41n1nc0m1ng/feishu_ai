@@ -14,10 +14,11 @@ def _normalize_text(value: str) -> str:
 
 
 def _card_text(card: MemoryCard) -> str:
+    title = getattr(card, "title", "") or ""
     return " ".join(
         [
             card.decision_object,
-            card.title,
+            title,
             card.decision,
             card.reason,
         ]
