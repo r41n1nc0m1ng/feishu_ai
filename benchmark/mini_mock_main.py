@@ -48,14 +48,15 @@ EVAL_PATH   = Path(__file__).with_name("evaluation_mini.json")
 def _card_to_entry(card, msg_ids: list[str]) -> dict[str, Any]:
     """将 MemoryCard 序列化为 result.json 中的 entry，PROGRESS 卡补充四个字段。"""
     entry: dict[str, Any] = {
-        "memory_id":          card.memory_id,
-        "decision_object":    card.decision_object,
-        "decision":           card.decision,
-        "reason":             card.reason,
-        "status":             card.status.value,
-        "memory_type":        card.memory_type.value,
-        "source_block_ids":   card.source_block_ids,
-        "source_message_ids": msg_ids,
+        "memory_id":             card.memory_id,
+        "decision_object":       card.decision_object,
+        "decision":              card.decision,
+        "reason":                card.reason,
+        "status":                card.status.value,
+        "memory_type":           card.memory_type.value,
+        "source_block_ids":      card.source_block_ids,
+        "source_message_ids":    msg_ids,
+        "supersedes_memory_ids": card.supersedes_memory_ids,
     }
     if card.memory_type == MemoryType.PROGRESS:
         entry["tentative_consensus"] = card.tentative_consensus

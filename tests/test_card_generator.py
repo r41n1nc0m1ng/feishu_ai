@@ -107,7 +107,7 @@ class CardGeneratorTests(unittest.IsolatedAsyncioTestCase):
             new_card = await CardGenerator().generate(block)
 
         self.assertIsNotNone(new_card)
-        self.assertEqual(new_card.supersedes_memory_id, old_card.memory_id)
+        self.assertEqual(new_card.supersedes_memory_ids, [old_card.memory_id])
         self.assertEqual(gen_module._card_cache[old_card.memory_id].status, CardStatus.DEPRECATED)
 
     async def test_invalid_memory_type_falls_back_to_decision(self):

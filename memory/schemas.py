@@ -3,7 +3,7 @@ from enum import Enum
 from typing import List, Optional
 import uuid
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 
 _now = lambda: datetime.now(timezone.utc)
 
@@ -38,6 +38,15 @@ class CardOperation(str, Enum):
     NOOP = "noop"           # 不值得记录
     PROGRESS = "progress"   # 未形成一致决策，记录讨论进度
     SUPERSEDE = "supersede" # 覆盖旧记忆（REFINE 留 P1）
+
+
+class CardRelationOp(str, Enum):
+    """新卡片与同议题旧卡片的关系判定（apply_operations 使用）。"""
+    ADD                = "add"                # 无相关候选 / 异向 → 直接添加
+    SUPERSEDE          = "supersede"          # 同向反观点 → 旧卡 deprecated，新卡保留
+    REFINE             = "refine"             # 同向同观点 → 合并消息块再生成，新旧均 deprecated
+    PROGRESS_COMPLETE  = "progress_complete"  # 旧 progress 卡的 open_questions 被完整解答 → 合并生成 decision 卡
+    PROGRESS_REFINE    = "progress_refine"    # 旧 progress 卡部分解答 / 双方均 progress → 合并生成新 progress 卡
 
 
 # ── 实时通道对象（event_handler / 查询侧使用）────────────────────────────────
@@ -126,12 +135,24 @@ class MemoryCard(BaseModel):
     memory_type: MemoryType = MemoryType.DECISION
     status: CardStatus = CardStatus.ACTIVE
     source_block_ids: List[str] = Field(default_factory=list)       # 来源 EvidenceBlock 的 block_id 列表
-    supersedes_memory_id: Optional[str] = None                      # 冗余索引字段，真相源为 MemoryRelation 表
+    # 冗余索引字段，真相源为 MemoryRelation 表。
+    # 长度=1 表示 SUPERSEDE；长度=2 表示 REFINE/PROGRESS_COMPLETE/PROGRESS_REFINE 合并废弃两张源卡。
+    supersedes_memory_ids: List[str] = Field(default_factory=list)
     effective_from: Optional[datetime] = None                       # 生效起始时间
     effective_until: Optional[datetime] = None                      # 生效截止时间（项目结束后可设置）
     last_retrieved_at: Optional[datetime] = None                    # 最近一次被检索的时间
     created_at: datetime = Field(default_factory=_now)
     updated_at: datetime = Field(default_factory=_now)
+
+    @model_validator(mode="before")
+    @classmethod
+    def _migrate_legacy_supersedes(cls, data):
+        # SQLite 中旧记录字段名为 supersedes_memory_id (str|null)；新 schema 使用 list。
+        if isinstance(data, dict):
+            legacy = data.pop("supersedes_memory_id", None)
+            if legacy and not data.get("supersedes_memory_ids"):
+                data["supersedes_memory_ids"] = [legacy]
+        return data
 
 
 class MemoryRelation(BaseModel):
@@ -144,6 +165,9 @@ class MemoryRelation(BaseModel):
 
     P1 只保证 supersedes 关系落地；refines / related_to / contradicts 保留 schema，
     不纳入 P1 验收。
+
+    REFINE / PROGRESS_COMPLETE / PROGRESS_REFINE 合并：合并卡作为 source_id，
+    被废弃的两张源卡各写一条 SUPERSEDES 关系（target_id 分别指向旧卡和新卡）。
     """
     relation_id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     chat_id: str

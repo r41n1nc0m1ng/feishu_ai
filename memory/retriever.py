@@ -135,21 +135,23 @@ class MemoryRetriever:
 
     async def get_version_chain(self, memory_id: str) -> List[MemoryCard]:
         """
-        从 memory_id 出发，沿 supersedes_memory_id 向上追溯完整版本链。
-        返回列表从新到旧排列：[当前卡, 上一版本, 更早版本, ...]。
+        从 memory_id 出发，沿 supersedes_memory_ids 向上 BFS 追溯完整版本祖先。
+        返回 [当前卡, 直接父辈, 更上一层, ...]；REFINE/PROGRESS_* 合并产生多父辈时按 BFS 深度排列。
         """
-        from memory import store
         chain: List[MemoryCard] = []
-        current_id: Optional[str] = memory_id
         seen: set[str] = set()
+        queue: List[str] = [memory_id]
 
-        while current_id and current_id not in seen:
-            seen.add(current_id)
-            card = await self.get_card_by_id(current_id)
+        while queue:
+            cid = queue.pop(0)
+            if cid in seen:
+                continue
+            seen.add(cid)
+            card = await self.get_card_by_id(cid)
             if not card:
-                break
+                continue
             chain.append(card)
-            current_id = card.supersedes_memory_id
+            queue.extend(card.supersedes_memory_ids or [])
 
         return chain
 

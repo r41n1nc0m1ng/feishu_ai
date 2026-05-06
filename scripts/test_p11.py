@@ -58,7 +58,7 @@ async def test_version_chain():
         decision_object="议题X", title="新版本",
         decision="新决策", reason="",
         status=CardStatus.ACTIVE,
-        supersedes_memory_id=old_id,
+        supersedes_memory_ids=[old_id],
     ))
 
     from memory.retriever import MemoryRetriever
