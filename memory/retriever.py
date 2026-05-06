@@ -85,11 +85,38 @@ class MemoryRetriever:
     ) -> List[MemoryCard]:
         """Stage 1：hybrid 打分召回 top-k 候选。embedding 缓存为空时返回 []，由调用方触发降级。"""
         from memory.card_generator import _card_cache, _card_embeddings
+        from memory import store
 
         active_cards = [
             c for c in _card_cache.values()
             if c.chat_id == chat_id and c.decision and c.status != CardStatus.DEPRECATED
         ]
+        if not active_cards:
+            sqlite_cards = [
+                c for c in store.get_cards_for_chat(chat_id)
+                if c.decision and c.status != CardStatus.DEPRECATED
+            ]
+            if sqlite_cards:
+                emb_map = store.load_all_card_embeddings()
+                restored_embeddings = 0
+                for card in sqlite_cards:
+                    _card_cache[card.memory_id] = card
+                    if card.memory_id in _card_embeddings:
+                        continue
+                    vec_bytes = emb_map.get(card.memory_id)
+                    if vec_bytes:
+                        try:
+                            _card_embeddings[card.memory_id] = np.frombuffer(vec_bytes, dtype=np.float32).copy()
+                            restored_embeddings += 1
+                        except Exception:
+                            logger.exception("SQLite embedding restore failed | memory_id=%s", card.memory_id)
+                active_cards = sqlite_cards
+                logger.info(
+                    "Memory retrieve restored SQLite cache | chat=%s cards=%d embeddings=%d",
+                    chat_id,
+                    len(sqlite_cards),
+                    restored_embeddings,
+                )
         cards_with_emb = [
             (c, _card_embeddings[c.memory_id])
             for c in active_cards
