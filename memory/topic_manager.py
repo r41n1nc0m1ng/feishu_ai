@@ -15,6 +15,7 @@ from typing import List, Optional
 import httpx
 
 from memory import store
+from memory.llm_runtime import apply_thinking_payload
 from memory.schemas import CardStatus, MemoryType, TopicSummary
 
 logger = logging.getLogger(__name__)
@@ -159,12 +160,14 @@ class TopicManager:
                 resp = await client.post(
                     f"{base_url}/chat/completions",
                     headers={"Authorization": f"Bearer {api_key}"},
-                    json={"model": model,
-                          "messages": [{"role": "user", "content": prompt}],
-                          "response_format": {"type": "json_object"},
-                          "temperature": 0,
-                          "top_p": 1,
-                          "seed": seed},
+                    json=apply_thinking_payload({
+                        "model": model,
+                        "messages": [{"role": "user", "content": prompt}],
+                        "response_format": {"type": "json_object"},
+                        "temperature": 0,
+                        "top_p": 1,
+                        "seed": seed,
+                    }),
                 )
                 resp.raise_for_status()
                 content = resp.json()["choices"][0]["message"]["content"]
@@ -186,12 +189,14 @@ class TopicManager:
                 resp = await client.post(
                     f"{base_url}/chat/completions",
                     headers={"Authorization": f"Bearer {api_key}"},
-                    json={"model": model,
-                          "messages": [{"role": "user", "content": prompt}],
-                          "response_format": {"type": "json_object"},
-                          "temperature": 0,
-                          "top_p": 1,
-                          "seed": seed},
+                    json=apply_thinking_payload({
+                        "model": model,
+                        "messages": [{"role": "user", "content": prompt}],
+                        "response_format": {"type": "json_object"},
+                        "temperature": 0,
+                        "top_p": 1,
+                        "seed": seed,
+                    }),
                 )
                 resp.raise_for_status()
                 content = resp.json()["choices"][0]["message"]["content"]

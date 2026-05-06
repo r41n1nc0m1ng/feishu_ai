@@ -19,6 +19,7 @@ from typing import Optional
 
 import httpx
 
+from memory.llm_runtime import apply_thinking_payload
 from memory.retriever import MemoryRetriever
 from memory.schemas import CardRelationOp, CardStatus, MemoryCard, MemoryType
 
@@ -312,12 +313,14 @@ class ConflictDetector:
             resp = await client.post(
                 f"{base_url}/chat/completions",
                 headers={"Authorization": f"Bearer {api_key}"},
-                json={"model": model,
-                      "messages": [{"role": "user", "content": prompt}],
-                      "response_format": {"type": "json_object"},
-                      "temperature": 0,
-                      "top_p": 1,
-                      "seed": seed},
+                json=apply_thinking_payload({
+                    "model": model,
+                    "messages": [{"role": "user", "content": prompt}],
+                    "response_format": {"type": "json_object"},
+                    "temperature": 0,
+                    "top_p": 1,
+                    "seed": seed,
+                }),
             )
             resp.raise_for_status()
             return json.loads(resp.json()["choices"][0]["message"]["content"])
@@ -331,12 +334,14 @@ class ConflictDetector:
             resp = await client.post(
                 f"{base_url}/chat/completions",
                 headers={"Authorization": f"Bearer {api_key}"},
-                json={"model": model,
-                      "messages": [{"role": "user", "content": prompt}],
-                      "response_format": {"type": "json_object"},
-                      "temperature": 0,
-                      "top_p": 1,
-                      "seed": seed},
+                json=apply_thinking_payload({
+                    "model": model,
+                    "messages": [{"role": "user", "content": prompt}],
+                    "response_format": {"type": "json_object"},
+                    "temperature": 0,
+                    "top_p": 1,
+                    "seed": seed,
+                }),
             )
             resp.raise_for_status()
             return json.loads(resp.json()["choices"][0]["message"]["content"])

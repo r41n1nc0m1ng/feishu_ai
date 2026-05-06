@@ -14,19 +14,20 @@
 
 ## Benchmark 体系
 
-当前仓库里实际存在三套并列的 benchmark 能力，它们不是相互替代关系：
+当前用于测试 / 评测的两个入口，分工明确，目的不同：
 
-- `benchmark/full_demo_dual_channel_test.py`
-  - 角色：最小双通道回放基线。
-  - 作用：验证 batch 内消息先过 realtime，再整体过 write 的编排顺序和适配层是否正常。
-  - 特点：轻量、快、结构简单，适合入口联调和 adapter 改动后的冒烟回归。
+- `benchmark/mock_main.py`
+  - 角色：端到端管线回放器。
+  - 作用：让 fixture 消息**走完线上完整通路**（实时层 → 写入层 → 可选 Graphiti），尽可能逼近生产环境。
+  - 输出：`benchmark/result.json`（每 batch 产出的 MemoryCard、@bot 回复、TopicSummary 终态、卡片版本链）+ `evaluation.json`。
+  - 适合：行为级冒烟、demo 录屏前验收、查看机器人在群里的"实际响应"。
 
 - `benchmark/special_case/special_case_replay.py`
   - 角色：单流专项回放。
   - 作用：验证 anti-noise、conflict、final query 召回、Graphiti/SQLite fallback 等专项能力。
   - 特点：更贴近“完整历史对话 + 最终追问”的专项测试，不负责通用分层评测。
 
-- `benchmark_v2/`
+- `benchmark_v2/（当前接口对应，但指标不完全对应）`
   - 角色：生产级 benchmark 主套件。
   - 作用：承接 source/runtime 分层、按 chat/tag 筛选、轻量评测 + 深度评测、报表输出。
   - 特点：覆盖面最完整，适合当前阶段的 benchmark 开发、专项回归和对外展示前验收。
@@ -36,11 +37,28 @@
 - `full_demo`：入口和适配层冒烟回归；
 - `special_case`：重型专项补充回放。
 
-统一入口见：
+
+- `benchmarkv3/runner.py`
+  - 角色：指标驱动评测平台。
+  - 作用：**绕开实时层**，直接调 `MemoryRetriever`；跑结构化测试用例（每 batch 末 3 条松检查 + 总末 23 条严格查询 + 8 条矛盾更新 + batch_006 抗干扰），输出可对比的多维指标。
+  - 测试用例和消息源解耦：`benchmarkv3/full_demo_case.json`（消息）+ `benchmarkv3/test_cases.json`（独立测试集），方便 A/B 修改。
+  - 输出：`benchmarkv3/reports/benchmark_v3_latest.json`（指标摘要）+ `benchmark_v3_latest_detailed.json`（每条 query 的 expected/actual 关键词、检索到的 top-N 卡片完整快照、本次产生的所有矛盾更新链路、抗干扰 batch 各块 block_type 详情）。
+  - 适合：写入侧 / 检索侧 / 矛盾更新链路的回归对比，做改动前后的指标差。
+
+运行命令：
 
 ```bash
+# 端到端回放（输出 result.json + evaluation.json）
+conda run -n feishu python benchmark/mock_main.py
+
+# benchmarkv2路径
 conda run -n feishu-ai-p0 python -m benchmark.run_suite --suite v2
 ```
+# 指标评测（输出 benchmark_v3_latest.json + _detailed.json）
+conda run -n feishu python -m benchmarkv3.runner
+```
+
+两条路径走到 `BatchProcessor.process_fetch_batch` 之后用的是同一套写入算法，差别只在驱动方式与评测视角：`mock_main` 答 "**机器人**会怎么响应"，`runner` 答 "**记忆系统**质量到什么程度"。
 
 
 
@@ -96,13 +114,15 @@ conda run -n feishu-ai-p0 python -m benchmark.run_suite --suite v2
 
 ### 3.1 Evidence Block：低粒度证据层
 
-Evidence Block 保存一段事件边界内的原始聊天记录，包括：
+Evidence Block 保存一段事件边界内的原始聊天记录，附加分段器产出的元信息：
 
-- 消息发送人；
-- 发送时间；
-- 消息内容；
-- message_id；
-- chat_id。
+- chat_id / block_id；
+- 时间范围 start_time / end_time；
+- 消息列表（每条含 message_id / sender_id / sender_name / timestamp / text）；
+- block_type：`decision` / `progress` / `noise`，由 LLM 切分器标注，下游 CardGenerator 据此路由 prompt 分支（progress 走 progress 抽取 schema，noise 直接跳过）；
+- topic：分段器预标注的"大方向-小方向"议题，CardGenerator 用作 hint；
+- one_line_summary：分段器预提炼的一句话摘要，CardGenerator 用作 hint；
+- boundary_signal：切分依据（调试用）。
 
 Evidence Block 不负责总结结论，也不直接作为默认回答内容，只作为后续追溯来源的证据层。
 
@@ -113,6 +133,9 @@ Evidence Block 001
 
 群 ID：chat_xxx
 时间范围：10:00-10:07
+block_type: decision
+topic: 产品规划-项目范围与MVP边界
+one_line_summary: MVP 不做企业级记忆，聚焦群聊决策记忆
 
 消息列表：
 - A，10:00：我觉得这次不要做企业级记忆了，权限太复杂。
@@ -127,24 +150,44 @@ Memory Card 是系统默认检索和回答的主要对象。
 
 它基于一个或多个 Evidence Block 生成，记录结构化决策信息：
 
-- 决策对象；
-- 决策内容；
-- 决策理由；
-- 记忆类型；
-- 当前状态；
-- 来源 Evidence Block；
-- 版本关系。
+- 议题 decision_object（"大方向-小方向" 格式，写入前归一化）+ 归一化主键 decision_object_key（候选筛选用）；
+- 决策内容 decision；
+- 决策理由 reason（无明确理由填"无"）；
+- 记忆类型 memory_type：`decision` / `progress` / `tradeoff` / `rule` / `constraint` / `risk` / `version_update`；
+- 当前状态 status：`active` / `deprecated`；
+- 来源 source_block_ids（一个或多个 EvidenceBlock）；
+- 版本关系 supersedes_memory_ids（List[str]）：长度=1 表示 SUPERSEDE（旧卡被覆盖），长度=2 表示 REFINE / PROGRESS_COMPLETE / PROGRESS_REFINE 合并产出（双源 supersede）。
 
-示例：
+PROGRESS 卡（讨论未收口、不强行写决策）额外携带四个字段：
+
+- tentative_consensus：候选共识（被提出且无人反对的小结论）；
+- open_questions：待决议子问题；
+- discussion_scope：讨论涉及的具体对象；
+- next_step：下一轮要解决什么。
+
+示例（DECISION 卡）：
 
 ```text
+议题：产品规划-项目范围与MVP边界
 决策：MVP 阶段暂不做企业级记忆，优先聚焦群聊决策记忆。
-
 理由：企业级记忆会引入权限、个人文档、私聊和跨群治理问题，容易让 Demo 失焦。
+状态：active
+memory_type：decision
+来源：[Evidence Block 001]
+supersedes_memory_ids：[]
+```
 
-状态：Active
+示例（PROGRESS 卡，讨论未收口）：
 
-来源：Evidence Block 001
+```text
+议题：技术实现-技术选型
+决策：后端语言选型讨论（本轮未收口）
+memory_type：progress
+状态：active
+tentative_consensus：[团队倾向 Python，希望尽快出 Demo]
+open_questions：[后端最终选 Python 还是 Go?]
+discussion_scope：[Python, Go]
+next_step：下周性能压测后再定
 ```
 
 ### 3.3 Topic Summary：高粒度主题摘要层
@@ -319,17 +362,17 @@ Topic Summary 主题摘要层
 记忆检索与回答层
 ```
 
-系统不会把整个群的长期历史都塞入 OpenClaw 的单一上下文中。
+系统不会把整个群的长期历史都塞入 LLM 的单一上下文中。
 
-OpenClaw 在本项目中的定位是：
+LLM 在本项目中的定位是：
 
-- Evidence Block 总结器；
-- Memory Card 生成器；
-- 冲突关系判断器；
-- Topic Summary 生成器；
-- 历史问题回答器。
+- 段切器（事件边界判定 + block_type 标注：decision / progress / noise）；
+- Memory Card 生成器（从 EvidenceBlock 提炼 decision_object / decision / reason，区分已收口决策与 PROGRESS 进行中讨论）；
+- 冲突关系判断器（5 分类 classify_pair：add / refine / supersede / progress_complete / progress_refine）；
+- TopicSummary 生成器（多张 Memory Card 聚合归并为大方向主题）；
+- 检索 reranker（hybrid 召回的候选 top-K 重排，可选）。
 
-每次调用 OpenClaw 时，系统只注入当前任务所需的上下文：
+每次调用 LLM 时，系统只注入当前任务所需的上下文：
 
 ```text
 当前 Evidence Block
@@ -340,6 +383,8 @@ OpenClaw 在本项目中的定位是：
   +
 输出格式要求
 ```
+
+LLM provider 走统一优先级：DeepSeek → OpenAI → Ollama，全部带 `temperature=0 / top_p=1 / seed=LLM_SEED` 参数保证可复现。
 
 ---
 
@@ -371,31 +416,73 @@ OpenClaw 在本项目中的定位是：
   "messages": [
     {
       "message_id": "msg_001",
+      "sender_id": "ou_xxx",
       "sender_name": "A",
       "timestamp": "2026-04-26T10:01:00",
       "text": "我觉得这次不要做企业级记忆了，权限太复杂。"
     }
-  ]
+  ],
+  "block_type": "decision",
+  "topic": "产品规划-项目范围与MVP边界",
+  "one_line_summary": "MVP 不做企业级记忆，聚焦群聊决策记忆",
+  "boundary_signal": "话题切换：从需求边界跳到 Benchmark 设计"
 }
 ```
 
 ### 6.3 MemoryCard
 
-中粒度决策记忆。
+中粒度决策记忆。DECISION 卡示例：
 
 ```json
 {
   "memory_id": "mem_001",
   "chat_id": "oc_xxx",
-  "decision_object": "企业级记忆是否进入 MVP",
-  "title": "MVP 阶段不做企业级记忆",
+  "decision_object": "产品规划-项目范围与MVP边界",
+  "decision_object_key": "产品规划项目范围与mvp边界",
   "decision": "MVP 阶段暂不做企业级记忆，优先聚焦群聊决策记忆。",
   "reason": "企业级记忆会引入权限、个人文档、私聊和跨群治理问题，容易让 Demo 失焦。",
   "memory_type": "decision",
   "status": "active",
   "source_block_ids": ["block_001"],
-  "related_memory_ids": [],
-  "supersedes_memory_id": null
+  "supersedes_memory_ids": [],
+  "tentative_consensus": [],
+  "open_questions": [],
+  "discussion_scope": [],
+  "next_step": null
+}
+```
+
+PROGRESS 卡（讨论未收口）示例：
+
+```json
+{
+  "memory_id": "mem_002",
+  "chat_id": "oc_xxx",
+  "decision_object": "技术实现-技术选型",
+  "decision_object_key": "技术实现技术选型",
+  "decision": "后端语言选型讨论（本轮未收口）",
+  "reason": "团队倾向 Python，但需性能压测后再定",
+  "memory_type": "progress",
+  "status": "active",
+  "source_block_ids": ["block_005"],
+  "supersedes_memory_ids": [],
+  "tentative_consensus": ["团队倾向 Python，希望尽快出 Demo"],
+  "open_questions": ["后端最终选 Python 还是 Go?"],
+  "discussion_scope": ["Python", "Go"],
+  "next_step": "下周性能压测后再定"
+}
+```
+
+合并卡（REFINE / PROGRESS_COMPLETE / PROGRESS_REFINE）示例 —— `supersedes_memory_ids` 长度=2 表示由两张源卡合并而来，两张源卡均会被置为 `deprecated`：
+
+```json
+{
+  "memory_id": "mem_003",
+  "decision_object": "质量保障-测试与评测方案",
+  "decision": "评测标准为等级一致率 + 关键理由覆盖率",
+  "memory_type": "decision",
+  "status": "active",
+  "supersedes_memory_ids": ["mem_002a_progress", "mem_002b_decision"]
 }
 ```
 

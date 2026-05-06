@@ -14,6 +14,7 @@ from typing import List, Optional
 
 import httpx
 
+from memory.llm_runtime import apply_thinking_payload
 from memory.schemas import EvidenceBlock, EvidenceMessage, FetchBatch
 from memory.topics import flat_list as _topic_flat_list, format_for_prompt as _topics_for_prompt
 
@@ -445,14 +446,14 @@ async def _call_openai_compat(prompt: str, api_key: str, base_url: str, model: s
         resp = await client.post(
             f"{base_url.rstrip('/')}/chat/completions",
             headers={"Authorization": f"Bearer {api_key}"},
-            json={
+            json=apply_thinking_payload({
                 "model": model,
                 "messages": [{"role": "user", "content": prompt}],
                 "response_format": {"type": "json_object"},
                 "temperature": 0,
                 "top_p": 1,
                 "seed": seed,
-            },
+            }),
         )
         resp.raise_for_status()
         content = resp.json()["choices"][0]["message"]["content"]

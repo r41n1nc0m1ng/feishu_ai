@@ -1,0 +1,374 @@
+{
+  "case_id": "full_demo_ai_resume_expanded_001",
+  "chat_id": "oc_demo_ai_resume",
+  "fixture": "D:\\learning\\飞书挑战赛\\benchmarkv3\\full_demo_case.json",
+  "tests": "D:\\learning\\飞书挑战赛\\benchmarkv3\\test_cases.json",
+  "query_metrics": {
+    "per_batch": {
+      "total": 15,
+      "passed": 15,
+      "pass_rate": 1.0,
+      "details": [
+        {
+          "batch_id": "batch_001",
+          "query_type": "decision",
+          "name": "batch_001.decision",
+          "passed": true,
+          "detail": "q=MVP 范围现在是什么？ hits=5 granularity=memory_card/memory_card"
+        },
+        {
+          "batch_id": "batch_001",
+          "query_type": "evidence",
+          "name": "batch_001.evidence",
+          "passed": true,
+          "detail": "q=为什么不做完整 ATS 的原话在哪？ hits=1 granularity=evidence_block/evidence_block"
+        },
+        {
+          "batch_id": "batch_001",
+          "query_type": "topic_summary",
+          "name": "batch_001.topic_summary",
+          "passed": true,
+          "detail": "q=产品规划现在怎么定的？ hits=1 granularity=topic_summary/topic_summary"
+        },
+        {
+          "batch_id": "batch_002",
+          "query_type": "decision",
+          "name": "batch_002.decision",
+          "passed": true,
+          "detail": "q=明天的 Demo 评审会安排是？ hits=5 granularity=memory_card/memory_card"
+        },
+        {
+          "batch_id": "batch_002",
+          "query_type": "evidence",
+          "name": "batch_002.evidence",
+          "passed": true,
+          "detail": "q=MVP 不输出淘汰结论原话谁说的？ hits=1 granularity=evidence_block/evidence_block"
+        },
+        {
+          "batch_id": "batch_002",
+          "query_type": "topic_summary",
+          "name": "batch_002.topic_summary",
+          "passed": true,
+          "detail": "q=项目管理与排期现在整体怎么定的？ hits=2 granularity=topic_summary/topic_summary"
+        },
+        {
+          "batch_id": "batch_003",
+          "query_type": "decision",
+          "name": "batch_003.decision",
+          "passed": true,
+          "detail": "q=P0 报告输出字段都有什么？ hits=5 granularity=memory_card/memory_card"
+        },
+        {
+          "batch_id": "batch_003",
+          "query_type": "evidence",
+          "name": "batch_003.evidence",
+          "passed": true,
+          "detail": "q=P0 不做权重配置的讨论原话在哪？ hits=1 granularity=evidence_block/evidence_block"
+        },
+        {
+          "batch_id": "batch_003",
+          "query_type": "topic_summary",
+          "name": "batch_003.topic_summary",
+          "passed": true,
+          "detail": "q=产品规划当前整体方案是什么？ hits=1 granularity=topic_summary/topic_summary"
+        },
+        {
+          "batch_id": "batch_004",
+          "query_type": "decision",
+          "name": "batch_004.decision",
+          "passed": true,
+          "detail": "q=评测方案怎么定的？ hits=5 granularity=memory_card/memory_card"
+        },
+        {
+          "batch_id": "batch_004",
+          "query_type": "evidence",
+          "name": "batch_004.evidence",
+          "passed": true,
+          "detail": "q=20 份 mock 简历谁负责？原话？ hits=1 granularity=evidence_block/evidence_block"
+        },
+        {
+          "batch_id": "batch_004",
+          "query_type": "topic_summary",
+          "name": "batch_004.topic_summary",
+          "passed": true,
+          "detail": "q=质量保障与评测当前整体方案是什么？ hits=3 granularity=topic_summary/topic_summary"
+        },
+        {
+          "batch_id": "batch_005",
+          "query_type": "decision",
+          "name": "batch_005.decision",
+          "passed": true,
+          "detail": "q=复赛的文件上传方案是什么？ hits=5 granularity=memory_card/memory_card"
+        },
+        {
+          "batch_id": "batch_005",
+          "query_type": "evidence",
+          "name": "batch_005.evidence",
+          "passed": true,
+          "detail": "q=复赛不接对象存储的原话在哪？ hits=1 granularity=evidence_block/evidence_block"
+        },
+        {
+          "batch_id": "batch_005",
+          "query_type": "topic_summary",
+          "name": "batch_005.topic_summary",
+          "passed": true,
+          "detail": "q=技术实现现在整体怎么定？ hits=3 granularity=topic_summary/topic_summary"
+        }
+      ]
+    },
+    "final": {
+      "total": 23,
+      "passed": 15,
+      "overall_pass_rate": 0.6522,
+      "decision_pass_rate": 0.7,
+      "evidence_pass_rate": 0.6,
+      "topic_pass_rate": 0.6667,
+      "decision_details": [
+        {
+          "name": "final_decision[0]",
+          "passed": false,
+          "detail": "q=MVP 范围限定在什么？ granularity=OK keyword=MISS hits=5"
+        },
+        {
+          "name": "final_decision[1]",
+          "passed": true,
+          "detail": "q=MVP 是否会输出自动淘汰结论？ granularity=OK keyword=OK hits=5"
+        },
+        {
+          "name": "final_decision[2]",
+          "passed": true,
+          "detail": "q=推荐等级怎么分类？ granularity=OK keyword=OK hits=5"
+        },
+        {
+          "name": "final_decision[3]",
+          "passed": true,
+          "detail": "q=P0 是否要做权重配置？ granularity=OK keyword=OK hits=5"
+        },
+        {
+          "name": "final_decision[4]",
+          "passed": true,
+          "detail": "q=复赛的文件上传具体怎么处理？ granularity=OK keyword=OK hits=5"
+        },
+        {
+          "name": "final_decision[5]",
+          "passed": false,
+          "detail": "q=解析失败时怎么处理？ granularity=OK keyword=MISS hits=5"
+        },
+        {
+          "name": "final_decision[6]",
+          "passed": false,
+          "detail": "q=P0 支持哪些简历格式？ granularity=OK keyword=MISS hits=5"
+        },
+        {
+          "name": "final_decision[7]",
+          "passed": true,
+          "detail": "q=简历结构化解析有哪些字段？ granularity=OK keyword=OK hits=5"
+        },
+        {
+          "name": "final_decision[8]",
+          "passed": true,
+          "detail": "q=UI 结果卡片怎么呈现？ granularity=OK keyword=OK hits=5"
+        },
+        {
+          "name": "final_decision[9]",
+          "passed": true,
+          "detail": "q=产品的最终名称是什么？ granularity=OK keyword=OK hits=5"
+        }
+      ],
+      "evidence_details": [
+        {
+          "name": "final_evidence[0]",
+          "passed": true,
+          "detail": "q=MVP 范围限定在什么的原话在哪？ granularity=OK keyword=OK block_msgs=5"
+        },
+        {
+          "name": "final_evidence[1]",
+          "passed": true,
+          "detail": "q=MVP 不输出淘汰结论的原话在哪说的？ granularity=OK keyword=OK block_msgs=5"
+        },
+        {
+          "name": "final_evidence[2]",
+          "passed": false,
+          "detail": "q=推荐等级分类的原话讨论在哪？ granularity=OK keyword=MISS block_msgs=5"
+        },
+        {
+          "name": "final_evidence[3]",
+          "passed": true,
+          "detail": "q=P0 不做权重配置的讨论原话？ granularity=OK keyword=OK block_msgs=5"
+        },
+        {
+          "name": "final_evidence[4]",
+          "passed": true,
+          "detail": "q=复赛 mock 上传方案的讨论原话？ granularity=OK keyword=OK block_msgs=6"
+        },
+        {
+          "name": "final_evidence[5]",
+          "passed": false,
+          "detail": "q=异常 PDF 处理的讨论原话？ granularity=OK keyword=MISS block_msgs=5"
+        },
+        {
+          "name": "final_evidence[6]",
+          "passed": false,
+          "detail": "q=P0 只支持 PDF 的讨论原话？ granularity=OK keyword=MISS block_msgs=5"
+        },
+        {
+          "name": "final_evidence[7]",
+          "passed": true,
+          "detail": "q=结构化解析五字段的讨论原话？ granularity=OK keyword=OK block_msgs=6"
+        },
+        {
+          "name": "final_evidence[8]",
+          "passed": true,
+          "detail": "q=UI 结果卡片排布的讨论原话？ granularity=OK keyword=OK block_msgs=4"
+        },
+        {
+          "name": "final_evidence[9]",
+          "passed": false,
+          "detail": "q=产品命名为 AI 简历初筛助手的讨论原话？ granularity=OK keyword=MISS block_msgs=3"
+        }
+      ],
+      "topic_details": [
+        {
+          "name": "final_topic[0]",
+          "passed": true,
+          "detail": "q=当前 AI 简历初筛 MVP 的整体边界是什么？ granularity=OK keyword=OK topics=5"
+        },
+        {
+          "name": "final_topic[1]",
+          "passed": false,
+          "detail": "q=项目管理和排期整体现在怎么定的？ granularity=OK keyword=MISS topics=5"
+        },
+        {
+          "name": "final_topic[2]",
+          "passed": true,
+          "detail": "q=技术实现整体方案现在是什么？ granularity=OK keyword=OK topics=3"
+        }
+      ]
+    },
+    "granularity_accuracy": {
+      "rates": {
+        "memory_card": 1.0,
+        "evidence_block": 1.0,
+        "topic_summary": 1.0
+      },
+      "raw": {
+        "memory_card": {
+          "expected": 15,
+          "actual_correct": 15
+        },
+        "evidence_block": {
+          "expected": 15,
+          "actual_correct": 15
+        },
+        "topic_summary": {
+          "expected": 8,
+          "actual_correct": 8
+        }
+      }
+    }
+  },
+  "conflict_metrics": {
+    "from_chat": {
+      "total": 5,
+      "passed": 1,
+      "pass_rate": 0.2,
+      "details": [
+        {
+          "name": "项目管理-分工与排期 refine",
+          "operation": "refine",
+          "passed": false,
+          "detail": "op=refine head_keywords=[]"
+        },
+        {
+          "name": "技术实现-部署与运维 progress_refine",
+          "operation": "progress_refine",
+          "passed": false,
+          "detail": "op=progress_refine head_keywords=[]"
+        },
+        {
+          "name": "质量保障-测试与评测 progress_refine",
+          "operation": "progress_refine",
+          "passed": false,
+          "detail": "op=progress_refine head_keywords=[]"
+        },
+        {
+          "name": "产品规划-功能优先级 refine（匹配分 + 报告字段合并）",
+          "operation": "refine",
+          "passed": false,
+          "detail": "op=refine head_keywords=[]"
+        },
+        {
+          "name": "数据与安全-脱敏字段 progress_refine",
+          "operation": "progress_refine",
+          "passed": true,
+          "detail": "op=progress_refine head=695d7d27 sources=['31e1511c', 'a8043b4d']"
+        }
+      ]
+    },
+    "simulated": {
+      "total": 3,
+      "passed": 3,
+      "pass_rate": 1.0,
+      "details": [
+        {
+          "name": "simulated_refine",
+          "operation": "refine",
+          "passed": true,
+          "detail": "refine ok: merged=0deb51ce type=decision"
+        },
+        {
+          "name": "simulated_supersede",
+          "operation": "supersede",
+          "passed": true,
+          "detail": "supersede ok: new=66943a81 supersedes=['5429577b']"
+        },
+        {
+          "name": "simulated_progress_complete",
+          "operation": "progress_complete",
+          "passed": true,
+          "detail": "progress_complete ok: merged=6b15f15d type=decision"
+        }
+      ]
+    },
+    "by_operation": {
+      "progress_complete": {
+        "total": 1,
+        "passed": 1,
+        "pass_rate": 1.0
+      },
+      "progress_refine": {
+        "total": 3,
+        "passed": 1,
+        "pass_rate": 0.3333
+      },
+      "refine": {
+        "total": 3,
+        "passed": 1,
+        "pass_rate": 0.3333
+      },
+      "supersede": {
+        "total": 1,
+        "passed": 1,
+        "pass_rate": 1.0
+      }
+    }
+  },
+  "anti_interference_metrics": {
+    "blocks_total": 1,
+    "blocks_noise": 0,
+    "noise_correct_rate": 0.0,
+    "cards_unexpected": 1,
+    "passed": false,
+    "block_types": [
+      "decision"
+    ],
+    "new_cards_summary": [
+      {
+        "memory_type": "decision",
+        "status": "active",
+        "decision_object": "其他-无关消息",
+        "decision": "决定等对方看完匹配分后一起去吃饭"
+      }
+    ]
+  }
+}

@@ -8,6 +8,8 @@ from typing import List, Optional
 import httpx
 from openai import AsyncOpenAI
 from graphiti_core import Graphiti
+
+from memory.llm_runtime import is_graphiti_disabled
 from graphiti_core.llm_client.openai_client import OpenAIClient, LLMConfig
 from graphiti_core.llm_client.config import DEFAULT_MAX_TOKENS, ModelSize
 from graphiti_core.embedder.openai import OpenAIEmbedder, OpenAIEmbedderConfig
@@ -119,6 +121,11 @@ class GraphitiClient:
     @classmethod
     async def initialize(cls):
         global _graphiti
+
+        if is_graphiti_disabled():
+            logger.info("Graphiti disabled (DISABLE_GRAPHITI=true) — skipping Neo4j connect / index build")
+            _graphiti = None
+            return
 
         ollama_url  = os.getenv("OLLAMA_URL", "http://localhost:11434")
         ollama_base = f"{ollama_url.rstrip('/')}/v1"

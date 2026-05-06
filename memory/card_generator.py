@@ -16,6 +16,7 @@ import numpy as np
 from graphiti_core.nodes import EpisodeType
 
 from memory.graphiti_client import GraphitiClient
+from memory.llm_runtime import apply_thinking_payload, should_skip_graphiti_card_write
 from memory.topics import format_for_prompt as _topics_for_prompt
 from memory.schemas import (
     CardRelationOp,
@@ -565,14 +566,14 @@ class CardGenerator:
                 resp = await client.post(
                     f"{base_url}/chat/completions",
                     headers={"Authorization": f"Bearer {api_key}"},
-                    json={
+                    json=apply_thinking_payload({
                         "model": model,
                         "messages": [{"role": "user", "content": prompt}],
                         "response_format": {"type": "json_object"},
                         "temperature": 0,
                         "top_p": 1,
                         "seed": seed,
-                    },
+                    }),
                 )
                 resp.raise_for_status()
                 content = resp.json()["choices"][0]["message"]["content"]
@@ -594,14 +595,14 @@ class CardGenerator:
                 resp = await client.post(
                     f"{base_url}/chat/completions",
                     headers={"Authorization": f"Bearer {api_key}"},
-                    json={
+                    json=apply_thinking_payload({
                         "model": model,
                         "messages": [{"role": "user", "content": prompt}],
                         "response_format": {"type": "json_object"},
                         "temperature": 0,
                         "top_p": 1,
                         "seed": seed,
-                    },
+                    }),
                 )
                 resp.raise_for_status()
                 content = resp.json()["choices"][0]["message"]["content"]
@@ -688,6 +689,10 @@ async def _cache_card_embedding(card: MemoryCard) -> None:
 
 async def _write_card_to_graphiti(card: MemoryCard, ref_time=None) -> None:
     """将单张 MemoryCard 写入 Graphiti（供批量并发写入复用）。"""
+    if should_skip_graphiti_card_write():
+        logger.info("Graphiti 卡片写入已禁用 (SKIP_GRAPHITI_CARD_WRITE) | memory_id=%s object=%s",
+                    card.memory_id, card.decision_object)
+        return
     g = GraphitiClient()
     if not g.g:
         logger.warning("Graphiti 未初始化，跳过写入 | memory_id=%s", card.memory_id)
