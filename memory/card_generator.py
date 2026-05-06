@@ -631,15 +631,28 @@ class CardGenerator:
 
 
 async def _get_embedding(text: str) -> Optional[np.ndarray]:
-    """调用 Ollama embed 接口，返回归一化向量。失败返回 None。"""
+    """调用 embedding 接口，返回归一化向量。失败返回 None。"""
     try:
         async with httpx.AsyncClient(timeout=30, trust_env=False) as client:
-            resp = await client.post(
-                f"{OLLAMA_URL}/api/embed",
-                json={"model": EMBED_MODEL, "input": text},
-            )
-            resp.raise_for_status()
-            vec = resp.json().get("embeddings", [[]])[0]
+            provider = os.getenv("MODEL_PROVIDER", "ollama").strip().lower()
+            if provider == "openai" or os.getenv("OPENAI_API_KEY"):
+                api_key = os.getenv("OPENAI_API_KEY", "")
+                base_url = os.getenv("OPENAI_BASE_URL", "https://api.openai.com/v1").rstrip("/")
+                model = os.getenv("OPENAI_EMBED_MODEL", os.getenv("EMBED_MODEL", "text-embedding-3-small"))
+                resp = await client.post(
+                    f"{base_url}/embeddings",
+                    headers={"Authorization": f"Bearer {api_key}"},
+                    json={"model": model, "input": text},
+                )
+                resp.raise_for_status()
+                vec = (resp.json().get("data") or [{}])[0].get("embedding") or []
+            else:
+                resp = await client.post(
+                    f"{OLLAMA_URL}/api/embed",
+                    json={"model": EMBED_MODEL, "input": text},
+                )
+                resp.raise_for_status()
+                vec = resp.json().get("embeddings", [[]])[0]
             if not vec:
                 return None
             arr = np.array(vec, dtype=np.float32)
