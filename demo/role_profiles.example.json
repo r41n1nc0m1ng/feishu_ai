@@ -1,0 +1,9 @@
+{
+  "ou_pm_001": "demo-pm-bot",
+  "ou_dev_001": "demo-dev-bot",
+  "ou_hr_001": "demo-hr-bot",
+  "ou_algo_001": "demo-algo-bot",
+  "ou_design_001": "demo-design-bot",
+  "ou_qa_001": "demo-qa-bot",
+  "ou_ops_001": "demo-ops-bot"
+}
