@@ -1,12 +1,47 @@
+import json
 import logging
+import os
 from typing import List, Optional
 
+import httpx
 import numpy as np
 
 from memory.graphiti_client import GraphitiClient
+from memory.llm_runtime import apply_thinking_payload
 from memory.schemas import CardStatus, EvidenceBlock, MemoryCard, TopicSummary
 
 logger = logging.getLogger(__name__)
+
+OLLAMA_URL = os.getenv("OLLAMA_URL", "http://localhost:11434")
+RERANK_MODEL = os.getenv("LOCAL_MODEL", "qwen2.5:7b")
+
+
+def _rerank_enabled() -> bool:
+    """RERANK_ENABLED=true 才会触发两段式 LLM rerank。"""
+    return os.getenv("RERANK_ENABLED", "").strip().lower() in {"1", "true", "yes", "on"}
+
+
+_RERANK_RECALL_K = int(os.getenv("RERANK_RECALL_K", "10"))   # 第一阶段 hybrid 召回数量上限
+
+_RERANK_PROMPT = """\
+你是一个群聊记忆检索助手。下面是用户提出的问题，以及若干候选记忆卡片。
+请基于"用户真正在问什么"挑出与问题最贴合的卡片，并按相关度从高到低排序。
+
+【用户问题】
+{query}
+
+【候选卡片】（共 {n} 张，编号 0 起）
+{cards_block}
+
+【排序规则】
+- 优先看卡片的 decision_object 与 decision 是否回答了用户问题的核心点
+- reason 仅作辅助，不要被无关 reason 中的关键词带偏
+- 不相关的卡片不要写进结果
+- 如果所有候选都不相关，返回空数组
+
+【输出 JSON】只返回 JSON，不要其他内容：
+{{"ranked_indices": [候选下标, ...], "reason": "一句话依据"}}
+"""
 
 
 class MemoryRetriever:
@@ -23,15 +58,34 @@ class MemoryRetriever:
         self, chat_id: str, query: str, limit: int = 5
     ) -> List[MemoryCard]:
         """
-        语义检索当前群聊中与 query 相关的 MemoryCard，仅返回 Active 状态。
+        两段式检索（仅返回 Active 状态卡片）：
+          Stage 1 — hybrid recall：embedding cosine + 分层 bigram 字面命中
+                    召回 RERANK_RECALL_K（默认 10）张候选
+          Stage 2 — LLM rerank（仅当 RERANK_ENABLED=true 时启用）：
+                    LLM 读 query + 候选卡片，重新排序输出 top-limit
+                    LLM 不可用 → 兜底返回 hybrid 原排序的 top-limit
 
-        主路径：query embedding 直接对比所有卡片 embedding（余弦排序），
-        绕开 Graphiti 图遍历，避免同语义域卡片被错误路由。
-        降级路径（_card_embeddings 为空时）：Graphiti 图搜索 + fact→card 匹配。
+        当 hybrid 召回不到任何卡（如 embedding 缓存为空）→ 走 Graphiti 图搜索降级。
         """
+        recall_k = max(limit, _RERANK_RECALL_K) if _rerank_enabled() else limit
+        candidates = await self._hybrid_topk(chat_id, query, k=recall_k)
+
+        if not candidates:
+            return await self._graphiti_fallback(chat_id, query, limit)
+
+        if _rerank_enabled() and len(candidates) > 1:
+            ranked = await self._llm_rerank(query, candidates, limit=limit)
+            if ranked is not None:
+                return ranked
+
+        return candidates[:limit]
+
+    async def _hybrid_topk(
+        self, chat_id: str, query: str, k: int
+    ) -> List[MemoryCard]:
+        """Stage 1：hybrid 打分召回 top-k 候选。embedding 缓存为空时返回 []，由调用方触发降级。"""
         from memory.card_generator import _card_cache, _card_embeddings
 
-        # ── 主路径：embedding 余弦排序 ────────────────────────────────────────
         active_cards = [
             c for c in _card_cache.values()
             if c.chat_id == chat_id and c.decision and c.status != CardStatus.DEPRECATED
@@ -41,26 +95,31 @@ class MemoryRetriever:
             for c in active_cards
             if c.memory_id in _card_embeddings
         ]
-        if cards_with_emb:
-            query_vec = await self._embed_text(query)
-            if query_vec is not None:
-                # 混合检索：embedding cosine + 字面字符重合度
-                # 字面命中能挽回 embedding 把"自动淘汰"和"需人工确认项"语义混淆的情况
-                scored = sorted(
-                    [(self._hybrid_score(query, query_vec, emb, c), c)
-                     for c, emb in cards_with_emb],
-                    reverse=True,
-                    key=lambda x: x[0],
-                )
-                cards = [c for _, c in scored[:limit]]
-                logger.info(
-                    "Memory retrieve (hybrid) | chat=%s query=%s top=%s",
-                    chat_id, query[:40],
-                    [(round(s, 3), c.decision_object) for s, c in scored[:3]],
-                )
-                return cards
+        if not cards_with_emb:
+            return []
 
-        # ── 降级路径：Graphiti 图搜索 + fact→card 匹配 ────────────────────────
+        query_vec = await self._embed_text(query)
+        if query_vec is None:
+            return []
+
+        scored = sorted(
+            [(self._hybrid_score(query, query_vec, emb, c), c)
+             for c, emb in cards_with_emb],
+            reverse=True,
+            key=lambda x: x[0],
+        )
+        cards = [c for _, c in scored[:k]]
+        logger.info(
+            "Memory retrieve (hybrid topK=%d) | chat=%s query=%s top3=%s",
+            k, chat_id, query[:40],
+            [(round(s, 3), c.decision_object) for s, c in scored[:3]],
+        )
+        return cards
+
+    async def _graphiti_fallback(
+        self, chat_id: str, query: str, limit: int
+    ) -> List[MemoryCard]:
+        """embedding 不可用时走 Graphiti 图搜索 + fact→card 匹配。"""
         raw_results = await self.search_active(chat_id, query, limit=limit)
         logger.info(
             "Memory retrieve (Graphiti) | chat=%s query=%s raw_hits=%d",
@@ -68,7 +127,6 @@ class MemoryRetriever:
         )
         cards_out: List[MemoryCard] = []
         seen_ids: set[str] = set()
-
         for raw in raw_results:
             fact = raw.get("fact", "")
             fact_vec = await self._embed_text(fact) if fact else None
@@ -78,7 +136,6 @@ class MemoryRetriever:
                 cards_out.append(card)
             elif not card:
                 cards_out.append(self._to_memory_card(chat_id, query, raw))
-
         return cards_out[:limit]
 
     async def retrieve_all(
@@ -247,6 +304,131 @@ class MemoryRetriever:
         """获取文本 embedding，复用 card_generator 的 _get_embedding。"""
         from memory.card_generator import _get_embedding
         return await _get_embedding(text)
+
+    # ── Stage 2：LLM rerank ───────────────────────────────────────────────────
+
+    async def _llm_rerank(
+        self,
+        query: str,
+        candidates: List[MemoryCard],
+        limit: int,
+    ) -> Optional[List[MemoryCard]]:
+        """LLM 读 query + 候选卡，重新排序。失败/格式异常返回 None 由调用方退化。"""
+        if not candidates:
+            return []
+
+        cards_block = "\n".join(
+            f"[{i}] decision_object={c.decision_object}\n    decision={c.decision}\n    reason={c.reason or '无'}"
+            for i, c in enumerate(candidates)
+        )
+        prompt = _RERANK_PROMPT.format(
+            query=query, n=len(candidates), cards_block=cards_block,
+        )
+
+        try:
+            raw = await self._call_rerank_llm(prompt)
+        except Exception as e:
+            logger.warning("rerank LLM 调用异常 | err=%s", e)
+            return None
+        if not raw:
+            return None
+
+        ranked_indices = raw.get("ranked_indices") or []
+        if not isinstance(ranked_indices, list):
+            logger.warning("rerank 返回 ranked_indices 类型错误: %r", ranked_indices)
+            return None
+
+        # 把整数下标映射回 MemoryCard，过滤越界 / 重复
+        seen: set[int] = set()
+        ordered: List[MemoryCard] = []
+        for raw_idx in ranked_indices:
+            try:
+                idx = int(raw_idx)
+            except (TypeError, ValueError):
+                continue
+            if idx < 0 or idx >= len(candidates) or idx in seen:
+                continue
+            seen.add(idx)
+            ordered.append(candidates[idx])
+            if len(ordered) >= limit:
+                break
+
+        if not ordered:
+            logger.info("rerank 返回空命中 (LLM 认为候选都不相关) | query=%s", query[:40])
+            return []
+
+        logger.info(
+            "Memory retrieve (rerank) | query=%s top3=%s reason=%s",
+            query[:40],
+            [c.decision_object for c in ordered[:3]],
+            (raw.get("reason") or "")[:80],
+        )
+        return ordered
+
+    async def _call_rerank_llm(self, prompt: str) -> Optional[dict]:
+        """优先级：DeepSeek → OpenAI → Ollama，与其他模块一致。"""
+        if os.getenv("DEEPSEEK_API_KEY"):
+            return await self._call_deepseek_rerank(prompt)
+        provider = os.getenv("MODEL_PROVIDER", "ollama").strip().lower()
+        if provider == "openai" or os.getenv("OPENAI_API_KEY"):
+            return await self._call_openai_rerank(prompt)
+        return await self._call_ollama_rerank(prompt)
+
+    async def _call_deepseek_rerank(self, prompt: str) -> Optional[dict]:
+        api_key  = os.getenv("DEEPSEEK_API_KEY", "")
+        base_url = os.getenv("DEEPSEEK_BASE_URL", "https://api.deepseek.com/v1").rstrip("/")
+        model    = os.getenv("DEEPSEEK_MODEL", "deepseek-chat")
+        seed     = int(os.getenv("LLM_SEED", "42"))
+        async with httpx.AsyncClient(timeout=60, trust_env=False) as client:
+            resp = await client.post(
+                f"{base_url}/chat/completions",
+                headers={"Authorization": f"Bearer {api_key}"},
+                json=apply_thinking_payload({
+                    "model": model,
+                    "messages": [{"role": "user", "content": prompt}],
+                    "response_format": {"type": "json_object"},
+                    "temperature": 0,
+                    "top_p": 1,
+                    "seed": seed,
+                }),
+            )
+            resp.raise_for_status()
+            return json.loads(resp.json()["choices"][0]["message"]["content"])
+
+    async def _call_openai_rerank(self, prompt: str) -> Optional[dict]:
+        api_key  = os.getenv("OPENAI_API_KEY", "")
+        base_url = os.getenv("OPENAI_BASE_URL", "https://api.openai.com/v1").rstrip("/")
+        model    = os.getenv("OPENAI_MODEL", RERANK_MODEL)
+        seed     = int(os.getenv("LLM_SEED", "42"))
+        if not api_key:
+            return None
+        async with httpx.AsyncClient(timeout=60, trust_env=False) as client:
+            resp = await client.post(
+                f"{base_url}/chat/completions",
+                headers={"Authorization": f"Bearer {api_key}"},
+                json=apply_thinking_payload({
+                    "model": model,
+                    "messages": [{"role": "user", "content": prompt}],
+                    "response_format": {"type": "json_object"},
+                    "temperature": 0,
+                    "top_p": 1,
+                    "seed": seed,
+                }),
+            )
+            resp.raise_for_status()
+            return json.loads(resp.json()["choices"][0]["message"]["content"])
+
+    async def _call_ollama_rerank(self, prompt: str) -> Optional[dict]:
+        seed = int(os.getenv("LLM_SEED", "42"))
+        async with httpx.AsyncClient(timeout=60, trust_env=False) as client:
+            resp = await client.post(
+                f"{OLLAMA_URL}/api/generate",
+                json={"model": RERANK_MODEL, "prompt": prompt,
+                      "stream": False, "format": "json",
+                      "options": {"temperature": 0, "seed": seed}},
+            )
+            resp.raise_for_status()
+            return json.loads(resp.json().get("response", "{}"))
 
     def _find_card_for_fact(
         self,

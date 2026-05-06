@@ -14,14 +14,16 @@ def _normalize_text(value: str) -> str:
 
 
 def _card_text(card: MemoryCard) -> str:
-    return " ".join(
-        [
-            card.decision_object,
-            card.title,
-            card.decision,
-            card.reason,
-        ]
-    ).lower()
+    parts = [
+        card.decision_object or "",
+        card.decision or "",
+        card.reason or "",
+        " ".join(card.tentative_consensus or []),
+        " ".join(card.open_questions or []),
+        " ".join(card.discussion_scope or []),
+        card.next_step or "",
+    ]
+    return " ".join(p for p in parts if p).lower()
 
 
 def _topic_text(topic: TopicSummary) -> str:
@@ -29,10 +31,19 @@ def _topic_text(topic: TopicSummary) -> str:
 
 
 def _keywords_match(text: str, expected_keywords: list[str] | None) -> bool:
+    """ALL-of：所有关键词都必须出现。空列表视为不约束。"""
     if not expected_keywords:
         return True
     normalized = _normalize_text(text)
     return all(_normalize_text(keyword) in normalized for keyword in expected_keywords)
+
+
+def _keywords_match_any(text: str, keywords: list[str] | None) -> bool:
+    """ANY-of：至少有一个关键词出现。空列表视为不约束。"""
+    if not keywords:
+        return True
+    normalized = _normalize_text(text)
+    return any(_normalize_text(keyword) in normalized for keyword in keywords)
 
 
 def _keywords_absent(text: str, forbidden_keywords: list[str] | None) -> bool:
@@ -40,6 +51,14 @@ def _keywords_absent(text: str, forbidden_keywords: list[str] | None) -> bool:
         return True
     normalized = _normalize_text(text)
     return all(_normalize_text(keyword) not in normalized for keyword in forbidden_keywords)
+
+
+def _as_list(value) -> list[str]:
+    if value is None:
+        return []
+    if isinstance(value, str):
+        return [value]
+    return [str(v) for v in value]
 
 
 @dataclass
@@ -87,6 +106,7 @@ class BenchmarkEvaluator:
         checks.extend(self._check_write_result(batch, write_result))
         checks.extend(self._check_memory_cards(chat_id, batch))
         checks.extend(self._check_relations(chat_id, batch))
+        checks.extend(self._check_card_relations(chat_id, batch))
         checks.extend(self._check_topics(chat_id, batch))
         checks.extend(self._check_batch_evidence(chat_id, batch))
 
@@ -98,7 +118,7 @@ class BenchmarkEvaluator:
         }
         return EvaluatorSummary(passed=passed, checks=checks, metrics=metrics)
 
-    def evaluate_case(self, case: dict[str, Any]) -> EvaluatorSummary:
+    async def evaluate_case(self, case: dict[str, Any]) -> EvaluatorSummary:
         checks: list[CheckResult] = []
         if not self.deep_eval_enabled:
             return self.skipped_case_eval("deep_eval_disabled")
@@ -107,7 +127,7 @@ class BenchmarkEvaluator:
         final_memory_checks = final_expected.get("final_memory_checks") or []
         relation_checks = final_expected.get("relation_checks") or []
         evidence_checks = final_expected.get("evidence_checks") or []
-        recall_metrics = self._build_recall_metrics(case, final_memory_checks)
+        recall_metrics = await self._build_recall_metrics(case, final_memory_checks)
         interference_metrics = self._build_interference_metrics(case)
         conflict_metrics = self._build_conflict_metrics(case)
 
@@ -216,16 +236,31 @@ class BenchmarkEvaluator:
         checks: list[CheckResult] = []
 
         for i, spec in enumerate(specs):
-            expected_keywords = spec.get("expected_keywords") or []
-            forbidden_keywords = spec.get("forbidden_keywords") or []
-            expected_status = spec.get("expected_status")
+            expected_keywords          = spec.get("expected_keywords") or []
+            expected_keywords_any      = spec.get("expected_keywords_any") or []
+            forbidden_keywords         = spec.get("forbidden_keywords") or []
+            expected_status            = spec.get("expected_status")
+            expected_memory_type       = spec.get("expected_memory_type")
+            expected_decision_objects  = _as_list(spec.get("expected_decision_object"))
+            forbidden_decision_objects = _as_list(spec.get("forbidden_decision_objects"))
             matched_cards = []
             for card in cards:
                 if expected_status and card.status.value != expected_status:
                     continue
+                if expected_memory_type and card.memory_type.value != expected_memory_type:
+                    continue
+                if expected_decision_objects and card.decision_object not in expected_decision_objects:
+                    continue
+                if forbidden_decision_objects and card.decision_object in forbidden_decision_objects:
+                    continue
                 text = _card_text(card)
-                if _keywords_match(text, expected_keywords) and _keywords_absent(text, forbidden_keywords):
-                    matched_cards.append(card)
+                if not _keywords_match(text, expected_keywords):
+                    continue
+                if not _keywords_match_any(text, expected_keywords_any):
+                    continue
+                if not _keywords_absent(text, forbidden_keywords):
+                    continue
+                matched_cards.append(card)
             checks.append(
                 CheckResult(
                     name=f"expected_memory_cards[{i}]",
@@ -256,6 +291,108 @@ class BenchmarkEvaluator:
             return [CheckResult(name="relation_eval", passed=True, detail="skipped")]
         checks = self._check_relation_specs({"chat_id": chat_id}, specs, prefix="expected_relations")
         checks.extend(self._check_relation_specs({"chat_id": chat_id}, forbidden_specs, prefix="forbidden_relations"))
+        return checks
+
+    def _check_card_relations(self, chat_id: str, batch: dict[str, Any]) -> list[CheckResult]:
+        """检查 refine / supersede / progress_complete / progress_refine 的"卡片对"关系。
+
+        与 expected_relations(走 MemoryRelation 表)不同，这里直接读 MemoryCard.supersedes_memory_ids
+        字段，能区分 refine（合并卡 supersedes 长度=2）、supersede（长度=1）等不同 operation 语义；
+        也能直接拿到合并/被合并卡片的 memory_id 链路，便于审计。
+
+        spec schema:
+          {
+            "operation": "supersede" | "refine" | "progress_complete" | "progress_refine",
+            "head_keywords": ["最新合并/覆盖卡的关键词"],          # 在 head 卡的 _card_text 上 ALL-match
+            "head_decision_object": "可选，head 卡的 decision_object 精确匹配",
+            "head_status": "active|deprecated（默认 active）",
+            "source_keywords": [                                  # 与 head.supersedes_memory_ids 等长
+              ["源卡1关键词", ...],
+              ["源卡2关键词", ...]
+            ]
+          }
+        """
+        expected_write = batch.get("expected_write_result") or {}
+        specs = expected_write.get("expected_card_relations") or []
+        if not self.deep_eval_enabled:
+            if not specs:
+                return []
+            return [CheckResult(name="card_relations_eval", passed=True, detail="skipped")]
+
+        op_to_count = {
+            "supersede": 1,
+            "refine": 2,
+            "progress_complete": 2,
+            "progress_refine": 2,
+        }
+
+        cards = store.get_cards_for_chat(chat_id)
+        cards_by_id = {c.memory_id: c for c in cards}
+        checks: list[CheckResult] = []
+
+        for i, spec in enumerate(specs):
+            op = str(spec.get("operation") or "").strip().lower()
+            head_kws = spec.get("head_keywords") or []
+            head_obj = spec.get("head_decision_object")
+            head_status = (spec.get("head_status") or "active").strip().lower()
+            source_specs = spec.get("source_keywords") or []
+            expected_count = op_to_count.get(op, len(source_specs) or None)
+
+            matched_card = None
+            detail = ""
+            for card in cards:
+                if card.status.value != head_status:
+                    continue
+                if head_obj and card.decision_object != head_obj:
+                    continue
+                if not card.supersedes_memory_ids:
+                    continue
+                if expected_count is not None and len(card.supersedes_memory_ids) != expected_count:
+                    continue
+                if not _keywords_match(_card_text(card), head_kws):
+                    continue
+
+                # 解析每个源卡（先内存后 SQLite）
+                source_cards = []
+                for sid in card.supersedes_memory_ids:
+                    sc = cards_by_id.get(sid) or store.load_memory_card(sid)
+                    if sc:
+                        source_cards.append(sc)
+                if len(source_cards) != len(card.supersedes_memory_ids):
+                    continue
+
+                # source_specs 与每张源卡做无序唯一匹配
+                if source_specs:
+                    used: set[int] = set()
+                    all_ok = True
+                    for s_kws in source_specs:
+                        s_kws = list(s_kws or [])
+                        found = False
+                        for j, sc in enumerate(source_cards):
+                            if j in used:
+                                continue
+                            if _keywords_match(_card_text(sc), s_kws):
+                                used.add(j)
+                                found = True
+                                break
+                        if not found:
+                            all_ok = False
+                            break
+                    if not all_ok:
+                        continue
+
+                matched_card = card
+                detail = f"head={card.memory_id} sources={list(card.supersedes_memory_ids)}"
+                break
+
+            checks.append(
+                CheckResult(
+                    name=f"expected_card_relations[{i}]",
+                    passed=bool(matched_card),
+                    detail=detail or f"op={op} head_keywords={head_kws}",
+                )
+            )
+
         return checks
 
     def _check_relation_specs(
@@ -389,7 +526,7 @@ class BenchmarkEvaluator:
             )
         return checks
 
-    def _build_recall_metrics(
+    async def _build_recall_metrics(
         self,
         case: dict[str, Any],
         specs: list[dict[str, Any]],
@@ -421,7 +558,7 @@ class BenchmarkEvaluator:
             forbidden_keywords = spec.get("forbidden_keywords") or []
 
             started = time.perf_counter()
-            ranked = self._rank_candidates(chat_id, query, target=target)
+            ranked = await self._rank_candidates(chat_id, query, target=target)
             latency_ms = round((time.perf_counter() - started) * 1000, 3)
             latencies.append(latency_ms)
 
@@ -578,35 +715,17 @@ class BenchmarkEvaluator:
             "conflict_expectations": conflict_expectations,
         }
 
-    def _rank_candidates(self, chat_id: str, query: str, *, target: str) -> list[dict[str, Any]]:
-        query_chars = {ch for ch in (query or "").strip() if not ch.isspace()}
+    async def _rank_candidates(self, chat_id: str, query: str, *, target: str) -> list[dict[str, Any]]:
+        """走真 production retriever（hybrid + 可选 LLM rerank），让 recall 指标真实反映线上行为。
+
+        score 字段不再是字符重合度，而是按返回顺序的合成单调降序值（1.0 / 0.99 / ...），
+        仅用于保留 score_margin 度量结构；hit_rate 类指标只看顺序。
+        """
+        from memory.retriever import MemoryRetriever
+        retriever = MemoryRetriever()
         if target == "topic_summary":
-            topics = store.load_topics_by_chat(chat_id)
-            ranked = []
-            for topic in topics:
-                text = _topic_text(topic)
-                score = self._char_overlap_score(query_chars, text)
-                ranked.append({"score": score, "text": text})
-            ranked.sort(key=lambda item: item["score"], reverse=True)
-            return ranked
+            topics = await retriever.retrieve_topic_summary(chat_id, query, limit=20)
+            return [{"score": 1.0 - i * 0.01, "text": _topic_text(t)} for i, t in enumerate(topics)]
 
-        cards = store.get_cards_for_chat(chat_id)
-        ranked = []
-        for card in cards:
-            text = _card_text(card)
-            score = self._char_overlap_score(query_chars, text)
-            # Prefer current active cards for "current state" style queries.
-            if getattr(card.status, "value", "") == "active":
-                score += 0.01
-            ranked.append({"score": score, "text": text})
-        ranked.sort(key=lambda item: item["score"], reverse=True)
-        return ranked
-
-    def _char_overlap_score(self, query_chars: set[str], text: str) -> float:
-        text_chars = {ch for ch in (text or "").strip() if not ch.isspace()}
-        if not query_chars or not text_chars:
-            return 0.0
-        inter = len(query_chars & text_chars)
-        union = len(query_chars | text_chars) or 1
-        coverage = inter / len(query_chars)
-        return inter / union + coverage
+        cards = await retriever.retrieve(chat_id, query, limit=20)
+        return [{"score": 1.0 - i * 0.01, "text": _card_text(c)} for i, c in enumerate(cards)]

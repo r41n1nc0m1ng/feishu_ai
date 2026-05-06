@@ -1,0 +1,297 @@
+{
+  "schema_version": "benchmark_v3",
+  "case_id": "benchmark_v3_full_demo",
+  "chat_id": "oc_demo_ai_resume",
+  "fixture_path": "benchmarkv3/full_demo_case.json",
+  "reference_result_path": "benchmark/result.json",
+  "description": "v3 测试集：每 batch 末 3 条松检查查询 + 总末 23 条严格查询 + 矛盾更新（result.json 推断 + 3 条模拟）+ batch_006 抗干扰",
+
+  "per_batch_queries": {
+    "batch_001": {
+      "decision_query": "MVP 范围现在是什么？",
+      "evidence_query": "为什么不做完整 ATS 的原话在哪？",
+      "topic_summary_query": "产品规划现在怎么定的？"
+    },
+    "batch_002": {
+      "decision_query": "明天的 Demo 评审会安排是？",
+      "evidence_query": "MVP 不输出淘汰结论原话谁说的？",
+      "topic_summary_query": "项目管理与排期现在整体怎么定的？"
+    },
+    "batch_003": {
+      "decision_query": "P0 报告输出字段都有什么？",
+      "evidence_query": "P0 不做权重配置的讨论原话在哪？",
+      "topic_summary_query": "产品规划当前整体方案是什么？"
+    },
+    "batch_004": {
+      "decision_query": "评测方案怎么定的？",
+      "evidence_query": "20 份 mock 简历谁负责？原话？",
+      "topic_summary_query": "质量保障与评测当前整体方案是什么？"
+    },
+    "batch_005": {
+      "decision_query": "复赛的文件上传方案是什么？",
+      "evidence_query": "复赛不接对象存储的原话在哪？",
+      "topic_summary_query": "技术实现现在整体怎么定？"
+    }
+  },
+
+  "final_queries": {
+    "decision_queries": [
+      {
+        "query": "MVP 范围限定在什么？",
+        "expected_keywords": ["JD", "简历匹配", "不做完整ATS"],
+        "expected_keywords_any": ["初筛", "MVP"],
+        "expected_granularity": "memory_card"
+      },
+      {
+        "query": "MVP 是否会输出自动淘汰结论？",
+        "expected_keywords": ["不输出", "淘汰"],
+        "expected_keywords_any": ["辅助判断", "辅助"],
+        "forbidden_keywords": ["录用概率"],
+        "expected_granularity": "memory_card"
+      },
+      {
+        "query": "推荐等级怎么分类？",
+        "expected_keywords_any": ["strong_match", "medium_match", "needs_review", "推荐等级"],
+        "expected_granularity": "memory_card"
+      },
+      {
+        "query": "P0 是否要做权重配置？",
+        "expected_keywords": ["P0", "不做", "权重"],
+        "expected_keywords_any": ["JD原文", "权重设置"],
+        "expected_granularity": "memory_card"
+      },
+      {
+        "query": "复赛的文件上传具体怎么处理？",
+        "expected_keywords": ["mock", "上传"],
+        "expected_keywords_any": ["不接对象存储", "examples/resumes", "决赛"],
+        "expected_granularity": "memory_card"
+      },
+      {
+        "query": "解析失败时怎么处理？",
+        "expected_keywords_any": ["乱码", "空简历", "图片", "请换", "PDF"],
+        "expected_granularity": "memory_card"
+      },
+      {
+        "query": "P0 支持哪些简历格式？",
+        "expected_keywords": ["PDF"],
+        "expected_keywords_any": ["P0", "只保证"],
+        "expected_granularity": "memory_card"
+      },
+      {
+        "query": "简历结构化解析有哪些字段？",
+        "expected_keywords_any": ["教育", "项目", "实习", "技能", "获奖"],
+        "expected_granularity": "memory_card"
+      },
+      {
+        "query": "UI 结果卡片怎么呈现？",
+        "expected_keywords": ["UI"],
+        "expected_keywords_any": ["匹配优势", "缺失项", "需人工确认", "卡片"],
+        "expected_granularity": "memory_card"
+      },
+      {
+        "query": "产品的最终名称是什么？",
+        "expected_keywords_any": ["AI简历初筛助手", "AI 简历初筛助手"],
+        "expected_granularity": "memory_card"
+      }
+    ],
+    "evidence_queries": [
+      {
+        "query": "MVP 范围限定在什么的原话在哪？",
+        "expected_keywords_any": ["JD", "ATS", "简历匹配", "初筛"],
+        "expected_granularity": "evidence_block",
+        "linked_decision_index": 0
+      },
+      {
+        "query": "MVP 不输出淘汰结论的原话在哪说的？",
+        "expected_keywords_any": ["淘汰", "辅助判断", "AI 不能直接决定"],
+        "expected_granularity": "evidence_block",
+        "linked_decision_index": 1
+      },
+      {
+        "query": "推荐等级分类的原话讨论在哪？",
+        "expected_keywords_any": ["strong_match", "medium_match", "needs_review", "推荐等级"],
+        "expected_granularity": "evidence_block",
+        "linked_decision_index": 2
+      },
+      {
+        "query": "P0 不做权重配置的讨论原话？",
+        "expected_keywords_any": ["权重", "JD原文"],
+        "expected_granularity": "evidence_block",
+        "linked_decision_index": 3
+      },
+      {
+        "query": "复赛 mock 上传方案的讨论原话？",
+        "expected_keywords_any": ["mock", "对象存储", "examples/resumes"],
+        "expected_granularity": "evidence_block",
+        "linked_decision_index": 4
+      },
+      {
+        "query": "异常 PDF 处理的讨论原话？",
+        "expected_keywords_any": ["空简历", "乱码", "图片", "请换"],
+        "expected_granularity": "evidence_block",
+        "linked_decision_index": 5
+      },
+      {
+        "query": "P0 只支持 PDF 的讨论原话？",
+        "expected_keywords_any": ["PDF", "只支持", "只保证"],
+        "expected_granularity": "evidence_block",
+        "linked_decision_index": 6
+      },
+      {
+        "query": "结构化解析五字段的讨论原话？",
+        "expected_keywords_any": ["教育", "项目", "实习", "技能", "获奖"],
+        "expected_granularity": "evidence_block",
+        "linked_decision_index": 7
+      },
+      {
+        "query": "UI 结果卡片排布的讨论原话？",
+        "expected_keywords_any": ["卡片", "匹配优势", "缺失项", "人工确认"],
+        "expected_granularity": "evidence_block",
+        "linked_decision_index": 8
+      },
+      {
+        "query": "产品命名为 AI 简历初筛助手的讨论原话？",
+        "expected_keywords_any": ["命名", "名称", "AI简历初筛助手", "改名"],
+        "expected_granularity": "evidence_block",
+        "linked_decision_index": 9
+      }
+    ],
+    "topic_summary_queries": [
+      {
+        "query": "当前 AI 简历初筛 MVP 的整体边界是什么？",
+        "expected_keywords_any": ["MVP", "ATS", "JD", "匹配", "初筛"],
+        "expected_granularity": "topic_summary"
+      },
+      {
+        "query": "项目管理和排期整体现在怎么定的？",
+        "expected_keywords_any": ["分工", "排期", "Demo", "今晚"],
+        "expected_granularity": "topic_summary"
+      },
+      {
+        "query": "技术实现整体方案现在是什么？",
+        "expected_keywords_any": ["LLM", "mock", "存储", "解析"],
+        "expected_granularity": "topic_summary"
+      }
+    ]
+  },
+
+  "conflict_update_cases": {
+    "from_result_json": [
+      {
+        "name": "项目管理-分工与排期 refine",
+        "operation": "refine",
+        "head_keywords": [],
+        "head_keywords_any": ["晚上", "补", "高保真", "Prompt", "测试集", "页面标题", "API", "样例"],
+        "head_decision_object_keywords_any": ["分工", "排期", "项目管理"],
+        "source_keywords_groups": [
+          ["改页面", "整理样例", "API"],
+          ["晚上", "高保真", "测试集"]
+        ]
+      },
+      {
+        "name": "技术实现-部署与运维 progress_refine",
+        "operation": "progress_refine",
+        "head_keywords": [],
+        "head_keywords_any": ["mock", "上传", "存储", "决赛", "复赛", "对象存储", "Demo", "examples/resumes"],
+        "head_decision_object_keywords_any": ["部署", "运维", "技术实现", "存储"],
+        "source_keywords_groups": [
+          ["mock", "存储", "上传", "Demo"],
+          ["mock", "Demo", "对象存储"]
+        ]
+      },
+      {
+        "name": "质量保障-测试与评测 progress_refine",
+        "operation": "progress_refine",
+        "head_keywords": [],
+        "head_keywords_any": ["等级一致率", "关键理由", "覆盖率", "评测", "人工标注", "投票"],
+        "head_decision_object_keywords_any": ["测试", "评测", "质量"],
+        "source_keywords_groups": [
+          ["人工标注", "投票", "评测", "讨论"],
+          ["等级一致率", "关键理由", "覆盖率"]
+        ]
+      },
+      {
+        "name": "产品规划-功能优先级 refine（匹配分 + 报告字段合并）",
+        "operation": "refine",
+        "head_keywords": [],
+        "head_keywords_any": ["matched_requirements", "missing_requirements", "match_score", "strong_match", "needs_review", "推荐等级", "匹配参考分", "risk_flags", "总览"],
+        "head_decision_object_keywords_any": ["产品", "功能", "优先级"],
+        "source_keywords_groups": [
+          ["matched_requirements", "missing_requirements", "risk_flags", "总览"],
+          ["match_score", "推荐等级", "匹配参考分", "strong_match"]
+        ]
+      },
+      {
+        "name": "数据与安全-脱敏字段 progress_refine",
+        "operation": "progress_refine",
+        "head_keywords": [],
+        "head_keywords_any": ["隐私", "脱敏", "敏感", "头像", "字段"],
+        "head_decision_object_keywords_any": ["安全", "隐私", "数据"],
+        "source_keywords_groups": [
+          ["隐私", "脱敏", "讨论"],
+          ["头像", "敏感", "脱敏", "手机号", "邮箱"]
+        ]
+      }
+    ],
+    "simulated": [
+      {
+        "name": "simulated_refine",
+        "operation": "refine",
+        "old_cards": [
+          {
+            "decision_object": "MVP-范围",
+            "decision": "MVP 不实现用户账号体系",
+            "reason": "账号系统增加复杂度",
+            "memory_type": "decision"
+          }
+        ],
+        "new_card": {
+          "decision_object": "MVP-范围",
+          "decision": "MVP 不做注册登录功能",
+          "reason": "保持精简",
+          "memory_type": "decision"
+        }
+      },
+      {
+        "name": "simulated_supersede",
+        "operation": "supersede",
+        "old_cards": [
+          {
+            "decision_object": "技术实现-技术选型",
+            "decision": "后端使用 Python",
+            "reason": "团队熟悉",
+            "memory_type": "decision"
+          }
+        ],
+        "new_card": {
+          "decision_object": "技术实现-技术选型",
+          "decision": "后端改用 Go 重写",
+          "reason": "性能压测发现 Python 扛不住",
+          "memory_type": "decision"
+        }
+      },
+      {
+        "name": "simulated_progress_complete",
+        "operation": "progress_complete",
+        "old_cards": [
+          {
+            "decision_object": "技术实现-技术选型",
+            "decision": "后端语言选型讨论",
+            "reason": "未达成一致",
+            "memory_type": "progress",
+            "open_questions": ["后端选 Python 还是 Go?"],
+            "discussion_scope": ["Python", "Go"]
+          }
+        ],
+        "new_card": {
+          "decision_object": "技术实现-技术选型",
+          "decision": "最终敲定后端使用 Python",
+          "reason": "团队熟悉迭代快",
+          "memory_type": "decision"
+        }
+      }
+    ]
+  },
+
+  "anti_interference_batch_id": "batch_006"
+}

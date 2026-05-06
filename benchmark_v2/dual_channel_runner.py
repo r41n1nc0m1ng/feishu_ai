@@ -78,8 +78,10 @@ class OfflineReplayRunner:
             outcomes.append(await self.run_batch(case, batch))
 
         run_case_eval = not bool(include_tags or include_chats)
-        case_eval = self.evaluator.evaluate_case(case) if run_case_eval else self.evaluator.skipped_case_eval(
-            "filtered run"
+        case_eval = (
+            await self.evaluator.evaluate_case(case)
+            if run_case_eval
+            else self.evaluator.skipped_case_eval("filtered run")
         )
         case_failures = [check.detail or check.name for check in case_eval.checks if not check.passed]
         overall_success = all(not o.failures for o in outcomes) and case_eval.passed

@@ -24,7 +24,6 @@ from dotenv import load_dotenv
 load_dotenv(ROOT / ".env")
 
 from benchmark.input_simulator import CaseLoader
-from memory.card_generator import _write_card_to_graphiti
 from benchmark.replay_adapter import DualChannelReplayAdapter
 from memory import store
 from memory.batch_processor import BatchProcessor
@@ -153,11 +152,8 @@ async def process_batch(
 
     print(f"[{batch_id}] 完成  新增 MemoryCard {len(new_cards)} 张")
 
-    # 并行批量写入 Graphiti
-    if new_cards:
-        print(f"[{batch_id}] 并行写入 Graphiti ({len(new_cards)} 张)...", flush=True)
-        await asyncio.gather(*[_write_card_to_graphiti(c) for c in new_cards])
-        print(f"[{batch_id}] Graphiti 写入完成", flush=True)
+    # 注意：Graphiti 写入由 BatchProcessor.process_fetch_batch 负责（其末尾已对最终
+    # 存活卡片做并发 add_episode）。此处不再重复写，避免 add_episode 被调两遍 → 慢一倍。
 
     return {
         "batch_id":             batch_id,

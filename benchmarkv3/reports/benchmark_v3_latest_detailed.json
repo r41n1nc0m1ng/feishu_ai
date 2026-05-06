@@ -1,0 +1,3061 @@
+{
+  "case_id": "full_demo_ai_resume_expanded_001",
+  "chat_id": "oc_demo_ai_resume",
+  "fixture": "D:\\learning\\飞书挑战赛\\benchmarkv3\\full_demo_case.json",
+  "tests": "D:\\learning\\飞书挑战赛\\benchmarkv3\\test_cases.json",
+  "summary": {
+    "per_batch_passed": 15,
+    "per_batch_total": 15,
+    "final_passed": 15,
+    "final_total": 23,
+    "final_overall_pass_rate": 0.6522,
+    "anti_interference_passed": false
+  },
+  "queries": {
+    "per_batch": [
+      {
+        "scope": "per_batch_decision",
+        "batch_id": "batch_001",
+        "name": "batch_001.decision",
+        "query": "MVP 范围现在是什么？",
+        "expected_granularity": "memory_card",
+        "actual_granularity": "memory_card",
+        "expected_keywords": null,
+        "expected_keywords_any": null,
+        "forbidden_keywords": null,
+        "passed": true,
+        "detail": "q=MVP 范围现在是什么？ hits=5 granularity=memory_card/memory_card",
+        "top_cards": [
+          {
+            "memory_id": "24f9d627-a827-40b0-b720-c15d7dbea228",
+            "decision_object": "产品规划-项目范围与MVP边界",
+            "decision": "MVP不输出自动淘汰/录用结论，只输出辅助判断",
+            "reason": "避免AI直接决定候选人命运，减少公平性争议且输出“建议人工复核”更合适",
+            "memory_type": "decision",
+            "status": "active",
+            "supersedes_memory_ids": [],
+            "source_block_ids": [
+              "185cc2ff-58cc-4def-9ef6-10de771e4946"
+            ],
+            "rank": 1
+          },
+          {
+            "memory_id": "ddd4dbd7-215a-48ef-a5d6-2b5eb1681f80",
+            "decision_object": "产品规划-项目范围与MVP边界",
+            "decision": "不做完整ATS，只做JD-简历初筛分析（MVP）",
+            "reason": "时间不够，且招聘官最痛的是JD和简历对不上，需人工一份份看",
+            "memory_type": "decision",
+            "status": "active",
+            "supersedes_memory_ids": [],
+            "source_block_ids": [
+              "c2f31fc7-c349-4f85-8199-0401c5da982a"
+            ],
+            "rank": 2
+          },
+          {
+            "memory_id": "20b4f4a3-4ba7-48c8-a529-49b8263c29d8",
+            "decision_object": "用户体验-用户界面与交互设计",
+            "decision": "结果卡片分为匹配优势、缺失项、需人工确认项三块",
+            "reason": "结合设计、HR、PM意见，风险提醒需温和且与不自动淘汰原则一致",
+            "memory_type": "decision",
+            "status": "active",
+            "supersedes_memory_ids": [],
+            "source_block_ids": [
+              "82ff99f4-0fcc-49d4-8b76-da0b522b71f3"
+            ],
+            "rank": 3
+          },
+          {
+            "memory_id": "dc315a14-e8e9-4269-96a4-e1691e573b58",
+            "decision_object": "数据与安全-数据格式与输入输出",
+            "decision": "简历解析字段定为教育、项目、实习、技能、获奖证书五类",
+            "reason": "PM提议，算法同意，HR建议学生场景先不硬算工作年限，实习和项目更重要",
+            "memory_type": "decision",
+            "status": "active",
+            "supersedes_memory_ids": [],
+            "source_block_ids": [
+              "e0ce4a08-9b73-4590-9ee2-6059bd86f38b"
+            ],
+            "rank": 4
+          },
+          {
+            "memory_id": "31e1511c-0903-4484-863b-c3bbb555d9e7",
+            "decision_object": "数据与安全-安全与隐私保护",
+            "decision": "简历隐私字段的脱敏策略",
+            "reason": "讨论未完成，约定下一轮继续",
+            "memory_type": "progress",
+            "status": "active",
+            "supersedes_memory_ids": [],
+            "source_block_ids": [
+              "dcedb41c-606c-4f7d-9c2a-85adf84aa121"
+            ],
+            "rank": 5
+          }
+        ],
+        "expanded_block": null,
+        "top_topics": []
+      },
+      {
+        "scope": "per_batch_evidence",
+        "batch_id": "batch_001",
+        "name": "batch_001.evidence",
+        "query": "为什么不做完整 ATS 的原话在哪？",
+        "expected_granularity": "evidence_block",
+        "actual_granularity": "evidence_block",
+        "expected_keywords": null,
+        "expected_keywords_any": null,
+        "forbidden_keywords": null,
+        "passed": true,
+        "detail": "q=为什么不做完整 ATS 的原话在哪？ hits=1 granularity=evidence_block/evidence_block",
+        "top_cards": [
+          {
+            "memory_id": "ddd4dbd7-215a-48ef-a5d6-2b5eb1681f80",
+            "decision_object": "产品规划-项目范围与MVP边界",
+            "decision": "不做完整ATS，只做JD-简历初筛分析（MVP）",
+            "reason": "时间不够，且招聘官最痛的是JD和简历对不上，需人工一份份看",
+            "memory_type": "decision",
+            "status": "active",
+            "supersedes_memory_ids": [],
+            "source_block_ids": [
+              "c2f31fc7-c349-4f85-8199-0401c5da982a"
+            ],
+            "rank": 1
+          }
+        ],
+        "expanded_block": {
+          "block_id": "c2f31fc7-c349-4f85-8199-0401c5da982a",
+          "block_type": "decision",
+          "one_line_summary": "讨论项目范围，确定不做完整ATS，只做JD-简历初筛分析",
+          "msg_count": 6,
+          "source_message_ids": [
+            "om_resume_0001",
+            "om_resume_0002",
+            "om_resume_0003",
+            "om_resume_0004",
+            "om_resume_0005",
+            "om_resume_0006"
+          ],
+          "sample_text": "我先说下范围，AI 自动晒简历这个项目别做成完整招聘系统，ATS 那套太大了。 | 同意，完整 ATS 要做职位发布、候选人池、面试流转、权限，复赛时间根本不够。 | 我们先把招聘官最痛的一步拿出来：JD 和简历对不上，要人工一份份看。"
+        },
+        "top_topics": []
+      },
+      {
+        "scope": "per_batch_topic_summary",
+        "batch_id": "batch_001",
+        "name": "batch_001.topic_summary",
+        "query": "产品规划现在怎么定的？",
+        "expected_granularity": "topic_summary",
+        "actual_granularity": "topic_summary",
+        "expected_keywords": null,
+        "expected_keywords_any": null,
+        "forbidden_keywords": null,
+        "passed": true,
+        "detail": "q=产品规划现在怎么定的？ hits=1 granularity=topic_summary/topic_summary",
+        "top_cards": [],
+        "expanded_block": null,
+        "top_topics": [
+          {
+            "summary_id": "1f34f411-60bc-4989-9b55-5095e1925e1e",
+            "topic": "数据格式与输入输出",
+            "summary": "简历解析字段定为教育、项目、实习、技能、获奖证书五类，不硬算工作年限。",
+            "covered_memory_ids": [
+              "dc315a14-e8e9-4269-96a4-e1691e573b58"
+            ],
+            "rank": 1
+          }
+        ]
+      },
+      {
+        "scope": "per_batch_decision",
+        "batch_id": "batch_002",
+        "name": "batch_002.decision",
+        "query": "明天的 Demo 评审会安排是？",
+        "expected_granularity": "memory_card",
+        "actual_granularity": "memory_card",
+        "expected_keywords": null,
+        "expected_keywords_any": null,
+        "forbidden_keywords": null,
+        "passed": true,
+        "detail": "q=明天的 Demo 评审会安排是？ hits=5 granularity=memory_card/memory_card",
+        "top_cards": [
+          {
+            "memory_id": "dc315a14-e8e9-4269-96a4-e1691e573b58",
+            "decision_object": "数据与安全-数据格式与输入输出",
+            "decision": "简历解析字段定为教育、项目、实习、技能、获奖证书五类",
+            "reason": "PM提议，算法同意，HR建议学生场景先不硬算工作年限，实习和项目更重要",
+            "memory_type": "decision",
+            "status": "active",
+            "supersedes_memory_ids": [],
+            "source_block_ids": [
+              "e0ce4a08-9b73-4590-9ee2-6059bd86f38b"
+            ],
+            "rank": 1
+          },
+          {
+            "memory_id": "695d7d27-cea7-4914-b233-f5e98a0221b6",
+            "decision_object": "数据与安全-安全与隐私保护",
+            "decision": "文本敏感信息脱敏，头像不解析，不作为匹配依据",
+            "reason": "保护候选人隐私，减少偏见争议",
+            "memory_type": "progress",
+            "status": "active",
+            "supersedes_memory_ids": [
+              "31e1511c-0903-4484-863b-c3bbb555d9e7",
+              "a8043b4d-75e0-49a2-ae81-e1d60bc72b0d"
+            ],
+            "source_block_ids": [
+              "dcedb41c-606c-4f7d-9c2a-85adf84aa121",
+              "407bc640-1225-4b31-9f21-274af1eb9aa1"
+            ],
+            "rank": 2
+          },
+          {
+            "memory_id": "20b4f4a3-4ba7-48c8-a529-49b8263c29d8",
+            "decision_object": "用户体验-用户界面与交互设计",
+            "decision": "结果卡片分为匹配优势、缺失项、需人工确认项三块",
+            "reason": "结合设计、HR、PM意见，风险提醒需温和且与不自动淘汰原则一致",
+            "memory_type": "decision",
+            "status": "active",
+            "supersedes_memory_ids": [],
+            "source_block_ids": [
+              "82ff99f4-0fcc-49d4-8b76-da0b522b71f3"
+            ],
+            "rank": 3
+          },
+          {
+            "memory_id": "ddd4dbd7-215a-48ef-a5d6-2b5eb1681f80",
+            "decision_object": "产品规划-项目范围与MVP边界",
+            "decision": "不做完整ATS，只做JD-简历初筛分析（MVP）",
+            "reason": "时间不够，且招聘官最痛的是JD和简历对不上，需人工一份份看",
+            "memory_type": "decision",
+            "status": "active",
+            "supersedes_memory_ids": [],
+            "source_block_ids": [
+              "c2f31fc7-c349-4f85-8199-0401c5da982a"
+            ],
+            "rank": 4
+          },
+          {
+            "memory_id": "aeab1938-cf56-4eb0-b918-2dc3c77cd027",
+            "decision_object": "产品规划-项目范围与MVP边界",
+            "decision": "MVP不输出自动淘汰/录用结论，只输出辅助判断",
+            "reason": "讨论中HR提‘淘汰’敏感，算法说AI不能直接决定，PM定调只输出辅助判断。无人反对。",
+            "memory_type": "decision",
+            "status": "active",
+            "supersedes_memory_ids": [
+              "24f9d627-a827-40b0-b720-c15d7dbea228",
+              "b448cb85-28ea-41c1-9fb4-620f3ca6f28a"
+            ],
+            "source_block_ids": [
+              "185cc2ff-58cc-4def-9ef6-10de771e4946",
+              "1146ab79-c092-4933-8ec7-63df4bccd9c8"
+            ],
+            "rank": 5
+          }
+        ],
+        "expanded_block": null,
+        "top_topics": []
+      },
+      {
+        "scope": "per_batch_evidence",
+        "batch_id": "batch_002",
+        "name": "batch_002.evidence",
+        "query": "MVP 不输出淘汰结论原话谁说的？",
+        "expected_granularity": "evidence_block",
+        "actual_granularity": "evidence_block",
+        "expected_keywords": null,
+        "expected_keywords_any": null,
+        "forbidden_keywords": null,
+        "passed": true,
+        "detail": "q=MVP 不输出淘汰结论原话谁说的？ hits=1 granularity=evidence_block/evidence_block",
+        "top_cards": [
+          {
+            "memory_id": "aeab1938-cf56-4eb0-b918-2dc3c77cd027",
+            "decision_object": "产品规划-项目范围与MVP边界",
+            "decision": "MVP不输出自动淘汰/录用结论，只输出辅助判断",
+            "reason": "讨论中HR提‘淘汰’敏感，算法说AI不能直接决定，PM定调只输出辅助判断。无人反对。",
+            "memory_type": "decision",
+            "status": "active",
+            "supersedes_memory_ids": [
+              "24f9d627-a827-40b0-b720-c15d7dbea228",
+              "b448cb85-28ea-41c1-9fb4-620f3ca6f28a"
+            ],
+            "source_block_ids": [
+              "185cc2ff-58cc-4def-9ef6-10de771e4946",
+              "1146ab79-c092-4933-8ec7-63df4bccd9c8"
+            ],
+            "rank": 1
+          }
+        ],
+        "expanded_block": {
+          "block_id": "185cc2ff-58cc-4def-9ef6-10de771e4946",
+          "block_type": "decision",
+          "one_line_summary": "确定MVP输出边界：不输出自动淘汰，只输出辅助判断，并约定页面三个区域",
+          "msg_count": 5,
+          "source_message_ids": [
+            "om_resume_0007",
+            "om_resume_0008",
+            "om_resume_0009",
+            "om_resume_0010",
+            "om_resume_0011"
+          ],
+          "sample_text": "页面也别复杂，先一个 JD 输入区，一个简历上传区，一个分析结果区。 | 结果里最好不要写‘淘汰’，这个词太敏感。 | 同意，AI 不能直接决定候选人命运。可以写‘建议人工复核’。"
+        },
+        "top_topics": []
+      },
+      {
+        "scope": "per_batch_topic_summary",
+        "batch_id": "batch_002",
+        "name": "batch_002.topic_summary",
+        "query": "项目管理与排期现在整体怎么定的？",
+        "expected_granularity": "topic_summary",
+        "actual_granularity": "topic_summary",
+        "expected_keywords": null,
+        "expected_keywords_any": null,
+        "forbidden_keywords": null,
+        "passed": true,
+        "detail": "q=项目管理与排期现在整体怎么定的？ hits=2 granularity=topic_summary/topic_summary",
+        "top_cards": [],
+        "expanded_block": null,
+        "top_topics": [
+          {
+            "summary_id": "f0de9ec0-444c-47d0-8cbd-aa7946d7367f",
+            "topic": "数据与安全-字段定义",
+            "summary": "简历解析字段定为教育、项目、实习、技能、获奖证书五类。",
+            "covered_memory_ids": [
+              "dc315a14-e8e9-4269-96a4-e1691e573b58"
+            ],
+            "rank": 1
+          },
+          {
+            "summary_id": "49981f79-48a6-4ace-b203-0518d766d0da",
+            "topic": "用户体验-结果展示",
+            "summary": "结果卡片分为匹配优势、缺失项、需人工确认项三块。",
+            "covered_memory_ids": [
+              "20b4f4a3-4ba7-48c8-a529-49b8263c29d8"
+            ],
+            "rank": 2
+          }
+        ]
+      },
+      {
+        "scope": "per_batch_decision",
+        "batch_id": "batch_003",
+        "name": "batch_003.decision",
+        "query": "P0 报告输出字段都有什么？",
+        "expected_granularity": "memory_card",
+        "actual_granularity": "memory_card",
+        "expected_keywords": null,
+        "expected_keywords_any": null,
+        "forbidden_keywords": null,
+        "passed": true,
+        "detail": "q=P0 报告输出字段都有什么？ hits=5 granularity=memory_card/memory_card",
+        "top_cards": [
+          {
+            "memory_id": "3e29961f-e6a8-4227-a7fa-7c3e84a255f0",
+            "decision_object": "数据与安全-数据格式与输入输出",
+            "decision": "报告卡片顺序定为overview、matched、missing、review_items；输出字段包含matched_requirements、missing_requirements、risk_flags",
+            "reason": "讨论中ou_algo_001提出输出字段，ou_design_001建议顺序，ou_pm_001确认，ou_dev_001记录结构，最终达成一致",
+            "memory_type": "decision",
+            "status": "active",
+            "supersedes_memory_ids": [],
+            "source_block_ids": [
+              "6eb046db-ca5f-48e3-a4d4-e4b55454d604"
+            ],
+            "rank": 1
+          },
+          {
+            "memory_id": "dc315a14-e8e9-4269-96a4-e1691e573b58",
+            "decision_object": "数据与安全-数据格式与输入输出",
+            "decision": "简历解析字段定为教育、项目、实习、技能、获奖证书五类",
+            "reason": "PM提议，算法同意，HR建议学生场景先不硬算工作年限，实习和项目更重要",
+            "memory_type": "decision",
+            "status": "active",
+            "supersedes_memory_ids": [],
+            "source_block_ids": [
+              "e0ce4a08-9b73-4590-9ee2-6059bd86f38b"
+            ],
+            "rank": 2
+          },
+          {
+            "memory_id": "47bd5c54-b4fd-4f74-94cf-6c4d1c72ba9c",
+            "decision_object": "产品规划-项目范围与MVP边界",
+            "decision": "保留匹配参考分（0-100）和推荐等级（strong_match, medium_match, needs_review），但不输出自动淘汰结论",
+            "reason": "HR认为'淘汰'敏感，PM提议不输出自动淘汰/录用结论，只输出辅助判断；算法提出匹配分需强制配解释，PM将产品名称定为'匹配参考分'，最终达成共识。",
+            "memory_type": "decision",
+            "status": "active",
+            "supersedes_memory_ids": [
+              "aeab1938-cf56-4eb0-b918-2dc3c77cd027",
+              "5e43041f-5f9e-414d-96ce-49c5712f1173"
+            ],
+            "source_block_ids": [
+              "185cc2ff-58cc-4def-9ef6-10de771e4946",
+              "1146ab79-c092-4933-8ec7-63df4bccd9c8",
+              "1916d36c-8713-498a-a104-1e78e1f30f0b"
+            ],
+            "rank": 3
+          },
+          {
+            "memory_id": "406c7d6b-e947-46d2-bee2-821413d3f8b4",
+            "decision_object": "产品规划-项目范围与MVP边界",
+            "decision": "P0不做权重配置，统一按JD原文理解",
+            "reason": "无",
+            "memory_type": "decision",
+            "status": "active",
+            "supersedes_memory_ids": [],
+            "source_block_ids": [
+              "eb8d2a28-661f-4707-a1ce-a2356c5e8ada"
+            ],
+            "rank": 4
+          },
+          {
+            "memory_id": "ddd4dbd7-215a-48ef-a5d6-2b5eb1681f80",
+            "decision_object": "产品规划-项目范围与MVP边界",
+            "decision": "不做完整ATS，只做JD-简历初筛分析（MVP）",
+            "reason": "时间不够，且招聘官最痛的是JD和简历对不上，需人工一份份看",
+            "memory_type": "decision",
+            "status": "active",
+            "supersedes_memory_ids": [],
+            "source_block_ids": [
+              "c2f31fc7-c349-4f85-8199-0401c5da982a"
+            ],
+            "rank": 5
+          }
+        ],
+        "expanded_block": null,
+        "top_topics": []
+      },
+      {
+        "scope": "per_batch_evidence",
+        "batch_id": "batch_003",
+        "name": "batch_003.evidence",
+        "query": "P0 不做权重配置的讨论原话在哪？",
+        "expected_granularity": "evidence_block",
+        "actual_granularity": "evidence_block",
+        "expected_keywords": null,
+        "expected_keywords_any": null,
+        "forbidden_keywords": null,
+        "passed": true,
+        "detail": "q=P0 不做权重配置的讨论原话在哪？ hits=1 granularity=evidence_block/evidence_block",
+        "top_cards": [
+          {
+            "memory_id": "406c7d6b-e947-46d2-bee2-821413d3f8b4",
+            "decision_object": "产品规划-项目范围与MVP边界",
+            "decision": "P0不做权重配置，统一按JD原文理解",
+            "reason": "无",
+            "memory_type": "decision",
+            "status": "active",
+            "supersedes_memory_ids": [],
+            "source_block_ids": [
+              "eb8d2a28-661f-4707-a1ce-a2356c5e8ada"
+            ],
+            "rank": 1
+          }
+        ],
+        "expanded_block": {
+          "block_id": "eb8d2a28-661f-4707-a1ce-a2356c5e8ada",
+          "block_type": "decision",
+          "one_line_summary": "决定P0不做权重配置，统一按JD原文理解，不增加配置面板",
+          "msg_count": 5,
+          "source_message_ids": [
+            "om_resume_0078",
+            "om_resume_0079",
+            "om_resume_0080",
+            "om_resume_0081",
+            "om_resume_0082"
+          ],
+          "sample_text": "还有一个问题，要不要允许用户自己调整 JD 权重？比如技能更重要还是项目更重要。 | 这个功能挺好，但实现有点多，要加配置面板。 | P0 先不要做权重配置，统一按 JD 原文理解。"
+        },
+        "top_topics": []
+      },
+      {
+        "scope": "per_batch_topic_summary",
+        "batch_id": "batch_003",
+        "name": "batch_003.topic_summary",
+        "query": "产品规划当前整体方案是什么？",
+        "expected_granularity": "topic_summary",
+        "actual_granularity": "topic_summary",
+        "expected_keywords": null,
+        "expected_keywords_any": null,
+        "forbidden_keywords": null,
+        "passed": true,
+        "detail": "q=产品规划当前整体方案是什么？ hits=1 granularity=topic_summary/topic_summary",
+        "top_cards": [],
+        "expanded_block": null,
+        "top_topics": [
+          {
+            "summary_id": "6a3fc986-2619-4843-b9da-79c1049f6c92",
+            "topic": "MVP产品边界",
+            "summary": "保留匹配参考分（0-100）和推荐等级（strong_match, medium_match, needs_review），但不输出自动淘汰结论；P0不做权重配置，统一按JD原文理解；MVP阶段不做完整ATS，只做JD-简历初筛分析。",
+            "covered_memory_ids": [
+              "47bd5c54-b4fd-4f74-94cf-6c4d1c72ba9c",
+              "406c7d6b-e947-46d2-bee2-821413d3f8b4",
+              "ddd4dbd7-215a-48ef-a5d6-2b5eb1681f80"
+            ],
+            "rank": 1
+          }
+        ]
+      },
+      {
+        "scope": "per_batch_decision",
+        "batch_id": "batch_004",
+        "name": "batch_004.decision",
+        "query": "评测方案怎么定的？",
+        "expected_granularity": "memory_card",
+        "actual_granularity": "memory_card",
+        "expected_keywords": null,
+        "expected_keywords_any": null,
+        "forbidden_keywords": null,
+        "passed": true,
+        "detail": "q=评测方案怎么定的？ hits=5 granularity=memory_card/memory_card",
+        "top_cards": [
+          {
+            "memory_id": "38e8285d-55f3-4fa4-a8f1-e52f27ff95a9",
+            "decision_object": "质量保障-测试与评测方案",
+            "decision": "评测标准定为等级一致率加关键理由覆盖率",
+            "reason": "为了平衡准确率和效率，先不引入更复杂的公平性指标",
+            "memory_type": "decision",
+            "status": "active",
+            "supersedes_memory_ids": [
+              "b2fedb83-3b0a-4abb-b6cf-ca760a51cd33",
+              "38053ee3-fdec-4f6e-a917-678f4944813f"
+            ],
+            "source_block_ids": [
+              "e17838bf-6487-4fc9-80df-383f76544eb3",
+              "6d1d557c-541e-4127-a3d3-c97046d4a88c",
+              "d250185c-eacf-44bb-b68b-35e333cbee0b"
+            ],
+            "rank": 1
+          },
+          {
+            "memory_id": "548ea0bb-0be1-4356-a297-98e759307dfe",
+            "decision_object": "技术实现-数据模型与存储方案",
+            "decision": "部署和文件存储暂用mock，真实文件下一轮再议",
+            "reason": "真实文件上传需要处理存储，较为麻烦，Demo时模拟上传即可",
+            "memory_type": "decision",
+            "status": "active",
+            "supersedes_memory_ids": [],
+            "source_block_ids": [
+              "0e02ac82-76ae-4bb9-b04e-425b5ff4de6e"
+            ],
+            "rank": 2
+          },
+          {
+            "memory_id": "dc315a14-e8e9-4269-96a4-e1691e573b58",
+            "decision_object": "数据与安全-数据格式与输入输出",
+            "decision": "简历解析字段定为教育、项目、实习、技能、获奖证书五类",
+            "reason": "PM提议，算法同意，HR建议学生场景先不硬算工作年限，实习和项目更重要",
+            "memory_type": "decision",
+            "status": "active",
+            "supersedes_memory_ids": [],
+            "source_block_ids": [
+              "e0ce4a08-9b73-4590-9ee2-6059bd86f38b"
+            ],
+            "rank": 3
+          },
+          {
+            "memory_id": "20b4f4a3-4ba7-48c8-a529-49b8263c29d8",
+            "decision_object": "用户体验-用户界面与交互设计",
+            "decision": "结果卡片分为匹配优势、缺失项、需人工确认项三块",
+            "reason": "结合设计、HR、PM意见，风险提醒需温和且与不自动淘汰原则一致",
+            "memory_type": "decision",
+            "status": "active",
+            "supersedes_memory_ids": [],
+            "source_block_ids": [
+              "82ff99f4-0fcc-49d4-8b76-da0b522b71f3"
+            ],
+            "rank": 4
+          },
+          {
+            "memory_id": "86c42b6b-8388-4483-899c-c1c3ee5ec02c",
+            "decision_object": "项目管理-命名与术语规范",
+            "decision": "产品命名为AI简历初筛助手，不采用自动晒简历",
+            "reason": "产品经理确定名称并获团队认可，因自动晒简历存在歧义",
+            "memory_type": "decision",
+            "status": "active",
+            "supersedes_memory_ids": [],
+            "source_block_ids": [
+              "b80b71dc-a649-4f37-859d-361d6d26f67c"
+            ],
+            "rank": 5
+          }
+        ],
+        "expanded_block": null,
+        "top_topics": []
+      },
+      {
+        "scope": "per_batch_evidence",
+        "batch_id": "batch_004",
+        "name": "batch_004.evidence",
+        "query": "20 份 mock 简历谁负责？原话？",
+        "expected_granularity": "evidence_block",
+        "actual_granularity": "evidence_block",
+        "expected_keywords": null,
+        "expected_keywords_any": null,
+        "forbidden_keywords": null,
+        "passed": true,
+        "detail": "q=20 份 mock 简历谁负责？原话？ hits=1 granularity=evidence_block/evidence_block",
+        "top_cards": [
+          {
+            "memory_id": "548ea0bb-0be1-4356-a297-98e759307dfe",
+            "decision_object": "技术实现-数据模型与存储方案",
+            "decision": "部署和文件存储暂用mock，真实文件下一轮再议",
+            "reason": "真实文件上传需要处理存储，较为麻烦，Demo时模拟上传即可",
+            "memory_type": "decision",
+            "status": "active",
+            "supersedes_memory_ids": [],
+            "source_block_ids": [
+              "0e02ac82-76ae-4bb9-b04e-425b5ff4de6e"
+            ],
+            "rank": 1
+          }
+        ],
+        "expanded_block": {
+          "block_id": "0e02ac82-76ae-4bb9-b04e-425b5ff4de6e",
+          "block_type": "decision",
+          "one_line_summary": "部署和文件存储暂用mock，真实文件下一轮再议",
+          "msg_count": 6,
+          "source_message_ids": [
+            "om_resume_0108",
+            "om_resume_0109",
+            "om_resume_0110",
+            "om_resume_0111",
+            "om_resume_0112",
+            "om_resume_0113"
+          ],
+          "sample_text": "部署这块要不要先接真实简历文件？还是用 mock 数据跑？ | 真实文件上传要处理存储，可能麻烦。 | 先用 mock 文件，Demo 时模拟上传。"
+        },
+        "top_topics": []
+      },
+      {
+        "scope": "per_batch_topic_summary",
+        "batch_id": "batch_004",
+        "name": "batch_004.topic_summary",
+        "query": "质量保障与评测当前整体方案是什么？",
+        "expected_granularity": "topic_summary",
+        "actual_granularity": "topic_summary",
+        "expected_keywords": null,
+        "expected_keywords_any": null,
+        "forbidden_keywords": null,
+        "passed": true,
+        "detail": "q=质量保障与评测当前整体方案是什么？ hits=3 granularity=topic_summary/topic_summary",
+        "top_cards": [],
+        "expanded_block": null,
+        "top_topics": [
+          {
+            "summary_id": "d18d572a-a4da-44ea-8d90-7af5776345e0",
+            "topic": "质量保障方案",
+            "summary": "评测标准定为等级一致率加关键理由覆盖率。",
+            "covered_memory_ids": [
+              "38e8285d-55f3-4fa4-a8f1-e52f27ff95a9"
+            ],
+            "rank": 1
+          },
+          {
+            "summary_id": "029a12d5-0370-4e07-a78e-07276afed8d4",
+            "topic": "数据存储方案",
+            "summary": "部署和文件存储暂用mock，真实文件下一轮再议。",
+            "covered_memory_ids": [
+              "548ea0bb-0be1-4356-a297-98e759307dfe"
+            ],
+            "rank": 2
+          },
+          {
+            "summary_id": "c6a2ab80-fe33-496a-a0e4-a895f7f02cbd",
+            "topic": "MVP产品边界",
+            "summary": "保留匹配参考分（0-100）和推荐等级，但不输出自动淘汰结论；不做权重配置，统一按JD原文理解；不做完整ATS，只做JD-简历初筛分析。",
+            "covered_memory_ids": [
+              "47bd5c54-b4fd-4f74-94cf-6c4d1c72ba9c",
+              "406c7d6b-e947-46d2-bee2-821413d3f8b4",
+              "ddd4dbd7-215a-48ef-a5d6-2b5eb1681f80"
+            ],
+            "rank": 3
+          }
+        ]
+      },
+      {
+        "scope": "per_batch_decision",
+        "batch_id": "batch_005",
+        "name": "batch_005.decision",
+        "query": "复赛的文件上传方案是什么？",
+        "expected_granularity": "memory_card",
+        "actual_granularity": "memory_card",
+        "expected_keywords": null,
+        "expected_keywords_any": null,
+        "forbidden_keywords": null,
+        "passed": true,
+        "detail": "q=复赛的文件上传方案是什么？ hits=5 granularity=memory_card/memory_card",
+        "top_cards": [
+          {
+            "memory_id": "b5547f72-82fa-4e59-bb53-9fc8d6084730",
+            "decision_object": "技术实现-数据模型与存储方案",
+            "decision": "复赛用mock文件路径模拟上传，不接对象存储，决赛再看真实上传",
+            "reason": "避免真实文件上传的存储问题，保证Demo稳定性，评委现场不会因上传失败翻车",
+            "memory_type": "decision",
+            "status": "active",
+            "supersedes_memory_ids": [
+              "548ea0bb-0be1-4356-a297-98e759307dfe",
+              "6e382aeb-cf13-4cd4-8a85-3708621a41ae"
+            ],
+            "source_block_ids": [
+              "0e02ac82-76ae-4bb9-b04e-425b5ff4de6e",
+              "f1355a34-d42f-49a6-9bea-d963b5899cea"
+            ],
+            "rank": 1
+          },
+          {
+            "memory_id": "ddd4dbd7-215a-48ef-a5d6-2b5eb1681f80",
+            "decision_object": "产品规划-项目范围与MVP边界",
+            "decision": "不做完整ATS，只做JD-简历初筛分析（MVP）",
+            "reason": "时间不够，且招聘官最痛的是JD和简历对不上，需人工一份份看",
+            "memory_type": "decision",
+            "status": "active",
+            "supersedes_memory_ids": [],
+            "source_block_ids": [
+              "c2f31fc7-c349-4f85-8199-0401c5da982a"
+            ],
+            "rank": 2
+          },
+          {
+            "memory_id": "406c7d6b-e947-46d2-bee2-821413d3f8b4",
+            "decision_object": "产品规划-项目范围与MVP边界",
+            "decision": "P0不做权重配置，统一按JD原文理解",
+            "reason": "无",
+            "memory_type": "decision",
+            "status": "active",
+            "supersedes_memory_ids": [],
+            "source_block_ids": [
+              "eb8d2a28-661f-4707-a1ce-a2356c5e8ada"
+            ],
+            "rank": 3
+          },
+          {
+            "memory_id": "38e8285d-55f3-4fa4-a8f1-e52f27ff95a9",
+            "decision_object": "质量保障-测试与评测方案",
+            "decision": "评测标准定为等级一致率加关键理由覆盖率",
+            "reason": "为了平衡准确率和效率，先不引入更复杂的公平性指标",
+            "memory_type": "decision",
+            "status": "active",
+            "supersedes_memory_ids": [
+              "b2fedb83-3b0a-4abb-b6cf-ca760a51cd33",
+              "38053ee3-fdec-4f6e-a917-678f4944813f"
+            ],
+            "source_block_ids": [
+              "e17838bf-6487-4fc9-80df-383f76544eb3",
+              "6d1d557c-541e-4127-a3d3-c97046d4a88c",
+              "d250185c-eacf-44bb-b68b-35e333cbee0b"
+            ],
+            "rank": 4
+          },
+          {
+            "memory_id": "695d7d27-cea7-4914-b233-f5e98a0221b6",
+            "decision_object": "数据与安全-安全与隐私保护",
+            "decision": "文本敏感信息脱敏，头像不解析，不作为匹配依据",
+            "reason": "保护候选人隐私，减少偏见争议",
+            "memory_type": "progress",
+            "status": "active",
+            "supersedes_memory_ids": [
+              "31e1511c-0903-4484-863b-c3bbb555d9e7",
+              "a8043b4d-75e0-49a2-ae81-e1d60bc72b0d"
+            ],
+            "source_block_ids": [
+              "dcedb41c-606c-4f7d-9c2a-85adf84aa121",
+              "407bc640-1225-4b31-9f21-274af1eb9aa1"
+            ],
+            "rank": 5
+          }
+        ],
+        "expanded_block": null,
+        "top_topics": []
+      },
+      {
+        "scope": "per_batch_evidence",
+        "batch_id": "batch_005",
+        "name": "batch_005.evidence",
+        "query": "复赛不接对象存储的原话在哪？",
+        "expected_granularity": "evidence_block",
+        "actual_granularity": "evidence_block",
+        "expected_keywords": null,
+        "expected_keywords_any": null,
+        "forbidden_keywords": null,
+        "passed": true,
+        "detail": "q=复赛不接对象存储的原话在哪？ hits=1 granularity=evidence_block/evidence_block",
+        "top_cards": [
+          {
+            "memory_id": "b5547f72-82fa-4e59-bb53-9fc8d6084730",
+            "decision_object": "技术实现-数据模型与存储方案",
+            "decision": "复赛用mock文件路径模拟上传，不接对象存储，决赛再看真实上传",
+            "reason": "避免真实文件上传的存储问题，保证Demo稳定性，评委现场不会因上传失败翻车",
+            "memory_type": "decision",
+            "status": "active",
+            "supersedes_memory_ids": [
+              "548ea0bb-0be1-4356-a297-98e759307dfe",
+              "6e382aeb-cf13-4cd4-8a85-3708621a41ae"
+            ],
+            "source_block_ids": [
+              "0e02ac82-76ae-4bb9-b04e-425b5ff4de6e",
+              "f1355a34-d42f-49a6-9bea-d963b5899cea"
+            ],
+            "rank": 1
+          }
+        ],
+        "expanded_block": {
+          "block_id": "0e02ac82-76ae-4bb9-b04e-425b5ff4de6e",
+          "block_type": "decision",
+          "one_line_summary": "部署和文件存储暂用mock，真实文件下一轮再议",
+          "msg_count": 6,
+          "source_message_ids": [
+            "om_resume_0108",
+            "om_resume_0109",
+            "om_resume_0110",
+            "om_resume_0111",
+            "om_resume_0112",
+            "om_resume_0113"
+          ],
+          "sample_text": "部署这块要不要先接真实简历文件？还是用 mock 数据跑？ | 真实文件上传要处理存储，可能麻烦。 | 先用 mock 文件，Demo 时模拟上传。"
+        },
+        "top_topics": []
+      },
+      {
+        "scope": "per_batch_topic_summary",
+        "batch_id": "batch_005",
+        "name": "batch_005.topic_summary",
+        "query": "技术实现现在整体怎么定？",
+        "expected_granularity": "topic_summary",
+        "actual_granularity": "topic_summary",
+        "expected_keywords": null,
+        "expected_keywords_any": null,
+        "forbidden_keywords": null,
+        "passed": true,
+        "detail": "q=技术实现现在整体怎么定？ hits=3 granularity=topic_summary/topic_summary",
+        "top_cards": [],
+        "expanded_block": null,
+        "top_topics": [
+          {
+            "summary_id": "1747e09c-081b-4f8b-a47c-de2e808dedf5",
+            "topic": "技术实现策略",
+            "summary": "复赛使用mock文件模拟上传，不接入对象存储；使用本地LLM进行模型分析，后续可接云模型。",
+            "covered_memory_ids": [
+              "b5547f72-82fa-4e59-bb53-9fc8d6084730",
+              "5a58f303-aa7c-4b46-8065-9bbf34d00bc5"
+            ],
+            "rank": 1
+          },
+          {
+            "summary_id": "04f04aa1-1a0f-4796-a6ce-9fcef6b42797",
+            "topic": "数据格式规范",
+            "summary": "报告卡片顺序为overview、matched、missing、review_items；输出字段包含matched_requirements、missing_requirements、risk_flags；简历解析字段定为教育、项目、实习、技能、获奖证书五类。",
+            "covered_memory_ids": [
+              "3e29961f-e6a8-4227-a7fa-7c3e84a255f0",
+              "dc315a14-e8e9-4269-96a4-e1691e573b58"
+            ],
+            "rank": 2
+          },
+          {
+            "summary_id": "4ba4846f-c7ac-4101-949d-17ccd9b7869a",
+            "topic": "MVP范围边界",
+            "summary": "保留匹配参考分和推荐等级，但不输出自动淘汰结论；P0不做权重配置，统一按JD原文理解；不做完整ATS，只做JD-简历初筛分析。",
+            "covered_memory_ids": [
+              "47bd5c54-b4fd-4f74-94cf-6c4d1c72ba9c",
+              "406c7d6b-e947-46d2-bee2-821413d3f8b4",
+              "ddd4dbd7-215a-48ef-a5d6-2b5eb1681f80"
+            ],
+            "rank": 3
+          }
+        ]
+      }
+    ],
+    "final_decision": [
+      {
+        "scope": "final_decision",
+        "batch_id": null,
+        "name": "final_decision[0]",
+        "query": "MVP 范围限定在什么？",
+        "expected_granularity": "memory_card",
+        "actual_granularity": "memory_card",
+        "expected_keywords": [
+          "JD",
+          "简历匹配",
+          "不做完整ATS"
+        ],
+        "expected_keywords_any": [
+          "初筛",
+          "MVP"
+        ],
+        "forbidden_keywords": null,
+        "passed": false,
+        "detail": "q=MVP 范围限定在什么？ granularity=OK keyword=MISS hits=5",
+        "top_cards": [
+          {
+            "memory_id": "ddd4dbd7-215a-48ef-a5d6-2b5eb1681f80",
+            "decision_object": "产品规划-项目范围与MVP边界",
+            "decision": "不做完整ATS，只做JD-简历初筛分析（MVP）",
+            "reason": "时间不够，且招聘官最痛的是JD和简历对不上，需人工一份份看",
+            "memory_type": "decision",
+            "status": "active",
+            "supersedes_memory_ids": [],
+            "source_block_ids": [
+              "c2f31fc7-c349-4f85-8199-0401c5da982a"
+            ],
+            "rank": 1
+          },
+          {
+            "memory_id": "47bd5c54-b4fd-4f74-94cf-6c4d1c72ba9c",
+            "decision_object": "产品规划-项目范围与MVP边界",
+            "decision": "保留匹配参考分（0-100）和推荐等级（strong_match, medium_match, needs_review），但不输出自动淘汰结论",
+            "reason": "HR认为'淘汰'敏感，PM提议不输出自动淘汰/录用结论，只输出辅助判断；算法提出匹配分需强制配解释，PM将产品名称定为'匹配参考分'，最终达成共识。",
+            "memory_type": "decision",
+            "status": "active",
+            "supersedes_memory_ids": [
+              "aeab1938-cf56-4eb0-b918-2dc3c77cd027",
+              "5e43041f-5f9e-414d-96ce-49c5712f1173"
+            ],
+            "source_block_ids": [
+              "185cc2ff-58cc-4def-9ef6-10de771e4946",
+              "1146ab79-c092-4933-8ec7-63df4bccd9c8",
+              "1916d36c-8713-498a-a104-1e78e1f30f0b"
+            ],
+            "rank": 2
+          },
+          {
+            "memory_id": "406c7d6b-e947-46d2-bee2-821413d3f8b4",
+            "decision_object": "产品规划-项目范围与MVP边界",
+            "decision": "P0不做权重配置，统一按JD原文理解",
+            "reason": "无",
+            "memory_type": "decision",
+            "status": "active",
+            "supersedes_memory_ids": [],
+            "source_block_ids": [
+              "eb8d2a28-661f-4707-a1ce-a2356c5e8ada"
+            ],
+            "rank": 3
+          },
+          {
+            "memory_id": "86c42b6b-8388-4483-899c-c1c3ee5ec02c",
+            "decision_object": "项目管理-命名与术语规范",
+            "decision": "产品命名为AI简历初筛助手，不采用自动晒简历",
+            "reason": "产品经理确定名称并获团队认可，因自动晒简历存在歧义",
+            "memory_type": "decision",
+            "status": "active",
+            "supersedes_memory_ids": [],
+            "source_block_ids": [
+              "b80b71dc-a649-4f37-859d-361d6d26f67c"
+            ],
+            "rank": 4
+          },
+          {
+            "memory_id": "38e8285d-55f3-4fa4-a8f1-e52f27ff95a9",
+            "decision_object": "质量保障-测试与评测方案",
+            "decision": "评测标准定为等级一致率加关键理由覆盖率",
+            "reason": "为了平衡准确率和效率，先不引入更复杂的公平性指标",
+            "memory_type": "decision",
+            "status": "active",
+            "supersedes_memory_ids": [
+              "b2fedb83-3b0a-4abb-b6cf-ca760a51cd33",
+              "38053ee3-fdec-4f6e-a917-678f4944813f"
+            ],
+            "source_block_ids": [
+              "e17838bf-6487-4fc9-80df-383f76544eb3",
+              "6d1d557c-541e-4127-a3d3-c97046d4a88c",
+              "d250185c-eacf-44bb-b68b-35e333cbee0b"
+            ],
+            "rank": 5
+          }
+        ],
+        "expanded_block": null,
+        "top_topics": []
+      },
+      {
+        "scope": "final_decision",
+        "batch_id": null,
+        "name": "final_decision[1]",
+        "query": "MVP 是否会输出自动淘汰结论？",
+        "expected_granularity": "memory_card",
+        "actual_granularity": "memory_card",
+        "expected_keywords": [
+          "不输出",
+          "淘汰"
+        ],
+        "expected_keywords_any": [
+          "辅助判断",
+          "辅助"
+        ],
+        "forbidden_keywords": [
+          "录用概率"
+        ],
+        "passed": true,
+        "detail": "q=MVP 是否会输出自动淘汰结论？ granularity=OK keyword=OK hits=5",
+        "top_cards": [
+          {
+            "memory_id": "47bd5c54-b4fd-4f74-94cf-6c4d1c72ba9c",
+            "decision_object": "产品规划-项目范围与MVP边界",
+            "decision": "保留匹配参考分（0-100）和推荐等级（strong_match, medium_match, needs_review），但不输出自动淘汰结论",
+            "reason": "HR认为'淘汰'敏感，PM提议不输出自动淘汰/录用结论，只输出辅助判断；算法提出匹配分需强制配解释，PM将产品名称定为'匹配参考分'，最终达成共识。",
+            "memory_type": "decision",
+            "status": "active",
+            "supersedes_memory_ids": [
+              "aeab1938-cf56-4eb0-b918-2dc3c77cd027",
+              "5e43041f-5f9e-414d-96ce-49c5712f1173"
+            ],
+            "source_block_ids": [
+              "185cc2ff-58cc-4def-9ef6-10de771e4946",
+              "1146ab79-c092-4933-8ec7-63df4bccd9c8",
+              "1916d36c-8713-498a-a104-1e78e1f30f0b"
+            ],
+            "rank": 1
+          },
+          {
+            "memory_id": "dc315a14-e8e9-4269-96a4-e1691e573b58",
+            "decision_object": "数据与安全-数据格式与输入输出",
+            "decision": "简历解析字段定为教育、项目、实习、技能、获奖证书五类",
+            "reason": "PM提议，算法同意，HR建议学生场景先不硬算工作年限，实习和项目更重要",
+            "memory_type": "decision",
+            "status": "active",
+            "supersedes_memory_ids": [],
+            "source_block_ids": [
+              "e0ce4a08-9b73-4590-9ee2-6059bd86f38b"
+            ],
+            "rank": 2
+          },
+          {
+            "memory_id": "3e29961f-e6a8-4227-a7fa-7c3e84a255f0",
+            "decision_object": "数据与安全-数据格式与输入输出",
+            "decision": "报告卡片顺序定为overview、matched、missing、review_items；输出字段包含matched_requirements、missing_requirements、risk_flags",
+            "reason": "讨论中ou_algo_001提出输出字段，ou_design_001建议顺序，ou_pm_001确认，ou_dev_001记录结构，最终达成一致",
+            "memory_type": "decision",
+            "status": "active",
+            "supersedes_memory_ids": [],
+            "source_block_ids": [
+              "6eb046db-ca5f-48e3-a4d4-e4b55454d604"
+            ],
+            "rank": 3
+          },
+          {
+            "memory_id": "ddd4dbd7-215a-48ef-a5d6-2b5eb1681f80",
+            "decision_object": "产品规划-项目范围与MVP边界",
+            "decision": "不做完整ATS，只做JD-简历初筛分析（MVP）",
+            "reason": "时间不够，且招聘官最痛的是JD和简历对不上，需人工一份份看",
+            "memory_type": "decision",
+            "status": "active",
+            "supersedes_memory_ids": [],
+            "source_block_ids": [
+              "c2f31fc7-c349-4f85-8199-0401c5da982a"
+            ],
+            "rank": 4
+          },
+          {
+            "memory_id": "406c7d6b-e947-46d2-bee2-821413d3f8b4",
+            "decision_object": "产品规划-项目范围与MVP边界",
+            "decision": "P0不做权重配置，统一按JD原文理解",
+            "reason": "无",
+            "memory_type": "decision",
+            "status": "active",
+            "supersedes_memory_ids": [],
+            "source_block_ids": [
+              "eb8d2a28-661f-4707-a1ce-a2356c5e8ada"
+            ],
+            "rank": 5
+          }
+        ],
+        "expanded_block": null,
+        "top_topics": []
+      },
+      {
+        "scope": "final_decision",
+        "batch_id": null,
+        "name": "final_decision[2]",
+        "query": "推荐等级怎么分类？",
+        "expected_granularity": "memory_card",
+        "actual_granularity": "memory_card",
+        "expected_keywords": null,
+        "expected_keywords_any": [
+          "strong_match",
+          "medium_match",
+          "needs_review",
+          "推荐等级"
+        ],
+        "forbidden_keywords": null,
+        "passed": true,
+        "detail": "q=推荐等级怎么分类？ granularity=OK keyword=OK hits=5",
+        "top_cards": [
+          {
+            "memory_id": "47bd5c54-b4fd-4f74-94cf-6c4d1c72ba9c",
+            "decision_object": "产品规划-项目范围与MVP边界",
+            "decision": "保留匹配参考分（0-100）和推荐等级（strong_match, medium_match, needs_review），但不输出自动淘汰结论",
+            "reason": "HR认为'淘汰'敏感，PM提议不输出自动淘汰/录用结论，只输出辅助判断；算法提出匹配分需强制配解释，PM将产品名称定为'匹配参考分'，最终达成共识。",
+            "memory_type": "decision",
+            "status": "active",
+            "supersedes_memory_ids": [
+              "aeab1938-cf56-4eb0-b918-2dc3c77cd027",
+              "5e43041f-5f9e-414d-96ce-49c5712f1173"
+            ],
+            "source_block_ids": [
+              "185cc2ff-58cc-4def-9ef6-10de771e4946",
+              "1146ab79-c092-4933-8ec7-63df4bccd9c8",
+              "1916d36c-8713-498a-a104-1e78e1f30f0b"
+            ],
+            "rank": 1
+          },
+          {
+            "memory_id": "ddd4dbd7-215a-48ef-a5d6-2b5eb1681f80",
+            "decision_object": "产品规划-项目范围与MVP边界",
+            "decision": "不做完整ATS，只做JD-简历初筛分析（MVP）",
+            "reason": "时间不够，且招聘官最痛的是JD和简历对不上，需人工一份份看",
+            "memory_type": "decision",
+            "status": "active",
+            "supersedes_memory_ids": [],
+            "source_block_ids": [
+              "c2f31fc7-c349-4f85-8199-0401c5da982a"
+            ],
+            "rank": 2
+          },
+          {
+            "memory_id": "20b4f4a3-4ba7-48c8-a529-49b8263c29d8",
+            "decision_object": "用户体验-用户界面与交互设计",
+            "decision": "结果卡片分为匹配优势、缺失项、需人工确认项三块",
+            "reason": "结合设计、HR、PM意见，风险提醒需温和且与不自动淘汰原则一致",
+            "memory_type": "decision",
+            "status": "active",
+            "supersedes_memory_ids": [],
+            "source_block_ids": [
+              "82ff99f4-0fcc-49d4-8b76-da0b522b71f3"
+            ],
+            "rank": 3
+          },
+          {
+            "memory_id": "5a58f303-aa7c-4b46-8065-9bbf34d00bc5",
+            "decision_object": "技术实现-算法与模型策略",
+            "decision": "使用本地LLM进行模型分析，后续可接云模型",
+            "reason": "演示可控，本地LLM先够用",
+            "memory_type": "decision",
+            "status": "active",
+            "supersedes_memory_ids": [],
+            "source_block_ids": [
+              "a4659035-c16f-480d-8464-45755f1eaa89"
+            ],
+            "rank": 4
+          },
+          {
+            "memory_id": "38e8285d-55f3-4fa4-a8f1-e52f27ff95a9",
+            "decision_object": "质量保障-测试与评测方案",
+            "decision": "评测标准定为等级一致率加关键理由覆盖率",
+            "reason": "为了平衡准确率和效率，先不引入更复杂的公平性指标",
+            "memory_type": "decision",
+            "status": "active",
+            "supersedes_memory_ids": [
+              "b2fedb83-3b0a-4abb-b6cf-ca760a51cd33",
+              "38053ee3-fdec-4f6e-a917-678f4944813f"
+            ],
+            "source_block_ids": [
+              "e17838bf-6487-4fc9-80df-383f76544eb3",
+              "6d1d557c-541e-4127-a3d3-c97046d4a88c",
+              "d250185c-eacf-44bb-b68b-35e333cbee0b"
+            ],
+            "rank": 5
+          }
+        ],
+        "expanded_block": null,
+        "top_topics": []
+      },
+      {
+        "scope": "final_decision",
+        "batch_id": null,
+        "name": "final_decision[3]",
+        "query": "P0 是否要做权重配置？",
+        "expected_granularity": "memory_card",
+        "actual_granularity": "memory_card",
+        "expected_keywords": [
+          "P0",
+          "不做",
+          "权重"
+        ],
+        "expected_keywords_any": [
+          "JD原文",
+          "权重设置"
+        ],
+        "forbidden_keywords": null,
+        "passed": true,
+        "detail": "q=P0 是否要做权重配置？ granularity=OK keyword=OK hits=5",
+        "top_cards": [
+          {
+            "memory_id": "406c7d6b-e947-46d2-bee2-821413d3f8b4",
+            "decision_object": "产品规划-项目范围与MVP边界",
+            "decision": "P0不做权重配置，统一按JD原文理解",
+            "reason": "无",
+            "memory_type": "decision",
+            "status": "active",
+            "supersedes_memory_ids": [],
+            "source_block_ids": [
+              "eb8d2a28-661f-4707-a1ce-a2356c5e8ada"
+            ],
+            "rank": 1
+          },
+          {
+            "memory_id": "86c42b6b-8388-4483-899c-c1c3ee5ec02c",
+            "decision_object": "项目管理-命名与术语规范",
+            "decision": "产品命名为AI简历初筛助手，不采用自动晒简历",
+            "reason": "产品经理确定名称并获团队认可，因自动晒简历存在歧义",
+            "memory_type": "decision",
+            "status": "active",
+            "supersedes_memory_ids": [],
+            "source_block_ids": [
+              "b80b71dc-a649-4f37-859d-361d6d26f67c"
+            ],
+            "rank": 2
+          },
+          {
+            "memory_id": "ddd4dbd7-215a-48ef-a5d6-2b5eb1681f80",
+            "decision_object": "产品规划-项目范围与MVP边界",
+            "decision": "不做完整ATS，只做JD-简历初筛分析（MVP）",
+            "reason": "时间不够，且招聘官最痛的是JD和简历对不上，需人工一份份看",
+            "memory_type": "decision",
+            "status": "active",
+            "supersedes_memory_ids": [],
+            "source_block_ids": [
+              "c2f31fc7-c349-4f85-8199-0401c5da982a"
+            ],
+            "rank": 3
+          },
+          {
+            "memory_id": "20b4f4a3-4ba7-48c8-a529-49b8263c29d8",
+            "decision_object": "用户体验-用户界面与交互设计",
+            "decision": "结果卡片分为匹配优势、缺失项、需人工确认项三块",
+            "reason": "结合设计、HR、PM意见，风险提醒需温和且与不自动淘汰原则一致",
+            "memory_type": "decision",
+            "status": "active",
+            "supersedes_memory_ids": [],
+            "source_block_ids": [
+              "82ff99f4-0fcc-49d4-8b76-da0b522b71f3"
+            ],
+            "rank": 4
+          },
+          {
+            "memory_id": "5a58f303-aa7c-4b46-8065-9bbf34d00bc5",
+            "decision_object": "技术实现-算法与模型策略",
+            "decision": "使用本地LLM进行模型分析，后续可接云模型",
+            "reason": "演示可控，本地LLM先够用",
+            "memory_type": "decision",
+            "status": "active",
+            "supersedes_memory_ids": [],
+            "source_block_ids": [
+              "a4659035-c16f-480d-8464-45755f1eaa89"
+            ],
+            "rank": 5
+          }
+        ],
+        "expanded_block": null,
+        "top_topics": []
+      },
+      {
+        "scope": "final_decision",
+        "batch_id": null,
+        "name": "final_decision[4]",
+        "query": "复赛的文件上传具体怎么处理？",
+        "expected_granularity": "memory_card",
+        "actual_granularity": "memory_card",
+        "expected_keywords": [
+          "mock",
+          "上传"
+        ],
+        "expected_keywords_any": [
+          "不接对象存储",
+          "examples/resumes",
+          "决赛"
+        ],
+        "forbidden_keywords": null,
+        "passed": true,
+        "detail": "q=复赛的文件上传具体怎么处理？ granularity=OK keyword=OK hits=5",
+        "top_cards": [
+          {
+            "memory_id": "b5547f72-82fa-4e59-bb53-9fc8d6084730",
+            "decision_object": "技术实现-数据模型与存储方案",
+            "decision": "复赛用mock文件路径模拟上传，不接对象存储，决赛再看真实上传",
+            "reason": "避免真实文件上传的存储问题，保证Demo稳定性，评委现场不会因上传失败翻车",
+            "memory_type": "decision",
+            "status": "active",
+            "supersedes_memory_ids": [
+              "548ea0bb-0be1-4356-a297-98e759307dfe",
+              "6e382aeb-cf13-4cd4-8a85-3708621a41ae"
+            ],
+            "source_block_ids": [
+              "0e02ac82-76ae-4bb9-b04e-425b5ff4de6e",
+              "f1355a34-d42f-49a6-9bea-d963b5899cea"
+            ],
+            "rank": 1
+          },
+          {
+            "memory_id": "ddd4dbd7-215a-48ef-a5d6-2b5eb1681f80",
+            "decision_object": "产品规划-项目范围与MVP边界",
+            "decision": "不做完整ATS，只做JD-简历初筛分析（MVP）",
+            "reason": "时间不够，且招聘官最痛的是JD和简历对不上，需人工一份份看",
+            "memory_type": "decision",
+            "status": "active",
+            "supersedes_memory_ids": [],
+            "source_block_ids": [
+              "c2f31fc7-c349-4f85-8199-0401c5da982a"
+            ],
+            "rank": 2
+          },
+          {
+            "memory_id": "406c7d6b-e947-46d2-bee2-821413d3f8b4",
+            "decision_object": "产品规划-项目范围与MVP边界",
+            "decision": "P0不做权重配置，统一按JD原文理解",
+            "reason": "无",
+            "memory_type": "decision",
+            "status": "active",
+            "supersedes_memory_ids": [],
+            "source_block_ids": [
+              "eb8d2a28-661f-4707-a1ce-a2356c5e8ada"
+            ],
+            "rank": 3
+          },
+          {
+            "memory_id": "695d7d27-cea7-4914-b233-f5e98a0221b6",
+            "decision_object": "数据与安全-安全与隐私保护",
+            "decision": "文本敏感信息脱敏，头像不解析，不作为匹配依据",
+            "reason": "保护候选人隐私，减少偏见争议",
+            "memory_type": "progress",
+            "status": "active",
+            "supersedes_memory_ids": [
+              "31e1511c-0903-4484-863b-c3bbb555d9e7",
+              "a8043b4d-75e0-49a2-ae81-e1d60bc72b0d"
+            ],
+            "source_block_ids": [
+              "dcedb41c-606c-4f7d-9c2a-85adf84aa121",
+              "407bc640-1225-4b31-9f21-274af1eb9aa1"
+            ],
+            "rank": 4
+          },
+          {
+            "memory_id": "dc315a14-e8e9-4269-96a4-e1691e573b58",
+            "decision_object": "数据与安全-数据格式与输入输出",
+            "decision": "简历解析字段定为教育、项目、实习、技能、获奖证书五类",
+            "reason": "PM提议，算法同意，HR建议学生场景先不硬算工作年限，实习和项目更重要",
+            "memory_type": "decision",
+            "status": "active",
+            "supersedes_memory_ids": [],
+            "source_block_ids": [
+              "e0ce4a08-9b73-4590-9ee2-6059bd86f38b"
+            ],
+            "rank": 5
+          }
+        ],
+        "expanded_block": null,
+        "top_topics": []
+      },
+      {
+        "scope": "final_decision",
+        "batch_id": null,
+        "name": "final_decision[5]",
+        "query": "解析失败时怎么处理？",
+        "expected_granularity": "memory_card",
+        "actual_granularity": "memory_card",
+        "expected_keywords": null,
+        "expected_keywords_any": [
+          "乱码",
+          "空简历",
+          "图片",
+          "请换",
+          "PDF"
+        ],
+        "forbidden_keywords": null,
+        "passed": false,
+        "detail": "q=解析失败时怎么处理？ granularity=OK keyword=MISS hits=5",
+        "top_cards": [
+          {
+            "memory_id": "dc315a14-e8e9-4269-96a4-e1691e573b58",
+            "decision_object": "数据与安全-数据格式与输入输出",
+            "decision": "简历解析字段定为教育、项目、实习、技能、获奖证书五类",
+            "reason": "PM提议，算法同意，HR建议学生场景先不硬算工作年限，实习和项目更重要",
+            "memory_type": "decision",
+            "status": "active",
+            "supersedes_memory_ids": [],
+            "source_block_ids": [
+              "e0ce4a08-9b73-4590-9ee2-6059bd86f38b"
+            ],
+            "rank": 1
+          },
+          {
+            "memory_id": "86c42b6b-8388-4483-899c-c1c3ee5ec02c",
+            "decision_object": "项目管理-命名与术语规范",
+            "decision": "产品命名为AI简历初筛助手，不采用自动晒简历",
+            "reason": "产品经理确定名称并获团队认可，因自动晒简历存在歧义",
+            "memory_type": "decision",
+            "status": "active",
+            "supersedes_memory_ids": [],
+            "source_block_ids": [
+              "b80b71dc-a649-4f37-859d-361d6d26f67c"
+            ],
+            "rank": 2
+          },
+          {
+            "memory_id": "ddd4dbd7-215a-48ef-a5d6-2b5eb1681f80",
+            "decision_object": "产品规划-项目范围与MVP边界",
+            "decision": "不做完整ATS，只做JD-简历初筛分析（MVP）",
+            "reason": "时间不够，且招聘官最痛的是JD和简历对不上，需人工一份份看",
+            "memory_type": "decision",
+            "status": "active",
+            "supersedes_memory_ids": [],
+            "source_block_ids": [
+              "c2f31fc7-c349-4f85-8199-0401c5da982a"
+            ],
+            "rank": 3
+          },
+          {
+            "memory_id": "20b4f4a3-4ba7-48c8-a529-49b8263c29d8",
+            "decision_object": "用户体验-用户界面与交互设计",
+            "decision": "结果卡片分为匹配优势、缺失项、需人工确认项三块",
+            "reason": "结合设计、HR、PM意见，风险提醒需温和且与不自动淘汰原则一致",
+            "memory_type": "decision",
+            "status": "active",
+            "supersedes_memory_ids": [],
+            "source_block_ids": [
+              "82ff99f4-0fcc-49d4-8b76-da0b522b71f3"
+            ],
+            "rank": 4
+          },
+          {
+            "memory_id": "5a58f303-aa7c-4b46-8065-9bbf34d00bc5",
+            "decision_object": "技术实现-算法与模型策略",
+            "decision": "使用本地LLM进行模型分析，后续可接云模型",
+            "reason": "演示可控，本地LLM先够用",
+            "memory_type": "decision",
+            "status": "active",
+            "supersedes_memory_ids": [],
+            "source_block_ids": [
+              "a4659035-c16f-480d-8464-45755f1eaa89"
+            ],
+            "rank": 5
+          }
+        ],
+        "expanded_block": null,
+        "top_topics": []
+      },
+      {
+        "scope": "final_decision",
+        "batch_id": null,
+        "name": "final_decision[6]",
+        "query": "P0 支持哪些简历格式？",
+        "expected_granularity": "memory_card",
+        "actual_granularity": "memory_card",
+        "expected_keywords": [
+          "PDF"
+        ],
+        "expected_keywords_any": [
+          "P0",
+          "只保证"
+        ],
+        "forbidden_keywords": null,
+        "passed": false,
+        "detail": "q=P0 支持哪些简历格式？ granularity=OK keyword=MISS hits=5",
+        "top_cards": [
+          {
+            "memory_id": "dc315a14-e8e9-4269-96a4-e1691e573b58",
+            "decision_object": "数据与安全-数据格式与输入输出",
+            "decision": "简历解析字段定为教育、项目、实习、技能、获奖证书五类",
+            "reason": "PM提议，算法同意，HR建议学生场景先不硬算工作年限，实习和项目更重要",
+            "memory_type": "decision",
+            "status": "active",
+            "supersedes_memory_ids": [],
+            "source_block_ids": [
+              "e0ce4a08-9b73-4590-9ee2-6059bd86f38b"
+            ],
+            "rank": 1
+          },
+          {
+            "memory_id": "86c42b6b-8388-4483-899c-c1c3ee5ec02c",
+            "decision_object": "项目管理-命名与术语规范",
+            "decision": "产品命名为AI简历初筛助手，不采用自动晒简历",
+            "reason": "产品经理确定名称并获团队认可，因自动晒简历存在歧义",
+            "memory_type": "decision",
+            "status": "active",
+            "supersedes_memory_ids": [],
+            "source_block_ids": [
+              "b80b71dc-a649-4f37-859d-361d6d26f67c"
+            ],
+            "rank": 2
+          },
+          {
+            "memory_id": "ddd4dbd7-215a-48ef-a5d6-2b5eb1681f80",
+            "decision_object": "产品规划-项目范围与MVP边界",
+            "decision": "不做完整ATS，只做JD-简历初筛分析（MVP）",
+            "reason": "时间不够，且招聘官最痛的是JD和简历对不上，需人工一份份看",
+            "memory_type": "decision",
+            "status": "active",
+            "supersedes_memory_ids": [],
+            "source_block_ids": [
+              "c2f31fc7-c349-4f85-8199-0401c5da982a"
+            ],
+            "rank": 3
+          },
+          {
+            "memory_id": "406c7d6b-e947-46d2-bee2-821413d3f8b4",
+            "decision_object": "产品规划-项目范围与MVP边界",
+            "decision": "P0不做权重配置，统一按JD原文理解",
+            "reason": "无",
+            "memory_type": "decision",
+            "status": "active",
+            "supersedes_memory_ids": [],
+            "source_block_ids": [
+              "eb8d2a28-661f-4707-a1ce-a2356c5e8ada"
+            ],
+            "rank": 4
+          },
+          {
+            "memory_id": "3e29961f-e6a8-4227-a7fa-7c3e84a255f0",
+            "decision_object": "数据与安全-数据格式与输入输出",
+            "decision": "报告卡片顺序定为overview、matched、missing、review_items；输出字段包含matched_requirements、missing_requirements、risk_flags",
+            "reason": "讨论中ou_algo_001提出输出字段，ou_design_001建议顺序，ou_pm_001确认，ou_dev_001记录结构，最终达成一致",
+            "memory_type": "decision",
+            "status": "active",
+            "supersedes_memory_ids": [],
+            "source_block_ids": [
+              "6eb046db-ca5f-48e3-a4d4-e4b55454d604"
+            ],
+            "rank": 5
+          }
+        ],
+        "expanded_block": null,
+        "top_topics": []
+      },
+      {
+        "scope": "final_decision",
+        "batch_id": null,
+        "name": "final_decision[7]",
+        "query": "简历结构化解析有哪些字段？",
+        "expected_granularity": "memory_card",
+        "actual_granularity": "memory_card",
+        "expected_keywords": null,
+        "expected_keywords_any": [
+          "教育",
+          "项目",
+          "实习",
+          "技能",
+          "获奖"
+        ],
+        "forbidden_keywords": null,
+        "passed": true,
+        "detail": "q=简历结构化解析有哪些字段？ granularity=OK keyword=OK hits=5",
+        "top_cards": [
+          {
+            "memory_id": "dc315a14-e8e9-4269-96a4-e1691e573b58",
+            "decision_object": "数据与安全-数据格式与输入输出",
+            "decision": "简历解析字段定为教育、项目、实习、技能、获奖证书五类",
+            "reason": "PM提议，算法同意，HR建议学生场景先不硬算工作年限，实习和项目更重要",
+            "memory_type": "decision",
+            "status": "active",
+            "supersedes_memory_ids": [],
+            "source_block_ids": [
+              "e0ce4a08-9b73-4590-9ee2-6059bd86f38b"
+            ],
+            "rank": 1
+          },
+          {
+            "memory_id": "3e29961f-e6a8-4227-a7fa-7c3e84a255f0",
+            "decision_object": "数据与安全-数据格式与输入输出",
+            "decision": "报告卡片顺序定为overview、matched、missing、review_items；输出字段包含matched_requirements、missing_requirements、risk_flags",
+            "reason": "讨论中ou_algo_001提出输出字段，ou_design_001建议顺序，ou_pm_001确认，ou_dev_001记录结构，最终达成一致",
+            "memory_type": "decision",
+            "status": "active",
+            "supersedes_memory_ids": [],
+            "source_block_ids": [
+              "6eb046db-ca5f-48e3-a4d4-e4b55454d604"
+            ],
+            "rank": 2
+          },
+          {
+            "memory_id": "86c42b6b-8388-4483-899c-c1c3ee5ec02c",
+            "decision_object": "项目管理-命名与术语规范",
+            "decision": "产品命名为AI简历初筛助手，不采用自动晒简历",
+            "reason": "产品经理确定名称并获团队认可，因自动晒简历存在歧义",
+            "memory_type": "decision",
+            "status": "active",
+            "supersedes_memory_ids": [],
+            "source_block_ids": [
+              "b80b71dc-a649-4f37-859d-361d6d26f67c"
+            ],
+            "rank": 3
+          },
+          {
+            "memory_id": "ddd4dbd7-215a-48ef-a5d6-2b5eb1681f80",
+            "decision_object": "产品规划-项目范围与MVP边界",
+            "decision": "不做完整ATS，只做JD-简历初筛分析（MVP）",
+            "reason": "时间不够，且招聘官最痛的是JD和简历对不上，需人工一份份看",
+            "memory_type": "decision",
+            "status": "active",
+            "supersedes_memory_ids": [],
+            "source_block_ids": [
+              "c2f31fc7-c349-4f85-8199-0401c5da982a"
+            ],
+            "rank": 4
+          },
+          {
+            "memory_id": "695d7d27-cea7-4914-b233-f5e98a0221b6",
+            "decision_object": "数据与安全-安全与隐私保护",
+            "decision": "文本敏感信息脱敏，头像不解析，不作为匹配依据",
+            "reason": "保护候选人隐私，减少偏见争议",
+            "memory_type": "progress",
+            "status": "active",
+            "supersedes_memory_ids": [
+              "31e1511c-0903-4484-863b-c3bbb555d9e7",
+              "a8043b4d-75e0-49a2-ae81-e1d60bc72b0d"
+            ],
+            "source_block_ids": [
+              "dcedb41c-606c-4f7d-9c2a-85adf84aa121",
+              "407bc640-1225-4b31-9f21-274af1eb9aa1"
+            ],
+            "rank": 5
+          }
+        ],
+        "expanded_block": null,
+        "top_topics": []
+      },
+      {
+        "scope": "final_decision",
+        "batch_id": null,
+        "name": "final_decision[8]",
+        "query": "UI 结果卡片怎么呈现？",
+        "expected_granularity": "memory_card",
+        "actual_granularity": "memory_card",
+        "expected_keywords": [
+          "UI"
+        ],
+        "expected_keywords_any": [
+          "匹配优势",
+          "缺失项",
+          "需人工确认",
+          "卡片"
+        ],
+        "forbidden_keywords": null,
+        "passed": true,
+        "detail": "q=UI 结果卡片怎么呈现？ granularity=OK keyword=OK hits=5",
+        "top_cards": [
+          {
+            "memory_id": "20b4f4a3-4ba7-48c8-a529-49b8263c29d8",
+            "decision_object": "用户体验-用户界面与交互设计",
+            "decision": "结果卡片分为匹配优势、缺失项、需人工确认项三块",
+            "reason": "结合设计、HR、PM意见，风险提醒需温和且与不自动淘汰原则一致",
+            "memory_type": "decision",
+            "status": "active",
+            "supersedes_memory_ids": [],
+            "source_block_ids": [
+              "82ff99f4-0fcc-49d4-8b76-da0b522b71f3"
+            ],
+            "rank": 1
+          },
+          {
+            "memory_id": "86c42b6b-8388-4483-899c-c1c3ee5ec02c",
+            "decision_object": "项目管理-命名与术语规范",
+            "decision": "产品命名为AI简历初筛助手，不采用自动晒简历",
+            "reason": "产品经理确定名称并获团队认可，因自动晒简历存在歧义",
+            "memory_type": "decision",
+            "status": "active",
+            "supersedes_memory_ids": [],
+            "source_block_ids": [
+              "b80b71dc-a649-4f37-859d-361d6d26f67c"
+            ],
+            "rank": 2
+          },
+          {
+            "memory_id": "ddd4dbd7-215a-48ef-a5d6-2b5eb1681f80",
+            "decision_object": "产品规划-项目范围与MVP边界",
+            "decision": "不做完整ATS，只做JD-简历初筛分析（MVP）",
+            "reason": "时间不够，且招聘官最痛的是JD和简历对不上，需人工一份份看",
+            "memory_type": "decision",
+            "status": "active",
+            "supersedes_memory_ids": [],
+            "source_block_ids": [
+              "c2f31fc7-c349-4f85-8199-0401c5da982a"
+            ],
+            "rank": 3
+          },
+          {
+            "memory_id": "3e29961f-e6a8-4227-a7fa-7c3e84a255f0",
+            "decision_object": "数据与安全-数据格式与输入输出",
+            "decision": "报告卡片顺序定为overview、matched、missing、review_items；输出字段包含matched_requirements、missing_requirements、risk_flags",
+            "reason": "讨论中ou_algo_001提出输出字段，ou_design_001建议顺序，ou_pm_001确认，ou_dev_001记录结构，最终达成一致",
+            "memory_type": "decision",
+            "status": "active",
+            "supersedes_memory_ids": [],
+            "source_block_ids": [
+              "6eb046db-ca5f-48e3-a4d4-e4b55454d604"
+            ],
+            "rank": 4
+          },
+          {
+            "memory_id": "5a58f303-aa7c-4b46-8065-9bbf34d00bc5",
+            "decision_object": "技术实现-算法与模型策略",
+            "decision": "使用本地LLM进行模型分析，后续可接云模型",
+            "reason": "演示可控，本地LLM先够用",
+            "memory_type": "decision",
+            "status": "active",
+            "supersedes_memory_ids": [],
+            "source_block_ids": [
+              "a4659035-c16f-480d-8464-45755f1eaa89"
+            ],
+            "rank": 5
+          }
+        ],
+        "expanded_block": null,
+        "top_topics": []
+      },
+      {
+        "scope": "final_decision",
+        "batch_id": null,
+        "name": "final_decision[9]",
+        "query": "产品的最终名称是什么？",
+        "expected_granularity": "memory_card",
+        "actual_granularity": "memory_card",
+        "expected_keywords": null,
+        "expected_keywords_any": [
+          "AI简历初筛助手",
+          "AI 简历初筛助手"
+        ],
+        "forbidden_keywords": null,
+        "passed": true,
+        "detail": "q=产品的最终名称是什么？ granularity=OK keyword=OK hits=5",
+        "top_cards": [
+          {
+            "memory_id": "86c42b6b-8388-4483-899c-c1c3ee5ec02c",
+            "decision_object": "项目管理-命名与术语规范",
+            "decision": "产品命名为AI简历初筛助手，不采用自动晒简历",
+            "reason": "产品经理确定名称并获团队认可，因自动晒简历存在歧义",
+            "memory_type": "decision",
+            "status": "active",
+            "supersedes_memory_ids": [],
+            "source_block_ids": [
+              "b80b71dc-a649-4f37-859d-361d6d26f67c"
+            ],
+            "rank": 1
+          },
+          {
+            "memory_id": "47bd5c54-b4fd-4f74-94cf-6c4d1c72ba9c",
+            "decision_object": "产品规划-项目范围与MVP边界",
+            "decision": "保留匹配参考分（0-100）和推荐等级（strong_match, medium_match, needs_review），但不输出自动淘汰结论",
+            "reason": "HR认为'淘汰'敏感，PM提议不输出自动淘汰/录用结论，只输出辅助判断；算法提出匹配分需强制配解释，PM将产品名称定为'匹配参考分'，最终达成共识。",
+            "memory_type": "decision",
+            "status": "active",
+            "supersedes_memory_ids": [
+              "aeab1938-cf56-4eb0-b918-2dc3c77cd027",
+              "5e43041f-5f9e-414d-96ce-49c5712f1173"
+            ],
+            "source_block_ids": [
+              "185cc2ff-58cc-4def-9ef6-10de771e4946",
+              "1146ab79-c092-4933-8ec7-63df4bccd9c8",
+              "1916d36c-8713-498a-a104-1e78e1f30f0b"
+            ],
+            "rank": 2
+          },
+          {
+            "memory_id": "ddd4dbd7-215a-48ef-a5d6-2b5eb1681f80",
+            "decision_object": "产品规划-项目范围与MVP边界",
+            "decision": "不做完整ATS，只做JD-简历初筛分析（MVP）",
+            "reason": "时间不够，且招聘官最痛的是JD和简历对不上，需人工一份份看",
+            "memory_type": "decision",
+            "status": "active",
+            "supersedes_memory_ids": [],
+            "source_block_ids": [
+              "c2f31fc7-c349-4f85-8199-0401c5da982a"
+            ],
+            "rank": 3
+          },
+          {
+            "memory_id": "406c7d6b-e947-46d2-bee2-821413d3f8b4",
+            "decision_object": "产品规划-项目范围与MVP边界",
+            "decision": "P0不做权重配置，统一按JD原文理解",
+            "reason": "无",
+            "memory_type": "decision",
+            "status": "active",
+            "supersedes_memory_ids": [],
+            "source_block_ids": [
+              "eb8d2a28-661f-4707-a1ce-a2356c5e8ada"
+            ],
+            "rank": 4
+          },
+          {
+            "memory_id": "dc315a14-e8e9-4269-96a4-e1691e573b58",
+            "decision_object": "数据与安全-数据格式与输入输出",
+            "decision": "简历解析字段定为教育、项目、实习、技能、获奖证书五类",
+            "reason": "PM提议，算法同意，HR建议学生场景先不硬算工作年限，实习和项目更重要",
+            "memory_type": "decision",
+            "status": "active",
+            "supersedes_memory_ids": [],
+            "source_block_ids": [
+              "e0ce4a08-9b73-4590-9ee2-6059bd86f38b"
+            ],
+            "rank": 5
+          }
+        ],
+        "expanded_block": null,
+        "top_topics": []
+      }
+    ],
+    "final_evidence": [
+      {
+        "scope": "final_evidence",
+        "batch_id": null,
+        "name": "final_evidence[0]",
+        "query": "MVP 范围限定在什么的原话在哪？",
+        "expected_granularity": "evidence_block",
+        "actual_granularity": "evidence_block",
+        "expected_keywords": null,
+        "expected_keywords_any": [
+          "JD",
+          "ATS",
+          "简历匹配",
+          "初筛"
+        ],
+        "forbidden_keywords": null,
+        "passed": true,
+        "detail": "q=MVP 范围限定在什么的原话在哪？ granularity=OK keyword=OK block_msgs=5",
+        "top_cards": [
+          {
+            "memory_id": "406c7d6b-e947-46d2-bee2-821413d3f8b4",
+            "decision_object": "产品规划-项目范围与MVP边界",
+            "decision": "P0不做权重配置，统一按JD原文理解",
+            "reason": "无",
+            "memory_type": "decision",
+            "status": "active",
+            "supersedes_memory_ids": [],
+            "source_block_ids": [
+              "eb8d2a28-661f-4707-a1ce-a2356c5e8ada"
+            ],
+            "rank": 1
+          }
+        ],
+        "expanded_block": {
+          "block_id": "eb8d2a28-661f-4707-a1ce-a2356c5e8ada",
+          "block_type": "decision",
+          "one_line_summary": "决定P0不做权重配置，统一按JD原文理解，不增加配置面板",
+          "msg_count": 5,
+          "source_message_ids": [
+            "om_resume_0078",
+            "om_resume_0079",
+            "om_resume_0080",
+            "om_resume_0081",
+            "om_resume_0082"
+          ],
+          "sample_text": "还有一个问题，要不要允许用户自己调整 JD 权重？比如技能更重要还是项目更重要。 | 这个功能挺好，但实现有点多，要加配置面板。 | P0 先不要做权重配置，统一按 JD 原文理解。"
+        },
+        "top_topics": []
+      },
+      {
+        "scope": "final_evidence",
+        "batch_id": null,
+        "name": "final_evidence[1]",
+        "query": "MVP 不输出淘汰结论的原话在哪说的？",
+        "expected_granularity": "evidence_block",
+        "actual_granularity": "evidence_block",
+        "expected_keywords": null,
+        "expected_keywords_any": [
+          "淘汰",
+          "辅助判断",
+          "AI 不能直接决定"
+        ],
+        "forbidden_keywords": null,
+        "passed": true,
+        "detail": "q=MVP 不输出淘汰结论的原话在哪说的？ granularity=OK keyword=OK block_msgs=5",
+        "top_cards": [
+          {
+            "memory_id": "47bd5c54-b4fd-4f74-94cf-6c4d1c72ba9c",
+            "decision_object": "产品规划-项目范围与MVP边界",
+            "decision": "保留匹配参考分（0-100）和推荐等级（strong_match, medium_match, needs_review），但不输出自动淘汰结论",
+            "reason": "HR认为'淘汰'敏感，PM提议不输出自动淘汰/录用结论，只输出辅助判断；算法提出匹配分需强制配解释，PM将产品名称定为'匹配参考分'，最终达成共识。",
+            "memory_type": "decision",
+            "status": "active",
+            "supersedes_memory_ids": [
+              "aeab1938-cf56-4eb0-b918-2dc3c77cd027",
+              "5e43041f-5f9e-414d-96ce-49c5712f1173"
+            ],
+            "source_block_ids": [
+              "185cc2ff-58cc-4def-9ef6-10de771e4946",
+              "1146ab79-c092-4933-8ec7-63df4bccd9c8",
+              "1916d36c-8713-498a-a104-1e78e1f30f0b"
+            ],
+            "rank": 1
+          }
+        ],
+        "expanded_block": {
+          "block_id": "185cc2ff-58cc-4def-9ef6-10de771e4946",
+          "block_type": "decision",
+          "one_line_summary": "确定MVP输出边界：不输出自动淘汰，只输出辅助判断，并约定页面三个区域",
+          "msg_count": 5,
+          "source_message_ids": [
+            "om_resume_0007",
+            "om_resume_0008",
+            "om_resume_0009",
+            "om_resume_0010",
+            "om_resume_0011"
+          ],
+          "sample_text": "页面也别复杂，先一个 JD 输入区，一个简历上传区，一个分析结果区。 | 结果里最好不要写‘淘汰’，这个词太敏感。 | 同意，AI 不能直接决定候选人命运。可以写‘建议人工复核’。"
+        },
+        "top_topics": []
+      },
+      {
+        "scope": "final_evidence",
+        "batch_id": null,
+        "name": "final_evidence[2]",
+        "query": "推荐等级分类的原话讨论在哪？",
+        "expected_granularity": "evidence_block",
+        "actual_granularity": "evidence_block",
+        "expected_keywords": null,
+        "expected_keywords_any": [
+          "strong_match",
+          "medium_match",
+          "needs_review",
+          "推荐等级"
+        ],
+        "forbidden_keywords": null,
+        "passed": false,
+        "detail": "q=推荐等级分类的原话讨论在哪？ granularity=OK keyword=MISS block_msgs=5",
+        "top_cards": [
+          {
+            "memory_id": "47bd5c54-b4fd-4f74-94cf-6c4d1c72ba9c",
+            "decision_object": "产品规划-项目范围与MVP边界",
+            "decision": "保留匹配参考分（0-100）和推荐等级（strong_match, medium_match, needs_review），但不输出自动淘汰结论",
+            "reason": "HR认为'淘汰'敏感，PM提议不输出自动淘汰/录用结论，只输出辅助判断；算法提出匹配分需强制配解释，PM将产品名称定为'匹配参考分'，最终达成共识。",
+            "memory_type": "decision",
+            "status": "active",
+            "supersedes_memory_ids": [
+              "aeab1938-cf56-4eb0-b918-2dc3c77cd027",
+              "5e43041f-5f9e-414d-96ce-49c5712f1173"
+            ],
+            "source_block_ids": [
+              "185cc2ff-58cc-4def-9ef6-10de771e4946",
+              "1146ab79-c092-4933-8ec7-63df4bccd9c8",
+              "1916d36c-8713-498a-a104-1e78e1f30f0b"
+            ],
+            "rank": 1
+          }
+        ],
+        "expanded_block": {
+          "block_id": "185cc2ff-58cc-4def-9ef6-10de771e4946",
+          "block_type": "decision",
+          "one_line_summary": "确定MVP输出边界：不输出自动淘汰，只输出辅助判断，并约定页面三个区域",
+          "msg_count": 5,
+          "source_message_ids": [
+            "om_resume_0007",
+            "om_resume_0008",
+            "om_resume_0009",
+            "om_resume_0010",
+            "om_resume_0011"
+          ],
+          "sample_text": "页面也别复杂，先一个 JD 输入区，一个简历上传区，一个分析结果区。 | 结果里最好不要写‘淘汰’，这个词太敏感。 | 同意，AI 不能直接决定候选人命运。可以写‘建议人工复核’。"
+        },
+        "top_topics": []
+      },
+      {
+        "scope": "final_evidence",
+        "batch_id": null,
+        "name": "final_evidence[3]",
+        "query": "P0 不做权重配置的讨论原话？",
+        "expected_granularity": "evidence_block",
+        "actual_granularity": "evidence_block",
+        "expected_keywords": null,
+        "expected_keywords_any": [
+          "权重",
+          "JD原文"
+        ],
+        "forbidden_keywords": null,
+        "passed": true,
+        "detail": "q=P0 不做权重配置的讨论原话？ granularity=OK keyword=OK block_msgs=5",
+        "top_cards": [
+          {
+            "memory_id": "406c7d6b-e947-46d2-bee2-821413d3f8b4",
+            "decision_object": "产品规划-项目范围与MVP边界",
+            "decision": "P0不做权重配置，统一按JD原文理解",
+            "reason": "无",
+            "memory_type": "decision",
+            "status": "active",
+            "supersedes_memory_ids": [],
+            "source_block_ids": [
+              "eb8d2a28-661f-4707-a1ce-a2356c5e8ada"
+            ],
+            "rank": 1
+          }
+        ],
+        "expanded_block": {
+          "block_id": "eb8d2a28-661f-4707-a1ce-a2356c5e8ada",
+          "block_type": "decision",
+          "one_line_summary": "决定P0不做权重配置，统一按JD原文理解，不增加配置面板",
+          "msg_count": 5,
+          "source_message_ids": [
+            "om_resume_0078",
+            "om_resume_0079",
+            "om_resume_0080",
+            "om_resume_0081",
+            "om_resume_0082"
+          ],
+          "sample_text": "还有一个问题，要不要允许用户自己调整 JD 权重？比如技能更重要还是项目更重要。 | 这个功能挺好，但实现有点多，要加配置面板。 | P0 先不要做权重配置，统一按 JD 原文理解。"
+        },
+        "top_topics": []
+      },
+      {
+        "scope": "final_evidence",
+        "batch_id": null,
+        "name": "final_evidence[4]",
+        "query": "复赛 mock 上传方案的讨论原话？",
+        "expected_granularity": "evidence_block",
+        "actual_granularity": "evidence_block",
+        "expected_keywords": null,
+        "expected_keywords_any": [
+          "mock",
+          "对象存储",
+          "examples/resumes"
+        ],
+        "forbidden_keywords": null,
+        "passed": true,
+        "detail": "q=复赛 mock 上传方案的讨论原话？ granularity=OK keyword=OK block_msgs=6",
+        "top_cards": [
+          {
+            "memory_id": "b5547f72-82fa-4e59-bb53-9fc8d6084730",
+            "decision_object": "技术实现-数据模型与存储方案",
+            "decision": "复赛用mock文件路径模拟上传，不接对象存储，决赛再看真实上传",
+            "reason": "避免真实文件上传的存储问题，保证Demo稳定性，评委现场不会因上传失败翻车",
+            "memory_type": "decision",
+            "status": "active",
+            "supersedes_memory_ids": [
+              "548ea0bb-0be1-4356-a297-98e759307dfe",
+              "6e382aeb-cf13-4cd4-8a85-3708621a41ae"
+            ],
+            "source_block_ids": [
+              "0e02ac82-76ae-4bb9-b04e-425b5ff4de6e",
+              "f1355a34-d42f-49a6-9bea-d963b5899cea"
+            ],
+            "rank": 1
+          }
+        ],
+        "expanded_block": {
+          "block_id": "0e02ac82-76ae-4bb9-b04e-425b5ff4de6e",
+          "block_type": "decision",
+          "one_line_summary": "部署和文件存储暂用mock，真实文件下一轮再议",
+          "msg_count": 6,
+          "source_message_ids": [
+            "om_resume_0108",
+            "om_resume_0109",
+            "om_resume_0110",
+            "om_resume_0111",
+            "om_resume_0112",
+            "om_resume_0113"
+          ],
+          "sample_text": "部署这块要不要先接真实简历文件？还是用 mock 数据跑？ | 真实文件上传要处理存储，可能麻烦。 | 先用 mock 文件，Demo 时模拟上传。"
+        },
+        "top_topics": []
+      },
+      {
+        "scope": "final_evidence",
+        "batch_id": null,
+        "name": "final_evidence[5]",
+        "query": "异常 PDF 处理的讨论原话？",
+        "expected_granularity": "evidence_block",
+        "actual_granularity": "evidence_block",
+        "expected_keywords": null,
+        "expected_keywords_any": [
+          "空简历",
+          "乱码",
+          "图片",
+          "请换"
+        ],
+        "forbidden_keywords": null,
+        "passed": false,
+        "detail": "q=异常 PDF 处理的讨论原话？ granularity=OK keyword=MISS block_msgs=5",
+        "top_cards": [
+          {
+            "memory_id": "406c7d6b-e947-46d2-bee2-821413d3f8b4",
+            "decision_object": "产品规划-项目范围与MVP边界",
+            "decision": "P0不做权重配置，统一按JD原文理解",
+            "reason": "无",
+            "memory_type": "decision",
+            "status": "active",
+            "supersedes_memory_ids": [],
+            "source_block_ids": [
+              "eb8d2a28-661f-4707-a1ce-a2356c5e8ada"
+            ],
+            "rank": 1
+          }
+        ],
+        "expanded_block": {
+          "block_id": "eb8d2a28-661f-4707-a1ce-a2356c5e8ada",
+          "block_type": "decision",
+          "one_line_summary": "决定P0不做权重配置，统一按JD原文理解，不增加配置面板",
+          "msg_count": 5,
+          "source_message_ids": [
+            "om_resume_0078",
+            "om_resume_0079",
+            "om_resume_0080",
+            "om_resume_0081",
+            "om_resume_0082"
+          ],
+          "sample_text": "还有一个问题，要不要允许用户自己调整 JD 权重？比如技能更重要还是项目更重要。 | 这个功能挺好，但实现有点多，要加配置面板。 | P0 先不要做权重配置，统一按 JD 原文理解。"
+        },
+        "top_topics": []
+      },
+      {
+        "scope": "final_evidence",
+        "batch_id": null,
+        "name": "final_evidence[6]",
+        "query": "P0 只支持 PDF 的讨论原话？",
+        "expected_granularity": "evidence_block",
+        "actual_granularity": "evidence_block",
+        "expected_keywords": null,
+        "expected_keywords_any": [
+          "PDF",
+          "只支持",
+          "只保证"
+        ],
+        "forbidden_keywords": null,
+        "passed": false,
+        "detail": "q=P0 只支持 PDF 的讨论原话？ granularity=OK keyword=MISS block_msgs=5",
+        "top_cards": [
+          {
+            "memory_id": "406c7d6b-e947-46d2-bee2-821413d3f8b4",
+            "decision_object": "产品规划-项目范围与MVP边界",
+            "decision": "P0不做权重配置，统一按JD原文理解",
+            "reason": "无",
+            "memory_type": "decision",
+            "status": "active",
+            "supersedes_memory_ids": [],
+            "source_block_ids": [
+              "eb8d2a28-661f-4707-a1ce-a2356c5e8ada"
+            ],
+            "rank": 1
+          }
+        ],
+        "expanded_block": {
+          "block_id": "eb8d2a28-661f-4707-a1ce-a2356c5e8ada",
+          "block_type": "decision",
+          "one_line_summary": "决定P0不做权重配置，统一按JD原文理解，不增加配置面板",
+          "msg_count": 5,
+          "source_message_ids": [
+            "om_resume_0078",
+            "om_resume_0079",
+            "om_resume_0080",
+            "om_resume_0081",
+            "om_resume_0082"
+          ],
+          "sample_text": "还有一个问题，要不要允许用户自己调整 JD 权重？比如技能更重要还是项目更重要。 | 这个功能挺好，但实现有点多，要加配置面板。 | P0 先不要做权重配置，统一按 JD 原文理解。"
+        },
+        "top_topics": []
+      },
+      {
+        "scope": "final_evidence",
+        "batch_id": null,
+        "name": "final_evidence[7]",
+        "query": "结构化解析五字段的讨论原话？",
+        "expected_granularity": "evidence_block",
+        "actual_granularity": "evidence_block",
+        "expected_keywords": null,
+        "expected_keywords_any": [
+          "教育",
+          "项目",
+          "实习",
+          "技能",
+          "获奖"
+        ],
+        "forbidden_keywords": null,
+        "passed": true,
+        "detail": "q=结构化解析五字段的讨论原话？ granularity=OK keyword=OK block_msgs=6",
+        "top_cards": [
+          {
+            "memory_id": "dc315a14-e8e9-4269-96a4-e1691e573b58",
+            "decision_object": "数据与安全-数据格式与输入输出",
+            "decision": "简历解析字段定为教育、项目、实习、技能、获奖证书五类",
+            "reason": "PM提议，算法同意，HR建议学生场景先不硬算工作年限，实习和项目更重要",
+            "memory_type": "decision",
+            "status": "active",
+            "supersedes_memory_ids": [],
+            "source_block_ids": [
+              "e0ce4a08-9b73-4590-9ee2-6059bd86f38b"
+            ],
+            "rank": 1
+          }
+        ],
+        "expanded_block": {
+          "block_id": "e0ce4a08-9b73-4590-9ee2-6059bd86f38b",
+          "block_type": "decision",
+          "one_line_summary": "确定简历解析字段为教育、项目、实习、技能、获奖证书五类",
+          "msg_count": 6,
+          "source_message_ids": [
+            "om_resume_0012",
+            "om_resume_0013",
+            "om_resume_0014",
+            "om_resume_0015",
+            "om_resume_0016",
+            "om_resume_0017"
+          ],
+          "sample_text": "简历解析字段先定哪些？教育经历、项目经历、实习经历、技能关键词？ | 再加工作年限和岗位关键词，不过学生简历可能没有工作年限。 | 学生场景先别硬算工作年限，容易误伤。实习经历和项目经历更重要。"
+        },
+        "top_topics": []
+      },
+      {
+        "scope": "final_evidence",
+        "batch_id": null,
+        "name": "final_evidence[8]",
+        "query": "UI 结果卡片排布的讨论原话？",
+        "expected_granularity": "evidence_block",
+        "actual_granularity": "evidence_block",
+        "expected_keywords": null,
+        "expected_keywords_any": [
+          "卡片",
+          "匹配优势",
+          "缺失项",
+          "人工确认"
+        ],
+        "forbidden_keywords": null,
+        "passed": true,
+        "detail": "q=UI 结果卡片排布的讨论原话？ granularity=OK keyword=OK block_msgs=4",
+        "top_cards": [
+          {
+            "memory_id": "20b4f4a3-4ba7-48c8-a529-49b8263c29d8",
+            "decision_object": "用户体验-用户界面与交互设计",
+            "decision": "结果卡片分为匹配优势、缺失项、需人工确认项三块",
+            "reason": "结合设计、HR、PM意见，风险提醒需温和且与不自动淘汰原则一致",
+            "memory_type": "decision",
+            "status": "active",
+            "supersedes_memory_ids": [],
+            "source_block_ids": [
+              "82ff99f4-0fcc-49d4-8b76-da0b522b71f3"
+            ],
+            "rank": 1
+          }
+        ],
+        "expanded_block": {
+          "block_id": "82ff99f4-0fcc-49d4-8b76-da0b522b71f3",
+          "block_type": "decision",
+          "one_line_summary": "确定结果卡片分匹配优势、缺失项、风险提醒三块，风险部分统一命名",
+          "msg_count": 4,
+          "source_message_ids": [
+            "om_resume_0018",
+            "om_resume_0019",
+            "om_resume_0020",
+            "om_resume_0021"
+          ],
+          "sample_text": "UI 上结果卡片可以分三块：匹配优势、缺失项、风险提醒。 | 风险提醒要温和一点，比如‘需要进一步确认’，不要写得像判决书。 | 好，风险部分统一叫‘需人工确认项’。"
+        },
+        "top_topics": []
+      },
+      {
+        "scope": "final_evidence",
+        "batch_id": null,
+        "name": "final_evidence[9]",
+        "query": "产品命名为 AI 简历初筛助手的讨论原话？",
+        "expected_granularity": "evidence_block",
+        "actual_granularity": "evidence_block",
+        "expected_keywords": null,
+        "expected_keywords_any": [
+          "命名",
+          "名称",
+          "AI简历初筛助手",
+          "改名"
+        ],
+        "forbidden_keywords": null,
+        "passed": false,
+        "detail": "q=产品命名为 AI 简历初筛助手的讨论原话？ granularity=OK keyword=MISS block_msgs=3",
+        "top_cards": [
+          {
+            "memory_id": "86c42b6b-8388-4483-899c-c1c3ee5ec02c",
+            "decision_object": "项目管理-命名与术语规范",
+            "decision": "产品命名为AI简历初筛助手，不采用自动晒简历",
+            "reason": "产品经理确定名称并获团队认可，因自动晒简历存在歧义",
+            "memory_type": "decision",
+            "status": "active",
+            "supersedes_memory_ids": [],
+            "source_block_ids": [
+              "b80b71dc-a649-4f37-859d-361d6d26f67c"
+            ],
+            "rank": 1
+          }
+        ],
+        "expanded_block": {
+          "block_id": "b80b71dc-a649-4f37-859d-361d6d26f67c",
+          "block_type": "decision",
+          "one_line_summary": "确定产品命名为AI简历初筛助手",
+          "msg_count": 3,
+          "source_message_ids": [
+            "om_resume_0105",
+            "om_resume_0106",
+            "om_resume_0107"
+          ],
+          "sample_text": "我现在按‘AI 简历初筛助手’这个名字出高保真。 | 名字定了，就叫 AI 简历初筛助手，不叫自动晒简历了，那个听起来像错别字。 | 哈哈确实，自动晒简历像把简历拿去晒太阳。"
+        },
+        "top_topics": []
+      }
+    ],
+    "final_topic": [
+      {
+        "scope": "final_topic",
+        "batch_id": null,
+        "name": "final_topic[0]",
+        "query": "当前 AI 简历初筛 MVP 的整体边界是什么？",
+        "expected_granularity": "topic_summary",
+        "actual_granularity": "topic_summary",
+        "expected_keywords": null,
+        "expected_keywords_any": [
+          "MVP",
+          "ATS",
+          "JD",
+          "匹配",
+          "初筛"
+        ],
+        "forbidden_keywords": null,
+        "passed": true,
+        "detail": "q=当前 AI 简历初筛 MVP 的整体边界是什么？ granularity=OK keyword=OK topics=5",
+        "top_cards": [],
+        "expanded_block": null,
+        "top_topics": [
+          {
+            "summary_id": "33c898eb-b55f-4674-bb84-b94ceea86323",
+            "topic": "产品命名",
+            "summary": "产品命名为AI简历初筛助手，不采用自动晒简历。",
+            "covered_memory_ids": [
+              "86c42b6b-8388-4483-899c-c1c3ee5ec02c"
+            ],
+            "rank": 1
+          },
+          {
+            "summary_id": "4ba4846f-c7ac-4101-949d-17ccd9b7869a",
+            "topic": "MVP范围边界",
+            "summary": "保留匹配参考分和推荐等级，但不输出自动淘汰结论；P0不做权重配置，统一按JD原文理解；不做完整ATS，只做JD-简历初筛分析。",
+            "covered_memory_ids": [
+              "47bd5c54-b4fd-4f74-94cf-6c4d1c72ba9c",
+              "406c7d6b-e947-46d2-bee2-821413d3f8b4",
+              "ddd4dbd7-215a-48ef-a5d6-2b5eb1681f80"
+            ],
+            "rank": 2
+          },
+          {
+            "summary_id": "04f04aa1-1a0f-4796-a6ce-9fcef6b42797",
+            "topic": "数据格式规范",
+            "summary": "报告卡片顺序为overview、matched、missing、review_items；输出字段包含matched_requirements、missing_requirements、risk_flags；简历解析字段定为教育、项目、实习、技能、获奖证书五类。",
+            "covered_memory_ids": [
+              "3e29961f-e6a8-4227-a7fa-7c3e84a255f0",
+              "dc315a14-e8e9-4269-96a4-e1691e573b58"
+            ],
+            "rank": 3
+          },
+          {
+            "summary_id": "1747e09c-081b-4f8b-a47c-de2e808dedf5",
+            "topic": "技术实现策略",
+            "summary": "复赛使用mock文件模拟上传，不接入对象存储；使用本地LLM进行模型分析，后续可接云模型。",
+            "covered_memory_ids": [
+              "b5547f72-82fa-4e59-bb53-9fc8d6084730",
+              "5a58f303-aa7c-4b46-8065-9bbf34d00bc5"
+            ],
+            "rank": 4
+          },
+          {
+            "summary_id": "a9febc0d-4f37-4889-ab9e-741e07d46f20",
+            "topic": "结果卡片设计",
+            "summary": "结果卡片分为匹配优势、缺失项、需人工确认项三块，风险提醒需温和。",
+            "covered_memory_ids": [
+              "20b4f4a3-4ba7-48c8-a529-49b8263c29d8"
+            ],
+            "rank": 5
+          }
+        ]
+      },
+      {
+        "scope": "final_topic",
+        "batch_id": null,
+        "name": "final_topic[1]",
+        "query": "项目管理和排期整体现在怎么定的？",
+        "expected_granularity": "topic_summary",
+        "actual_granularity": "topic_summary",
+        "expected_keywords": null,
+        "expected_keywords_any": [
+          "分工",
+          "排期",
+          "Demo",
+          "今晚"
+        ],
+        "forbidden_keywords": null,
+        "passed": false,
+        "detail": "q=项目管理和排期整体现在怎么定的？ granularity=OK keyword=MISS topics=5",
+        "top_cards": [],
+        "expanded_block": null,
+        "top_topics": [
+          {
+            "summary_id": "a9febc0d-4f37-4889-ab9e-741e07d46f20",
+            "topic": "结果卡片设计",
+            "summary": "结果卡片分为匹配优势、缺失项、需人工确认项三块，风险提醒需温和。",
+            "covered_memory_ids": [
+              "20b4f4a3-4ba7-48c8-a529-49b8263c29d8"
+            ],
+            "rank": 1
+          },
+          {
+            "summary_id": "4ba4846f-c7ac-4101-949d-17ccd9b7869a",
+            "topic": "MVP范围边界",
+            "summary": "保留匹配参考分和推荐等级，但不输出自动淘汰结论；P0不做权重配置，统一按JD原文理解；不做完整ATS，只做JD-简历初筛分析。",
+            "covered_memory_ids": [
+              "47bd5c54-b4fd-4f74-94cf-6c4d1c72ba9c",
+              "406c7d6b-e947-46d2-bee2-821413d3f8b4",
+              "ddd4dbd7-215a-48ef-a5d6-2b5eb1681f80"
+            ],
+            "rank": 2
+          },
+          {
+            "summary_id": "04f04aa1-1a0f-4796-a6ce-9fcef6b42797",
+            "topic": "数据格式规范",
+            "summary": "报告卡片顺序为overview、matched、missing、review_items；输出字段包含matched_requirements、missing_requirements、risk_flags；简历解析字段定为教育、项目、实习、技能、获奖证书五类。",
+            "covered_memory_ids": [
+              "3e29961f-e6a8-4227-a7fa-7c3e84a255f0",
+              "dc315a14-e8e9-4269-96a4-e1691e573b58"
+            ],
+            "rank": 3
+          },
+          {
+            "summary_id": "02f9ba4e-091d-4645-b518-fe0e1d9ab587",
+            "topic": "评测标准",
+            "summary": "采用等级一致率加关键理由覆盖率作为评测标准，不引入更复杂公平性指标。",
+            "covered_memory_ids": [
+              "38e8285d-55f3-4fa4-a8f1-e52f27ff95a9"
+            ],
+            "rank": 4
+          },
+          {
+            "summary_id": "1747e09c-081b-4f8b-a47c-de2e808dedf5",
+            "topic": "技术实现策略",
+            "summary": "复赛使用mock文件模拟上传，不接入对象存储；使用本地LLM进行模型分析，后续可接云模型。",
+            "covered_memory_ids": [
+              "b5547f72-82fa-4e59-bb53-9fc8d6084730",
+              "5a58f303-aa7c-4b46-8065-9bbf34d00bc5"
+            ],
+            "rank": 5
+          }
+        ]
+      },
+      {
+        "scope": "final_topic",
+        "batch_id": null,
+        "name": "final_topic[2]",
+        "query": "技术实现整体方案现在是什么？",
+        "expected_granularity": "topic_summary",
+        "actual_granularity": "topic_summary",
+        "expected_keywords": null,
+        "expected_keywords_any": [
+          "LLM",
+          "mock",
+          "存储",
+          "解析"
+        ],
+        "forbidden_keywords": null,
+        "passed": true,
+        "detail": "q=技术实现整体方案现在是什么？ granularity=OK keyword=OK topics=3",
+        "top_cards": [],
+        "expanded_block": null,
+        "top_topics": [
+          {
+            "summary_id": "1747e09c-081b-4f8b-a47c-de2e808dedf5",
+            "topic": "技术实现策略",
+            "summary": "复赛使用mock文件模拟上传，不接入对象存储；使用本地LLM进行模型分析，后续可接云模型。",
+            "covered_memory_ids": [
+              "b5547f72-82fa-4e59-bb53-9fc8d6084730",
+              "5a58f303-aa7c-4b46-8065-9bbf34d00bc5"
+            ],
+            "rank": 1
+          },
+          {
+            "summary_id": "04f04aa1-1a0f-4796-a6ce-9fcef6b42797",
+            "topic": "数据格式规范",
+            "summary": "报告卡片顺序为overview、matched、missing、review_items；输出字段包含matched_requirements、missing_requirements、risk_flags；简历解析字段定为教育、项目、实习、技能、获奖证书五类。",
+            "covered_memory_ids": [
+              "3e29961f-e6a8-4227-a7fa-7c3e84a255f0",
+              "dc315a14-e8e9-4269-96a4-e1691e573b58"
+            ],
+            "rank": 2
+          },
+          {
+            "summary_id": "4ba4846f-c7ac-4101-949d-17ccd9b7869a",
+            "topic": "MVP范围边界",
+            "summary": "保留匹配参考分和推荐等级，但不输出自动淘汰结论；P0不做权重配置，统一按JD原文理解；不做完整ATS，只做JD-简历初筛分析。",
+            "covered_memory_ids": [
+              "47bd5c54-b4fd-4f74-94cf-6c4d1c72ba9c",
+              "406c7d6b-e947-46d2-bee2-821413d3f8b4",
+              "ddd4dbd7-215a-48ef-a5d6-2b5eb1681f80"
+            ],
+            "rank": 3
+          }
+        ]
+      }
+    ]
+  },
+  "memory_cards_snapshot": [
+    {
+      "memory_id": "60b44fec-aac3-4e09-9f6b-769f3db6be34",
+      "decision_object": "其他-无关消息",
+      "decision": "决定等对方看完匹配分后一起去吃饭",
+      "reason": "无",
+      "memory_type": "decision",
+      "status": "active",
+      "supersedes_memory_ids": [],
+      "source_block_ids": [
+        "6e20b08a-9acf-4290-a62a-6cfbb31143db"
+      ]
+    },
+    {
+      "memory_id": "b5547f72-82fa-4e59-bb53-9fc8d6084730",
+      "decision_object": "技术实现-数据模型与存储方案",
+      "decision": "复赛用mock文件路径模拟上传，不接对象存储，决赛再看真实上传",
+      "reason": "避免真实文件上传的存储问题，保证Demo稳定性，评委现场不会因上传失败翻车",
+      "memory_type": "decision",
+      "status": "active",
+      "supersedes_memory_ids": [
+        "548ea0bb-0be1-4356-a297-98e759307dfe",
+        "6e382aeb-cf13-4cd4-8a85-3708621a41ae"
+      ],
+      "source_block_ids": [
+        "0e02ac82-76ae-4bb9-b04e-425b5ff4de6e",
+        "f1355a34-d42f-49a6-9bea-d963b5899cea"
+      ]
+    },
+    {
+      "memory_id": "5a58f303-aa7c-4b46-8065-9bbf34d00bc5",
+      "decision_object": "技术实现-算法与模型策略",
+      "decision": "使用本地LLM进行模型分析，后续可接云模型",
+      "reason": "演示可控，本地LLM先够用",
+      "memory_type": "decision",
+      "status": "active",
+      "supersedes_memory_ids": [],
+      "source_block_ids": [
+        "a4659035-c16f-480d-8464-45755f1eaa89"
+      ]
+    },
+    {
+      "memory_id": "6e382aeb-cf13-4cd4-8a85-3708621a41ae",
+      "decision_object": "技术实现-数据模型与存储方案",
+      "decision": "复赛用mock文件路径模拟上传，不接对象存储，决赛再看真实上传",
+      "reason": "为保证演示稳定性，避免现场上传失败",
+      "memory_type": "decision",
+      "status": "deprecated",
+      "supersedes_memory_ids": [],
+      "source_block_ids": [
+        "f1355a34-d42f-49a6-9bea-d963b5899cea"
+      ]
+    },
+    {
+      "memory_id": "38e8285d-55f3-4fa4-a8f1-e52f27ff95a9",
+      "decision_object": "质量保障-测试与评测方案",
+      "decision": "评测标准定为等级一致率加关键理由覆盖率",
+      "reason": "为了平衡准确率和效率，先不引入更复杂的公平性指标",
+      "memory_type": "decision",
+      "status": "active",
+      "supersedes_memory_ids": [
+        "b2fedb83-3b0a-4abb-b6cf-ca760a51cd33",
+        "38053ee3-fdec-4f6e-a917-678f4944813f"
+      ],
+      "source_block_ids": [
+        "e17838bf-6487-4fc9-80df-383f76544eb3",
+        "6d1d557c-541e-4127-a3d3-c97046d4a88c",
+        "d250185c-eacf-44bb-b68b-35e333cbee0b"
+      ]
+    },
+    {
+      "memory_id": "b2fedb83-3b0a-4abb-b6cf-ca760a51cd33",
+      "decision_object": "质量保障-测试与评测方案",
+      "decision": "确定评测标准为等级一致率加关键理由覆盖率",
+      "reason": "讨论中初步达成一致，但尚需实施验证",
+      "memory_type": "progress",
+      "status": "deprecated",
+      "supersedes_memory_ids": [
+        "bf0f60f2-c4c6-4cb5-8fe3-328fa0292dc8",
+        "bd020f13-d24b-4cc0-a042-ab1341253aff"
+      ],
+      "source_block_ids": [
+        "e17838bf-6487-4fc9-80df-383f76544eb3",
+        "6d1d557c-541e-4127-a3d3-c97046d4a88c"
+      ]
+    },
+    {
+      "memory_id": "548ea0bb-0be1-4356-a297-98e759307dfe",
+      "decision_object": "技术实现-数据模型与存储方案",
+      "decision": "部署和文件存储暂用mock，真实文件下一轮再议",
+      "reason": "真实文件上传需要处理存储，较为麻烦，Demo时模拟上传即可",
+      "memory_type": "decision",
+      "status": "deprecated",
+      "supersedes_memory_ids": [],
+      "source_block_ids": [
+        "0e02ac82-76ae-4bb9-b04e-425b5ff4de6e"
+      ]
+    },
+    {
+      "memory_id": "86c42b6b-8388-4483-899c-c1c3ee5ec02c",
+      "decision_object": "项目管理-命名与术语规范",
+      "decision": "产品命名为AI简历初筛助手，不采用自动晒简历",
+      "reason": "产品经理确定名称并获团队认可，因自动晒简历存在歧义",
+      "memory_type": "decision",
+      "status": "active",
+      "supersedes_memory_ids": [],
+      "source_block_ids": [
+        "b80b71dc-a649-4f37-859d-361d6d26f67c"
+      ]
+    },
+    {
+      "memory_id": "38053ee3-fdec-4f6e-a917-678f4944813f",
+      "decision_object": "质量保障-测试与评测方案",
+      "decision": "由王五补齐20份mock简历和3个JD样例，由ou_qa_001制作人工标注模板",
+      "reason": "推进评测准备工作，依据已有共识需要简历样品和标注模板",
+      "memory_type": "decision",
+      "status": "deprecated",
+      "supersedes_memory_ids": [],
+      "source_block_ids": [
+        "d250185c-eacf-44bb-b68b-35e333cbee0b"
+      ]
+    },
+    {
+      "memory_id": "bd020f13-d24b-4cc0-a042-ab1341253aff",
+      "decision_object": "质量保障-测试与评测方案",
+      "decision": "等级一致率 + 关键理由覆盖率",
+      "reason": "讨论中确定了评测标准，基于时间限制，不搞复杂公平性指标。",
+      "memory_type": "decision",
+      "status": "deprecated",
+      "supersedes_memory_ids": [],
+      "source_block_ids": [
+        "6d1d557c-541e-4127-a3d3-c97046d4a88c"
+      ]
+    },
+    {
+      "memory_id": "47bd5c54-b4fd-4f74-94cf-6c4d1c72ba9c",
+      "decision_object": "产品规划-项目范围与MVP边界",
+      "decision": "保留匹配参考分（0-100）和推荐等级（strong_match, medium_match, needs_review），但不输出自动淘汰结论",
+      "reason": "HR认为'淘汰'敏感，PM提议不输出自动淘汰/录用结论，只输出辅助判断；算法提出匹配分需强制配解释，PM将产品名称定为'匹配参考分'，最终达成共识。",
+      "memory_type": "decision",
+      "status": "active",
+      "supersedes_memory_ids": [
+        "aeab1938-cf56-4eb0-b918-2dc3c77cd027",
+        "5e43041f-5f9e-414d-96ce-49c5712f1173"
+      ],
+      "source_block_ids": [
+        "185cc2ff-58cc-4def-9ef6-10de771e4946",
+        "1146ab79-c092-4933-8ec7-63df4bccd9c8",
+        "1916d36c-8713-498a-a104-1e78e1f30f0b"
+      ]
+    },
+    {
+      "memory_id": "bf0f60f2-c4c6-4cb5-8fe3-328fa0292dc8",
+      "decision_object": "质量保障-测试与评测方案",
+      "decision": "评测标准讨论暂缓，准备简历样品，后续专门讨论",
+      "reason": "讨论中提到人工标注的主观性问题，且pm决定暂缓，先准备简历样品",
+      "memory_type": "progress",
+      "status": "deprecated",
+      "supersedes_memory_ids": [],
+      "source_block_ids": [
+        "e17838bf-6487-4fc9-80df-383f76544eb3"
+      ]
+    },
+    {
+      "memory_id": "406c7d6b-e947-46d2-bee2-821413d3f8b4",
+      "decision_object": "产品规划-项目范围与MVP边界",
+      "decision": "P0不做权重配置，统一按JD原文理解",
+      "reason": "无",
+      "memory_type": "decision",
+      "status": "active",
+      "supersedes_memory_ids": [],
+      "source_block_ids": [
+        "eb8d2a28-661f-4707-a1ce-a2356c5e8ada"
+      ]
+    },
+    {
+      "memory_id": "3e29961f-e6a8-4227-a7fa-7c3e84a255f0",
+      "decision_object": "数据与安全-数据格式与输入输出",
+      "decision": "报告卡片顺序定为overview、matched、missing、review_items；输出字段包含matched_requirements、missing_requirements、risk_flags",
+      "reason": "讨论中ou_algo_001提出输出字段，ou_design_001建议顺序，ou_pm_001确认，ou_dev_001记录结构，最终达成一致",
+      "memory_type": "decision",
+      "status": "active",
+      "supersedes_memory_ids": [],
+      "source_block_ids": [
+        "6eb046db-ca5f-48e3-a4d4-e4b55454d604"
+      ]
+    },
+    {
+      "memory_id": "5e43041f-5f9e-414d-96ce-49c5712f1173",
+      "decision_object": "产品规划-项目范围与MVP边界",
+      "decision": "保留匹配参考分（0-100）和推荐等级（strong_match, medium_match, needs_review），但不输出自动淘汰结论",
+      "reason": "各方达成一致，且与之前不自动淘汰的约定一致",
+      "memory_type": "decision",
+      "status": "deprecated",
+      "supersedes_memory_ids": [],
+      "source_block_ids": [
+        "1916d36c-8713-498a-a104-1e78e1f30f0b"
+      ]
+    },
+    {
+      "memory_id": "aeab1938-cf56-4eb0-b918-2dc3c77cd027",
+      "decision_object": "产品规划-项目范围与MVP边界",
+      "decision": "MVP不输出自动淘汰/录用结论，只输出辅助判断",
+      "reason": "讨论中HR提‘淘汰’敏感，算法说AI不能直接决定，PM定调只输出辅助判断。无人反对。",
+      "memory_type": "decision",
+      "status": "deprecated",
+      "supersedes_memory_ids": [
+        "24f9d627-a827-40b0-b720-c15d7dbea228",
+        "b448cb85-28ea-41c1-9fb4-620f3ca6f28a"
+      ],
+      "source_block_ids": [
+        "185cc2ff-58cc-4def-9ef6-10de771e4946",
+        "1146ab79-c092-4933-8ec7-63df4bccd9c8"
+      ]
+    },
+    {
+      "memory_id": "695d7d27-cea7-4914-b233-f5e98a0221b6",
+      "decision_object": "数据与安全-安全与隐私保护",
+      "decision": "文本敏感信息脱敏，头像不解析，不作为匹配依据",
+      "reason": "保护候选人隐私，减少偏见争议",
+      "memory_type": "progress",
+      "status": "active",
+      "supersedes_memory_ids": [
+        "31e1511c-0903-4484-863b-c3bbb555d9e7",
+        "a8043b4d-75e0-49a2-ae81-e1d60bc72b0d"
+      ],
+      "source_block_ids": [
+        "dcedb41c-606c-4f7d-9c2a-85adf84aa121",
+        "407bc640-1225-4b31-9f21-274af1eb9aa1"
+      ]
+    },
+    {
+      "memory_id": "b448cb85-28ea-41c1-9fb4-620f3ca6f28a",
+      "decision_object": "产品规划-项目范围与MVP边界",
+      "decision": "匹配分暂不写入最终决策，先做草案；页面标题改为‘AI简历初筛助手’；先本地demo部署，复赛前再看是否需要公开链接",
+      "reason": "PM要求先看Demo表达，故暂缓决策",
+      "memory_type": "decision",
+      "status": "deprecated",
+      "supersedes_memory_ids": [],
+      "source_block_ids": [
+        "1146ab79-c092-4933-8ec7-63df4bccd9c8"
+      ]
+    },
+    {
+      "memory_id": "a8043b4d-75e0-49a2-ae81-e1d60bc72b0d",
+      "decision_object": "数据与安全-安全与隐私保护",
+      "decision": "文本敏感信息脱敏，头像不解析，不作为匹配依据",
+      "reason": "保护隐私，减少偏见争议，且团队达成一致",
+      "memory_type": "decision",
+      "status": "deprecated",
+      "supersedes_memory_ids": [],
+      "source_block_ids": [
+        "407bc640-1225-4b31-9f21-274af1eb9aa1"
+      ]
+    },
+    {
+      "memory_id": "31e1511c-0903-4484-863b-c3bbb555d9e7",
+      "decision_object": "数据与安全-安全与隐私保护",
+      "decision": "简历隐私字段的脱敏策略",
+      "reason": "讨论未完成，约定下一轮继续",
+      "memory_type": "progress",
+      "status": "deprecated",
+      "supersedes_memory_ids": [],
+      "source_block_ids": [
+        "dcedb41c-606c-4f7d-9c2a-85adf84aa121"
+      ]
+    },
+    {
+      "memory_id": "20b4f4a3-4ba7-48c8-a529-49b8263c29d8",
+      "decision_object": "用户体验-用户界面与交互设计",
+      "decision": "结果卡片分为匹配优势、缺失项、需人工确认项三块",
+      "reason": "结合设计、HR、PM意见，风险提醒需温和且与不自动淘汰原则一致",
+      "memory_type": "decision",
+      "status": "active",
+      "supersedes_memory_ids": [],
+      "source_block_ids": [
+        "82ff99f4-0fcc-49d4-8b76-da0b522b71f3"
+      ]
+    },
+    {
+      "memory_id": "dc315a14-e8e9-4269-96a4-e1691e573b58",
+      "decision_object": "数据与安全-数据格式与输入输出",
+      "decision": "简历解析字段定为教育、项目、实习、技能、获奖证书五类",
+      "reason": "PM提议，算法同意，HR建议学生场景先不硬算工作年限，实习和项目更重要",
+      "memory_type": "decision",
+      "status": "active",
+      "supersedes_memory_ids": [],
+      "source_block_ids": [
+        "e0ce4a08-9b73-4590-9ee2-6059bd86f38b"
+      ]
+    },
+    {
+      "memory_id": "24f9d627-a827-40b0-b720-c15d7dbea228",
+      "decision_object": "产品规划-项目范围与MVP边界",
+      "decision": "MVP不输出自动淘汰/录用结论，只输出辅助判断",
+      "reason": "避免AI直接决定候选人命运，减少公平性争议且输出“建议人工复核”更合适",
+      "memory_type": "decision",
+      "status": "deprecated",
+      "supersedes_memory_ids": [],
+      "source_block_ids": [
+        "185cc2ff-58cc-4def-9ef6-10de771e4946"
+      ]
+    },
+    {
+      "memory_id": "ddd4dbd7-215a-48ef-a5d6-2b5eb1681f80",
+      "decision_object": "产品规划-项目范围与MVP边界",
+      "decision": "不做完整ATS，只做JD-简历初筛分析（MVP）",
+      "reason": "时间不够，且招聘官最痛的是JD和简历对不上，需人工一份份看",
+      "memory_type": "decision",
+      "status": "active",
+      "supersedes_memory_ids": [],
+      "source_block_ids": [
+        "c2f31fc7-c349-4f85-8199-0401c5da982a"
+      ]
+    }
+  ],
+  "conflict_updates_observed": [
+    {
+      "operation_inferred": "refine",
+      "merged_card": {
+        "memory_id": "b5547f72-82fa-4e59-bb53-9fc8d6084730",
+        "decision_object": "技术实现-数据模型与存储方案",
+        "decision": "复赛用mock文件路径模拟上传，不接对象存储，决赛再看真实上传",
+        "reason": "避免真实文件上传的存储问题，保证Demo稳定性，评委现场不会因上传失败翻车",
+        "memory_type": "decision",
+        "status": "active",
+        "supersedes_memory_ids": [
+          "548ea0bb-0be1-4356-a297-98e759307dfe",
+          "6e382aeb-cf13-4cd4-8a85-3708621a41ae"
+        ],
+        "source_block_ids": [
+          "0e02ac82-76ae-4bb9-b04e-425b5ff4de6e",
+          "f1355a34-d42f-49a6-9bea-d963b5899cea"
+        ]
+      },
+      "source_cards": [
+        {
+          "memory_id": "548ea0bb-0be1-4356-a297-98e759307dfe",
+          "decision_object": "技术实现-数据模型与存储方案",
+          "decision": "部署和文件存储暂用mock，真实文件下一轮再议",
+          "reason": "真实文件上传需要处理存储，较为麻烦，Demo时模拟上传即可",
+          "memory_type": "decision",
+          "status": "deprecated",
+          "supersedes_memory_ids": [],
+          "source_block_ids": [
+            "0e02ac82-76ae-4bb9-b04e-425b5ff4de6e"
+          ]
+        },
+        {
+          "memory_id": "6e382aeb-cf13-4cd4-8a85-3708621a41ae",
+          "decision_object": "技术实现-数据模型与存储方案",
+          "decision": "复赛用mock文件路径模拟上传，不接对象存储，决赛再看真实上传",
+          "reason": "为保证演示稳定性，避免现场上传失败",
+          "memory_type": "decision",
+          "status": "deprecated",
+          "supersedes_memory_ids": [],
+          "source_block_ids": [
+            "f1355a34-d42f-49a6-9bea-d963b5899cea"
+          ]
+        }
+      ]
+    },
+    {
+      "operation_inferred": "progress_complete",
+      "merged_card": {
+        "memory_id": "38e8285d-55f3-4fa4-a8f1-e52f27ff95a9",
+        "decision_object": "质量保障-测试与评测方案",
+        "decision": "评测标准定为等级一致率加关键理由覆盖率",
+        "reason": "为了平衡准确率和效率，先不引入更复杂的公平性指标",
+        "memory_type": "decision",
+        "status": "active",
+        "supersedes_memory_ids": [
+          "b2fedb83-3b0a-4abb-b6cf-ca760a51cd33",
+          "38053ee3-fdec-4f6e-a917-678f4944813f"
+        ],
+        "source_block_ids": [
+          "e17838bf-6487-4fc9-80df-383f76544eb3",
+          "6d1d557c-541e-4127-a3d3-c97046d4a88c",
+          "d250185c-eacf-44bb-b68b-35e333cbee0b"
+        ]
+      },
+      "source_cards": [
+        {
+          "memory_id": "b2fedb83-3b0a-4abb-b6cf-ca760a51cd33",
+          "decision_object": "质量保障-测试与评测方案",
+          "decision": "确定评测标准为等级一致率加关键理由覆盖率",
+          "reason": "讨论中初步达成一致，但尚需实施验证",
+          "memory_type": "progress",
+          "status": "deprecated",
+          "supersedes_memory_ids": [
+            "bf0f60f2-c4c6-4cb5-8fe3-328fa0292dc8",
+            "bd020f13-d24b-4cc0-a042-ab1341253aff"
+          ],
+          "source_block_ids": [
+            "e17838bf-6487-4fc9-80df-383f76544eb3",
+            "6d1d557c-541e-4127-a3d3-c97046d4a88c"
+          ]
+        },
+        {
+          "memory_id": "38053ee3-fdec-4f6e-a917-678f4944813f",
+          "decision_object": "质量保障-测试与评测方案",
+          "decision": "由王五补齐20份mock简历和3个JD样例，由ou_qa_001制作人工标注模板",
+          "reason": "推进评测准备工作，依据已有共识需要简历样品和标注模板",
+          "memory_type": "decision",
+          "status": "deprecated",
+          "supersedes_memory_ids": [],
+          "source_block_ids": [
+            "d250185c-eacf-44bb-b68b-35e333cbee0b"
+          ]
+        }
+      ]
+    },
+    {
+      "operation_inferred": "refine",
+      "merged_card": {
+        "memory_id": "47bd5c54-b4fd-4f74-94cf-6c4d1c72ba9c",
+        "decision_object": "产品规划-项目范围与MVP边界",
+        "decision": "保留匹配参考分（0-100）和推荐等级（strong_match, medium_match, needs_review），但不输出自动淘汰结论",
+        "reason": "HR认为'淘汰'敏感，PM提议不输出自动淘汰/录用结论，只输出辅助判断；算法提出匹配分需强制配解释，PM将产品名称定为'匹配参考分'，最终达成共识。",
+        "memory_type": "decision",
+        "status": "active",
+        "supersedes_memory_ids": [
+          "aeab1938-cf56-4eb0-b918-2dc3c77cd027",
+          "5e43041f-5f9e-414d-96ce-49c5712f1173"
+        ],
+        "source_block_ids": [
+          "185cc2ff-58cc-4def-9ef6-10de771e4946",
+          "1146ab79-c092-4933-8ec7-63df4bccd9c8",
+          "1916d36c-8713-498a-a104-1e78e1f30f0b"
+        ]
+      },
+      "source_cards": [
+        {
+          "memory_id": "aeab1938-cf56-4eb0-b918-2dc3c77cd027",
+          "decision_object": "产品规划-项目范围与MVP边界",
+          "decision": "MVP不输出自动淘汰/录用结论，只输出辅助判断",
+          "reason": "讨论中HR提‘淘汰’敏感，算法说AI不能直接决定，PM定调只输出辅助判断。无人反对。",
+          "memory_type": "decision",
+          "status": "deprecated",
+          "supersedes_memory_ids": [
+            "24f9d627-a827-40b0-b720-c15d7dbea228",
+            "b448cb85-28ea-41c1-9fb4-620f3ca6f28a"
+          ],
+          "source_block_ids": [
+            "185cc2ff-58cc-4def-9ef6-10de771e4946",
+            "1146ab79-c092-4933-8ec7-63df4bccd9c8"
+          ]
+        },
+        {
+          "memory_id": "5e43041f-5f9e-414d-96ce-49c5712f1173",
+          "decision_object": "产品规划-项目范围与MVP边界",
+          "decision": "保留匹配参考分（0-100）和推荐等级（strong_match, medium_match, needs_review），但不输出自动淘汰结论",
+          "reason": "各方达成一致，且与之前不自动淘汰的约定一致",
+          "memory_type": "decision",
+          "status": "deprecated",
+          "supersedes_memory_ids": [],
+          "source_block_ids": [
+            "1916d36c-8713-498a-a104-1e78e1f30f0b"
+          ]
+        }
+      ]
+    },
+    {
+      "operation_inferred": "progress_refine",
+      "merged_card": {
+        "memory_id": "695d7d27-cea7-4914-b233-f5e98a0221b6",
+        "decision_object": "数据与安全-安全与隐私保护",
+        "decision": "文本敏感信息脱敏，头像不解析，不作为匹配依据",
+        "reason": "保护候选人隐私，减少偏见争议",
+        "memory_type": "progress",
+        "status": "active",
+        "supersedes_memory_ids": [
+          "31e1511c-0903-4484-863b-c3bbb555d9e7",
+          "a8043b4d-75e0-49a2-ae81-e1d60bc72b0d"
+        ],
+        "source_block_ids": [
+          "dcedb41c-606c-4f7d-9c2a-85adf84aa121",
+          "407bc640-1225-4b31-9f21-274af1eb9aa1"
+        ]
+      },
+      "source_cards": [
+        {
+          "memory_id": "31e1511c-0903-4484-863b-c3bbb555d9e7",
+          "decision_object": "数据与安全-安全与隐私保护",
+          "decision": "简历隐私字段的脱敏策略",
+          "reason": "讨论未完成，约定下一轮继续",
+          "memory_type": "progress",
+          "status": "deprecated",
+          "supersedes_memory_ids": [],
+          "source_block_ids": [
+            "dcedb41c-606c-4f7d-9c2a-85adf84aa121"
+          ]
+        },
+        {
+          "memory_id": "a8043b4d-75e0-49a2-ae81-e1d60bc72b0d",
+          "decision_object": "数据与安全-安全与隐私保护",
+          "decision": "文本敏感信息脱敏，头像不解析，不作为匹配依据",
+          "reason": "保护隐私，减少偏见争议，且团队达成一致",
+          "memory_type": "decision",
+          "status": "deprecated",
+          "supersedes_memory_ids": [],
+          "source_block_ids": [
+            "407bc640-1225-4b31-9f21-274af1eb9aa1"
+          ]
+        }
+      ]
+    }
+  ],
+  "conflict_update_checks": {
+    "from_chat": [
+      {
+        "name": "项目管理-分工与排期 refine",
+        "operation": "refine",
+        "passed": false,
+        "detail": "op=refine head_keywords=[]"
+      },
+      {
+        "name": "技术实现-部署与运维 progress_refine",
+        "operation": "progress_refine",
+        "passed": false,
+        "detail": "op=progress_refine head_keywords=[]"
+      },
+      {
+        "name": "质量保障-测试与评测 progress_refine",
+        "operation": "progress_refine",
+        "passed": false,
+        "detail": "op=progress_refine head_keywords=[]"
+      },
+      {
+        "name": "产品规划-功能优先级 refine（匹配分 + 报告字段合并）",
+        "operation": "refine",
+        "passed": false,
+        "detail": "op=refine head_keywords=[]"
+      },
+      {
+        "name": "数据与安全-脱敏字段 progress_refine",
+        "operation": "progress_refine",
+        "passed": true,
+        "detail": "op=progress_refine head=695d7d27 sources=['31e1511c', 'a8043b4d']"
+      }
+    ],
+    "simulated": [
+      {
+        "name": "simulated_refine",
+        "operation": "refine",
+        "passed": true,
+        "detail": "refine ok: merged=0deb51ce type=decision"
+      },
+      {
+        "name": "simulated_supersede",
+        "operation": "supersede",
+        "passed": true,
+        "detail": "supersede ok: new=66943a81 supersedes=['5429577b']"
+      },
+      {
+        "name": "simulated_progress_complete",
+        "operation": "progress_complete",
+        "passed": true,
+        "detail": "progress_complete ok: merged=6b15f15d type=decision"
+      }
+    ]
+  },
+  "anti_interference": {
+    "blocks_total": 1,
+    "blocks_noise": 0,
+    "noise_correct_rate": 0.0,
+    "cards_unexpected": 1,
+    "block_types": [
+      "decision"
+    ],
+    "new_cards_summary": [
+      {
+        "memory_type": "decision",
+        "status": "active",
+        "decision_object": "其他-无关消息",
+        "decision": "决定等对方看完匹配分后一起去吃饭"
+      }
+    ]
+  }
+}

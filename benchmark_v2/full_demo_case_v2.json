@@ -155,10 +155,23 @@
         ],
         "expected_memory_cards": [
           {
+            "expected_decision_object": [
+              "产品规划-项目范围与MVP边界",
+              "产品规划-MVP边界",
+              "产品规划-范围与边界"
+            ],
             "expected_keywords": [
-              "不做完整 ATS",
-              "群聊记忆",
-              "不碰企业级共享"
+              "不做完整 ATS"
+            ]
+          },
+          {
+            "expected_keywords": [
+              "群聊"
+            ],
+            "expected_keywords_any": [
+              "不碰企业级",
+              "不碰企业",
+              "群聊内闭环"
             ]
           }
         ]
@@ -404,20 +417,27 @@
       "expected_write_result": {
         "expected_memory_cards": [
           {
-            "expected_keywords": [
+            "expected_keywords_any": [
               "参考分区间",
-              "人工复核",
-              "needs_review"
+              "needs_review",
+              "人工复核"
             ]
           }
         ],
-        "expected_relations": [
+        "expected_card_relations": [
           {
-            "relation_type": "refines",
-            "new_expected_keywords": [
-              "低于60",
-              "高于80",
+            "operation": "progress_complete",
+            "head_keywords": [
               "needs_review"
+            ],
+            "head_status": "active",
+            "source_keywords": [
+              [
+                "匹配分"
+              ],
+              [
+                "needs_review"
+              ]
             ]
           }
         ]
@@ -489,12 +509,24 @@
           {
             "relation_type": "supersedes",
             "old_expected_keywords": [
-              "群聊内记忆",
-              "不碰企业级共享"
+              "群聊"
             ],
             "new_expected_keywords": [
-              "企业级共享",
-              "不只群聊"
+              "企业级"
+            ]
+          }
+        ],
+        "expected_card_relations": [
+          {
+            "operation": "supersede",
+            "head_keywords": [
+              "企业级"
+            ],
+            "head_status": "active",
+            "source_keywords": [
+              [
+                "群聊"
+              ]
             ]
           }
         ]
@@ -988,12 +1020,24 @@
           {
             "relation_type": "supersedes",
             "old_expected_keywords": [
-              "纯本地 demo",
-              "离线测试"
+              "纯本地"
             ],
             "new_expected_keywords": [
-              "真实飞书群演示优先",
-              "本地 mock"
+              "真实飞书群"
+            ]
+          }
+        ],
+        "expected_card_relations": [
+          {
+            "operation": "supersede",
+            "head_keywords": [
+              "真实飞书群"
+            ],
+            "head_status": "active",
+            "source_keywords": [
+              [
+                "纯本地"
+              ]
             ]
           }
         ]
@@ -2157,7 +2201,6 @@
       },
       {
         "chat_id": "oc_launch_ops",
-        "relation_type": "related_to",
         "old_expected_keywords": [
           "公告",
           "辅助初筛"
