@@ -12,75 +12,6 @@
 
 注意：本文仅介绍系统的基本原理和架构，不涉及具体实现细节。具体字段格式请参考其他文档。
 
-## 当前能力
-
-当前主线已经具备以下闭环能力：
-
-- 飞书群消息接入与后台批处理写入；
-- Evidence Block -> Memory Card -> Topic Summary 的多粒度记忆链；
-- 群内 `@机器人` 查询、来源追问、版本追问、topic list；
-- 日程 / 待办即时分流；
-- `refine` / `supersede` / `progress_complete` / `progress_refine` 等更新链路；
-- 三类 benchmark 入口：端到端回放、专项回放、指标驱动评测；
-- 飞书实播 demo 播放器与离线评测报告输出。
-
-当前仍然明确存在的限制：
-
-- 自动评测仍以关键词匹配为主，不能直接等同于严格语义正确率；
-- 写入链包含 LLM 生成与更新判断，同一 case 多次运行时结果会有轻微波动；
-- `benchmarkv3` 当前能稳定出报告，但不保证每次跑分达标；
-- Graphiti 在本地未初始化时会自动降级，相关结果应按降级环境理解。
-
-## 快速开始
-
-建议按下面顺序使用仓库：
-
-1. 激活你自己的项目环境；
-2. 用 `benchmark/mock_main.py` 跑一遍完整链路，确认写入和查询能通；
-3. 用 `python -m benchmarkv3.runner` 生成指标报告；
-4. 需要录屏时，用 `python -m demo.play_feishu_demo ...` 播放飞书群实播 demo。
-
-最常用命令：
-
-```bash
-# 先激活你自己的项目环境
-# 例如：
-# conda activate <your-env>
-
-# 端到端回放（输出 benchmark/result.json + benchmark/evaluation.json）
-python benchmark/mock_main.py
-
-# 指标评测（输出 benchmark_v3_latest.json + _detailed.json）
-python -m benchmarkv3.runner
-
-# 飞书实播 demo
-python -m demo.play_feishu_demo --reset --message-delay 0.15 --batch-pause 1 --hide-role-label
-
-# 启动真实机器人服务
-python main.py
-```
-
-## 仓库结构
-
-主要目录分工如下：
-
-- `feishu/`
-  - 飞书接入层、消息发送与事件解析
-- `realtime/`
-  - 即时触发、查询路由、日程/待办处理
-- `preprocessor/`
-  - 事件分块与消息预处理
-- `memory/`
-  - EvidenceBlock / MemoryCard / TopicSummary、冲突更新、检索、运行时开关
-- `benchmark/`
-  - 端到端回放、专项回放、demo trace
-- `benchmark_v2/`
-  - 分层 fixture 与兼容性评测套件
-- `benchmarkv3/`
-  - 当前主用的指标驱动评测套件
-- `demo/`
-  - 飞书群实播演示工具
-
 ## Benchmark 体系
 
 当前仓库里保留了三类测试 / 评测入口，分别服务于演示、端到端回放和指标评测：
@@ -769,7 +700,7 @@ vs
 
 ### 第二阶段：跑通记忆生成与查询
 
-- 调用 OpenClaw / LLM 总结 Evidence Block；
+- 调用 LLM 总结 Evidence Block；
 - 生成 Memory Card；
 - 实现基础检索；
 - 支持来源 Evidence Block 展开。
