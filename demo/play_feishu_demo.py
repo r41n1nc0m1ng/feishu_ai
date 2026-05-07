@@ -17,11 +17,6 @@ from dotenv import load_dotenv
 
 load_dotenv(ROOT / ".env")
 
-from benchmark.demo_trace_runner import (
-    install_llm_thinking_patch,
-    install_openai_embedding_patch,
-    install_skip_graphiti_card_write_patch,
-)
 from benchmark.input_simulator import CaseLoader
 from benchmark.replay_adapter import DualChannelReplayAdapter
 from feishu.api_client import FeishuAPIClient
@@ -249,10 +244,8 @@ async def play_batch(
 
 
 async def main_async(args: argparse.Namespace) -> int:
-    install_llm_thinking_patch()
-    install_openai_embedding_patch()
     if not args.keep_graphiti_card_write:
-        install_skip_graphiti_card_write_patch()
+        os.environ["SKIP_GRAPHITI_CARD_WRITE"] = "true"
 
     await GraphitiClient.initialize()
 
