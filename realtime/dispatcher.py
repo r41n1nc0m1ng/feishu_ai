@@ -6,6 +6,7 @@ import logging
 import os
 
 from realtime.action_handler import RealtimeActionHandler
+from realtime.action_classifier import refine_realtime_action
 from realtime.query_handler import QueryTrace, RealtimeQueryHandler
 from realtime.triggers import classify_realtime_action
 from openclaw_bridge.client import OpenClawClient
@@ -30,12 +31,14 @@ async def dispatch_message(
     action_handler: Optional[RealtimeActionHandler] = None,
     legacy_ingest: Optional[Callable[[object], Awaitable[None]]] = None,
 ) -> DispatchTrace:
-    action = classify_realtime_action(message)
+    rule_action = classify_realtime_action(message)
+    action = await refine_realtime_action(getattr(message, "text", ""), rule_action)
     logger.info(
-        "Realtime dispatch | chat=%s message_id=%s action=%s text=%s",
+        "Realtime dispatch | chat=%s message_id=%s action=%s rule_action=%s text=%s",
         getattr(message, "chat_id", ""),
         getattr(message, "message_id", ""),
         action,
+        rule_action,
         getattr(message, "text", "")[:120],
     )
 
