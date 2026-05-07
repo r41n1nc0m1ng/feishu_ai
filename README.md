@@ -47,17 +47,21 @@
 运行命令：
 
 ```bash
+# 先激活你自己的项目环境
+# 例如：
+# conda activate <your-env>
+
 # 端到端回放（输出 benchmark/result.json + benchmark/evaluation.json）
-conda run -n feishu-ai-p0 python benchmark/mock_main.py
+python benchmark/mock_main.py
 
 # benchmark_v2 分层回放
-conda run -n feishu-ai-p0 python -m benchmark.run_suite --suite v2
+python -m benchmark.run_suite --suite v2
 
 # 指标评测（输出 benchmark_v3_latest.json + _detailed.json）
-conda run -n feishu-ai-p0 python -m benchmarkv3.runner
+python -m benchmarkv3.runner
 
 # 飞书实播 demo
-conda run -n feishu-ai-p0 python -m demo.play_feishu_demo --reset --message-delay 0.15 --batch-pause 1 --hide-role-label
+python -m demo.play_feishu_demo --reset --message-delay 0.15 --batch-pause 1 --hide-role-label
 ```
 
 其中：

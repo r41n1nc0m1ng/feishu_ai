@@ -43,19 +43,20 @@ Each webhook should be a Feishu custom bot installed in the same `DEMO_CHAT_ID` 
 Recommended demo run:
 
 ```bash
-conda run -n feishu-ai-p0 python -m demo.play_feishu_demo --reset --message-delay 0.15 --batch-pause 1 --hide-role-label
+# activate your own project environment first
+python -m demo.play_feishu_demo --reset --message-delay 0.15 --batch-pause 1 --hide-role-label
 ```
 
 Smoke test one batch:
 
 ```bash
-conda run -n feishu-ai-p0 python -m demo.play_feishu_demo --reset --max-batches 1 --message-delay 0.3
+python -m demo.play_feishu_demo --reset --max-batches 1 --message-delay 0.3
 ```
 
 Keep Graphiti card writes, closer to the slower main path:
 
 ```bash
-conda run -n feishu-ai-p0 python -m demo.play_feishu_demo --keep-graphiti-card-write
+python -m demo.play_feishu_demo --keep-graphiti-card-write
 ```
 
 ## Query After Playback
@@ -63,7 +64,7 @@ conda run -n feishu-ai-p0 python -m demo.play_feishu_demo --keep-graphiti-card-w
 Start the real bot service in another terminal:
 
 ```bash
-conda run -n feishu-ai-p0 python main.py
+python main.py
 ```
 
 After playback, mention the application bot in the same group. Queries use the memory already written under `DEMO_CHAT_ID`; they do not pull Feishu history on demand.
