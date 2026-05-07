@@ -42,35 +42,41 @@ Each webhook should be a Feishu custom bot installed in the same `DEMO_CHAT_ID` 
 
 Recommended demo run:
 
-```powershell
-python -m demo.play_feishu_demo --reset --message-delay 0.15 --batch-pause 1 --hide-role-label
+```bash
+conda run -n feishu-ai-p0 python -m demo.play_feishu_demo --reset --message-delay 0.15 --batch-pause 1 --hide-role-label
 ```
 
 Smoke test one batch:
 
-```powershell
-python -m demo.play_feishu_demo --reset --max-batches 1 --message-delay 0.3
+```bash
+conda run -n feishu-ai-p0 python -m demo.play_feishu_demo --reset --max-batches 1 --message-delay 0.3
 ```
 
 Keep Graphiti card writes, closer to the slower main path:
 
-```powershell
-python -m demo.play_feishu_demo --keep-graphiti-card-write
+```bash
+conda run -n feishu-ai-p0 python -m demo.play_feishu_demo --keep-graphiti-card-write
 ```
 
 ## Query After Playback
 
-Start the real OpenClaw bot service in another terminal:
+Start the real bot service in another terminal:
 
-```powershell
-python main.py
+```bash
+conda run -n feishu-ai-p0 python main.py
 ```
 
-After playback, mention the OpenClaw application bot in the same group. Queries use the memory already written under `DEMO_CHAT_ID`; they do not pull Feishu history on demand.
+After playback, mention the application bot in the same group. Queries use the memory already written under `DEMO_CHAT_ID`; they do not pull Feishu history on demand.
+
+For competition recording, keep the post-playback Q&A short:
+
+- ask 1-2 queries with low lexical ambiguity;
+- prefer concrete wording such as "简历上传的格式是什么" instead of broader wording with too many repeated domain terms;
+- if real-time answers are unstable, fall back to showing `benchmark/mock_main.py` plus `benchmarkv3` reports in the same recording.
 
 ## Notes
 
 - `--reset` clears memory for the demo group before playback.
 - `--hide-role-label` is useful when separate custom bots already show the role by name/avatar.
-- If a role webhook is missing, that role falls back to the OpenClaw app bot sender.
+- If a role webhook is missing, that role falls back to the application bot sender.
 - Real human messages sent after the demo can still be written by `python main.py` through the normal polling path.

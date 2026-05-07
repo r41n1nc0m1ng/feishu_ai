@@ -1,6 +1,6 @@
-# Feishu Openclaw Memory
+# Feishu Group Memory
 
-基于飞书群聊与 OpenClaw 的轻量级团队决策记忆系统。
+基于飞书群聊的轻量级团队决策记忆系统。
 
 本项目面向小型团队在飞书群聊中常见的“历史决策遗忘、决策理由丢失、版本更新混乱”等问题，将机器人定位为群聊中的后台决策记录者。系统不追求记录所有聊天内容，而是聚焦于长期有复用价值的决策、规则、约束、方案取舍和版本更新。
 
@@ -14,7 +14,7 @@
 
 ## Benchmark 体系
 
-当前用于测试 / 评测的两个入口，分工明确，目的不同：
+当前仓库里保留了三类测试 / 评测入口，分别服务于演示、端到端回放和指标评测：
 
 - `benchmark/mock_main.py`
   - 角色：端到端管线回放器。
@@ -22,43 +22,69 @@
   - 输出：`benchmark/result.json`（每 batch 产出的 MemoryCard、@bot 回复、TopicSummary 终态、卡片版本链）+ `evaluation.json`。
   - 适合：行为级冒烟、demo 录屏前验收、查看机器人在群里的"实际响应"。
 
+- `benchmarkv3/runner.py`
+  - 角色：当前主用的指标驱动评测平台。
+  - 作用：**绕开实时层**，直接调 `MemoryRetriever`；跑结构化测试用例，输出可对比的多维指标。
+  - 测试用例和消息源解耦：`benchmarkv3/full_demo_case.json`（消息）+ `benchmarkv3/test_cases.json`（独立测试集），方便 A/B 修改。
+  - 输出：`benchmarkv3/reports/benchmark_v3_latest.json`（指标摘要）+ `benchmark_v3_latest_detailed.json`（每条 query 的 expected/actual 关键词、检索到的 top-N 卡片完整快照、本次产生的矛盾更新链路、抗干扰 batch 各块 `block_type` 详情）。
+  - 适合：写入侧 / 检索侧 / 矛盾更新链路的回归对比，做改动前后的指标差。
+
 - `benchmark/special_case/special_case_replay.py`
   - 角色：单流专项回放。
   - 作用：验证 anti-noise、conflict、final query 召回、Graphiti/SQLite fallback 等专项能力。
   - 特点：更贴近“完整历史对话 + 最终追问”的专项测试，不负责通用分层评测。
 
-- `benchmark_v2/（当前接口对应，但指标不完全对应）`
-  - 角色：生产级 benchmark 主套件。
+- `benchmark_v2/`
+  - 角色：分层 benchmark 与兼容性评测套件。
   - 作用：承接 source/runtime 分层、按 chat/tag 筛选、轻量评测 + 深度评测、报表输出。
-  - 特点：覆盖面最完整，适合当前阶段的 benchmark 开发、专项回归和对外展示前验收。
+  - 特点：覆盖 chat/tag 维度筛选和 batch 级检查，适合继续扩 benchmark fixture，但当前评测口径与最新写入链不完全一致。
 
-当前如果目标是“把 benchmark 做到满足真实模拟、分层测评、清晰指标、能说服人的测试能力”，主工作区应以 `benchmark_v2` 为主，另外两套保留为：
-
-- `full_demo`：入口和适配层冒烟回归；
-- `special_case`：重型专项补充回放。
-
-
-- `benchmarkv3/runner.py`
-  - 角色：指标驱动评测平台。
-  - 作用：**绕开实时层**，直接调 `MemoryRetriever`；跑结构化测试用例（每 batch 末 3 条松检查 + 总末 23 条严格查询 + 8 条矛盾更新 + batch_006 抗干扰），输出可对比的多维指标。
-  - 测试用例和消息源解耦：`benchmarkv3/full_demo_case.json`（消息）+ `benchmarkv3/test_cases.json`（独立测试集），方便 A/B 修改。
-  - 输出：`benchmarkv3/reports/benchmark_v3_latest.json`（指标摘要）+ `benchmark_v3_latest_detailed.json`（每条 query 的 expected/actual 关键词、检索到的 top-N 卡片完整快照、本次产生的所有矛盾更新链路、抗干扰 batch 各块 block_type 详情）。
-  - 适合：写入侧 / 检索侧 / 矛盾更新链路的回归对比，做改动前后的指标差。
+- `demo/play_feishu_demo.py`
+  - 角色：飞书实播演示编排器。
+  - 作用：把 `benchmark/full_demo_case.json` 快速播放到真实飞书群，同时把同一批消息喂给后端写入链。
+  - 适合：录制“群里消息快速出现 + 机器人后续可被询问”的展示视频。
 
 运行命令：
 
 ```bash
-# 端到端回放（输出 result.json + evaluation.json）
-conda run -n feishu python benchmark/mock_main.py
+# 端到端回放（输出 benchmark/result.json + benchmark/evaluation.json）
+conda run -n feishu-ai-p0 python benchmark/mock_main.py
 
-# benchmarkv2路径
+# benchmark_v2 分层回放
 conda run -n feishu-ai-p0 python -m benchmark.run_suite --suite v2
-```
+
 # 指标评测（输出 benchmark_v3_latest.json + _detailed.json）
-conda run -n feishu python -m benchmarkv3.runner
+conda run -n feishu-ai-p0 python -m benchmarkv3.runner
+
+# 飞书实播 demo
+conda run -n feishu-ai-p0 python -m demo.play_feishu_demo --reset --message-delay 0.15 --batch-pause 1 --hide-role-label
 ```
 
-两条路径走到 `BatchProcessor.process_fetch_batch` 之后用的是同一套写入算法，差别只在驱动方式与评测视角：`mock_main` 答 "**机器人**会怎么响应"，`runner` 答 "**记忆系统**质量到什么程度"。
+其中：
+
+- `mock_main` 更适合回答“机器人在完整链路里会怎么响应”；
+- `benchmarkv3` 更适合回答“记忆系统当前质量到什么程度”；
+- `benchmark_v2` 更适合继续做分层 fixture 和专项回归。
+
+## 演示与交付材料
+
+如果时间有限，推荐优先展示两类材料：
+
+1. 飞书实播 demo
+   - 命令：`python -m demo.play_feishu_demo --reset --message-delay 0.15 --batch-pause 1 --hide-role-label`
+   - 另起一个终端运行：`python main.py`
+   - 播放结束后，在同一群里 `@机器人` 追问 1-2 个歧义较低的问题。
+
+2. 离线评测结果
+   - `benchmark/result.json`
+   - `benchmark/evaluation.json`
+   - `benchmarkv3/reports/benchmark_v3_latest.json`
+   - `benchmarkv3/reports/benchmark_v3_latest_detailed.json`
+
+评测结果解读时需要明确两点：
+
+- 当前自动评分仍以关键词匹配为主，不能把分数直接等同于严格语义正确率。
+- 写入侧包含 LLM 生成与冲突更新判断，同一 case 多次运行时，卡片数量、`refine` / `add` / `supersede` 细节可能会有轻微波动。
 
 
 
@@ -76,7 +102,7 @@ conda run -n feishu python -m benchmarkv3.runner
 - 新成员加入后，需要老成员重复解释历史上下文；
 - 人工翻群记录成本高，且很容易漏掉关键原因。
 
-因此，本项目希望让 OpenClaw 成为飞书群中的“决策记忆助手”：在不打扰日常讨论的前提下，后台沉淀群聊中的关键决策，并在需要时准确召回。
+因此，本项目希望让机器人成为飞书群中的“决策记忆助手”：在不打扰日常讨论的前提下，后台沉淀群聊中的关键决策，并在需要时准确召回。
 
 ---
 
