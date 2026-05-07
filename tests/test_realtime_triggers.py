@@ -38,6 +38,26 @@ class RealtimeTriggerTests(unittest.TestCase):
         self.assertTrue(should_trigger_realtime(message))
         self.assertEqual(classify_realtime_action(message), "query")
 
+    def test_mentioned_schedule_request_routes_to_schedule(self):
+        message = _msg("@机器人 帮我约明天下午3点 Demo 评审会", is_at_bot=True)
+        self.assertEqual(classify_realtime_action(message), "schedule")
+
+    def test_mentioned_schedule_request_with_coordination_word_routes_to_schedule(self):
+        message = _msg("@_user_1 帮我约个明天下午三点的联调", is_at_bot=True)
+        self.assertEqual(classify_realtime_action(message), "schedule")
+
+    def test_mentioned_task_request_routes_to_task(self):
+        message = _msg("@机器人 提醒张三明天提交 demo 文档", is_at_bot=True)
+        self.assertEqual(classify_realtime_action(message), "task")
+
+    def test_mentioned_schedule_confirmation_stays_query(self):
+        message = _msg("@机器人 明天下午三点对吧？", is_at_bot=True)
+        self.assertEqual(classify_realtime_action(message), "query")
+
+    def test_mentioned_ack_is_noop(self):
+        message = _msg("@机器人 收到", is_at_bot=True)
+        self.assertEqual(classify_realtime_action(message), "noop")
+
     def test_internal_user_mention_prefix_triggers_query(self):
         message = _msg("@_user_1 之前怎么定的")
         self.assertTrue(should_trigger_realtime(message))

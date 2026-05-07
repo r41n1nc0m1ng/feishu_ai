@@ -78,6 +78,9 @@ SCHEDULE_PATTERNS = [
         r"会议",
         r"评审",
         r"同步",
+        r"联调",
+        r"沟通",
+        r"碰头",
         r"明天",
         r"[0-9一二三四五六七八九十]+点",
     ]
@@ -120,12 +123,43 @@ TASK_INTENT_PATTERNS = [
     ]
 ]
 
+MENTIONED_NOOP_PATTERNS = [
+    re.compile(p)
+    for p in [
+        r"^(收到|好的|好|嗯|ok|OK|明白|知道了|不用了|算了)[。.!！\s]*$",
+    ]
+]
+
+MENTIONED_SCHEDULE_INTENT_PATTERNS = [
+    re.compile(p)
+    for p in [
+        r"(帮我|麻烦|请|创建|新建|安排|约|约个|发起|拉|拉个|定|建|加).{0,16}(会|会议|评审|同步|日程|碰头|联调|沟通)",
+        r"(会|会议|评审|同步|日程|碰头|联调|沟通).{0,16}(帮我|创建|新建|安排|约|约个|发起|拉|拉个|定|建|加)",
+    ]
+]
+
+MENTIONED_TASK_INTENT_PATTERNS = [
+    re.compile(p)
+    for p in [
+        r"(帮我|麻烦|请|创建|新建|建|加|提醒|安排).{0,12}(待办|任务|提醒)",
+        r"(提醒|安排).{0,8}.+(提交|完成|处理|交付|同步|反馈|发送)",
+        r"(让|叫|请).{0,8}.+(提交|完成|处理|交付|同步|反馈|发送)",
+    ]
+]
+
 
 def has_explicit_bot_mention(text: str) -> bool:
     normalized = text.strip()
     if not normalized:
         return False
     return any(pattern.search(normalized) for pattern in MENTION_PREFIX_PATTERNS)
+
+
+def strip_leading_bot_mention(text: str) -> str:
+    normalized = text.strip()
+    normalized = re.sub(r"^<at\b[^>]*>.*?</at>\s*", "", normalized).strip()
+    normalized = re.sub(r"^@\S+\s*", "", normalized).strip()
+    return normalized
 
 
 def is_explicit_query(text: str) -> bool:
@@ -178,6 +212,29 @@ def is_task_like(text: str) -> bool:
     return has_anchor and has_intent
 
 
+def is_mentioned_noop(text: str) -> bool:
+    normalized = strip_leading_bot_mention(text)
+    if not normalized:
+        return True
+    return any(pattern.search(normalized) for pattern in MENTIONED_NOOP_PATTERNS)
+
+
+def is_mentioned_schedule_request(text: str) -> bool:
+    normalized = strip_leading_bot_mention(text)
+    if not normalized:
+        return False
+    has_execution_intent = any(pattern.search(normalized) for pattern in MENTIONED_SCHEDULE_INTENT_PATTERNS)
+    return has_execution_intent and is_schedule_like(normalized)
+
+
+def is_mentioned_task_request(text: str) -> bool:
+    normalized = strip_leading_bot_mention(text)
+    if not normalized:
+        return False
+    has_execution_intent = any(pattern.search(normalized) for pattern in MENTIONED_TASK_INTENT_PATTERNS)
+    return has_execution_intent or is_task_like(normalized)
+
+
 def should_trigger_realtime(message) -> bool:
     if bool(getattr(message, "is_at_bot", False)):
         return True
@@ -186,6 +243,13 @@ def should_trigger_realtime(message) -> bool:
 
 def classify_realtime_action(message) -> str:
     if should_trigger_realtime(message):
+        text = getattr(message, "text", "")
+        if is_mentioned_noop(text):
+            return "noop"
+        if is_mentioned_task_request(text):
+            return "task"
+        if is_mentioned_schedule_request(text):
+            return "schedule"
         return "query"
     if is_task_like(message.text):
         return "task"
